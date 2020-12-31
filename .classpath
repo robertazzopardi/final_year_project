@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER">
+		<attributes>
+			<attribute name="module" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry excluding="*.asl" kind="src" path="src/asl"/>
+	<classpathentry kind="src" path="src/java"/>
+	<classpathentry kind="lib" path="/Users/rob/_CODE/Development/jason-2/libs/jason-2.6.2.jar"/>
+	<classpathentry kind="lib" path="/Users/rob/_CODE/Java/final-project/project/lib/comp329robosim.jar"/>
+	<classpathentry kind="output" path="bin/classes"/>
+</classpath>

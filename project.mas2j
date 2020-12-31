@@ -1,0 +1,12 @@
+MAS project {
+
+	infrastructure: Centralised
+
+	environment: myEnv
+
+	agents:
+		agent1 sample_agent;
+
+	aslSourcePath:
+		"src/asl";
+}
