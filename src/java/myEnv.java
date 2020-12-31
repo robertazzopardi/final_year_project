@@ -2,6 +2,7 @@
 
 import jason.asSyntax.*;
 import jason.environment.*;
+import jdk.jfr.internal.LogLevel;
 import jason.asSyntax.parser.*;
 
 import java.awt.Color;
@@ -10,12 +11,13 @@ import java.util.logging.*;
 import comp329robosim.EnvController;
 import comp329robosim.RobotMonitor;
 
+import java.util.Random;
+
 public class myEnv extends Environment {
 
 	private Logger logger = Logger.getLogger("final_year_project." + myEnv.class.getName());
 
 	EnvController controller;
-//	RobotMonitor myRobot;
 	RobotMonitor[] robotMonitors;
 
 	/** Called before the MAS execution with the args informed in .mas2j */
@@ -29,36 +31,11 @@ public class myEnv extends Environment {
 		}
 
 		controller = new EnvController("/Users/rob/_CODE/Java/final-project/defaultConfig.txt", 10, 10);
-//		myRobot = controller.getMyRobot();
 		robotMonitors = controller.getRobots();
 
-//		robotMonitors[0].monitorRobotStatus(true);
-//		robotMonitors[0].setTravelSpeed(100); // 10cm per sec myRobot.setDirection(0);
-//		while (robotMonitors[0].getUSenseRange() > 700) {
-//			robotMonitors[0].travel(350); // travel 35 cm
-//		}
-//		robotMonitors[0].rotate(90); // Turn Left
-//		while (!robotMonitors[0].isBumperPressed()) {
-//			robotMonitors[0].travel(350); // travel 35 cm
-//			if (robotMonitors[0].getCSenseColor().equals(Color.GREEN)) {
-//				System.out.println("found Green cell at location (" + robotMonitors[0].getX() + ","
-//						+ robotMonitors[0].getY() + ") with heading " + robotMonitors[0].getHeading());
-//			}
-//		}
-
-		robotMonitors[1].monitorRobotStatus(true);
-		robotMonitors[1].setTravelSpeed(100); // 10cm per sec myRobot.setDirection(0);
-		robotMonitors[1].rotate(90);
-		while (robotMonitors[1].getUSenseRange() > 700) {
-			robotMonitors[1].travel(350); // travel 35 cm
-		}
-		robotMonitors[1].rotate(90); // Turn Left
-		while (!robotMonitors[1].isBumperPressed()) {
-			robotMonitors[1].travel(350); // travel 35 cm
-			if (robotMonitors[1].getCSenseColor().equals(Color.GREEN)) {
-				System.out.println("found Green cell at location (" + robotMonitors[1].getX() + ","
-						+ robotMonitors[1].getY() + ") with heading " + robotMonitors[1].getHeading());
-			}
+		for (RobotMonitor robot : robotMonitors) {
+			RobotRunner runner = new RobotRunner(robot);
+			runner.start();
 		}
 
 	}
@@ -77,4 +54,53 @@ public class myEnv extends Environment {
 	public void stop() {
 		super.stop();
 	}
+}
+
+class RobotRunner extends Thread {
+
+	private static final int[] rotationAmount = new int[] { 0, 90, 180, 270, 360 };
+
+	private static final Random random = new Random();
+
+	RobotMonitor robot;
+
+	public RobotRunner(RobotMonitor monitor) {
+		this.robot = monitor;
+	}
+
+	@Override
+	public void run() {
+		super.run();
+
+		handleRobotMovement();
+	}
+
+	private void handleRobotMovement() {
+		robot.monitorRobotStatus(true);
+		robot.setTravelSpeed(100); // 10cm per sec myRobot.setDirection(0);
+		
+		while (true) {
+
+			robot.rotate(getRandomRotation());
+			
+			if (robot.getUSenseRange() < 350) {
+				robot.rotate(getRandomRotation());
+			}
+			
+			robot.travel(350);
+		}
+		
+//		while (!robot.isBumperPressed()) {
+//			robot.travel(350); // travel 35 cm
+//			if (robot.getCSenseColor().equals(Color.GREEN)) {
+//				System.out.println("found Green cell at location (" + robot.getX() + ","
+//						+ robot.getY() + ") with heading " + robot.getHeading());
+//			}
+//		}
+	}
+
+	private int getRandomRotation() {
+		return rotationAmount[random.nextInt(rotationAmount.length)];
+	}
+
 }
