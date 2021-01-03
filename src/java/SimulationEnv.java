@@ -2,7 +2,7 @@
 
 import jason.asSyntax.*;
 import jason.environment.*;
-import jason.asSyntax.parser.*;
+//import jason.asSyntax.parser.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,6 +18,7 @@ public class SimulationEnv extends Environment {
 	EnvController controller;
 
 	RobotMonitor prey;
+	
 	RobotMonitor[] hunters;
 
 	/** Called before the MAS execution with the args informed in .mas2j */
@@ -35,7 +36,7 @@ public class SimulationEnv extends Environment {
 
 		// get and run the prey robot
 		prey = controller.getPreyRobot();
-		new RobotRunner(prey, hunters).start();
+		new Prey(prey, hunters).start();
 
 		// get and run hunters
 		hunters = controller.getHunters();
@@ -44,7 +45,7 @@ public class SimulationEnv extends Environment {
 
 			otherHunters.remove(robot);
 
-			new RobotRunner(robot, otherHunters.toArray(new RobotMonitor[otherHunters.size()])).start();
+			new Hunter(robot, otherHunters.toArray(new RobotMonitor[otherHunters.size()])).start();
 		}
 
 	}
