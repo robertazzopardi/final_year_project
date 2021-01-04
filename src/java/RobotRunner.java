@@ -1,5 +1,6 @@
 import java.util.Random;
 
+import comp329robosim.EnvController;
 import comp329robosim.RobotMonitor;
 
 /**
@@ -14,16 +15,26 @@ public abstract class RobotRunner extends Thread {
 
 	final Random random = new Random();
 
-	RobotMonitor thisHunter;
+	RobotMonitor robot;
 
 	RobotMonitor[] otherHunters;
 
-	public RobotRunner(RobotMonitor thisHunter, RobotMonitor[] otherHunters) {
-		this.thisHunter = thisHunter;
+	EnvController controller;
 
-		this.otherHunters = otherHunters;
+	public RobotRunner(RobotMonitor robot, RobotMonitor[] otherRobots, EnvController controller) {
+		this.robot = robot;
 
-		this.thisHunter.monitorRobotStatus(true);
+//		this.robot.monitorRobotStatus(true);
+		this.robot.monitorRobotStatus(false);
+
+		this.otherHunters = otherRobots;
+
+		robot.setTravelSpeed(100);
+
+		this.controller = controller;
+
+		controller.setPosition(getEnvPosY(), getEnvPosX());
+
 	}
 
 	@Override
@@ -33,9 +44,7 @@ public abstract class RobotRunner extends Thread {
 		handleRobotMovement();
 	}
 
-	void handleRobotMovement() {
-		thisHunter.setTravelSpeed(100);
-	}
+	abstract void handleRobotMovement();
 
 	// sets some rules for the robots movements
 //	private void handleRobotMovement() {
@@ -92,11 +101,11 @@ public abstract class RobotRunner extends Thread {
 	}
 
 	int getEnvPosX() {
-		return ((thisHunter.getX() * 2) / 350);
+		return (int) ((((((double) robot.getX() / 350) * 2) - 1) / 2));
 	}
 
 	int getEnvPosY() {
-		return ((thisHunter.getY() * 2) / 350);
+		return (int) ((((((double) robot.getY() / 350) * 2) - 1) / 2));
 	}
 
 }

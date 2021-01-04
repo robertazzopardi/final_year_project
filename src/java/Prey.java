@@ -1,3 +1,4 @@
+import comp329robosim.EnvController;
 import comp329robosim.RobotMonitor;
 
 /**
@@ -6,31 +7,23 @@ import comp329robosim.RobotMonitor;
  */
 public class Prey extends RobotRunner {
 
-	boolean hasRotated = false;
-
-	public Prey(RobotMonitor thisHunter, RobotMonitor[] otherHunters) {
-		super(thisHunter, otherHunters);
+	public Prey(RobotMonitor robot, RobotMonitor[] otherRobots, EnvController controller) {
+		super(robot, otherRobots, controller);
 	}
 
 	@Override
 	void handleRobotMovement() {
-		super.handleRobotMovement();
-		
-		while (true) {
-			int range = thisHunter.getUSenseRange();
 
-			if (range > 180) {
-				if (random.nextBoolean() && !hasRotated) {
-					thisHunter.rotate(getRandomRotationSingle());
-				} else {
-					hasRotated = false;
-					thisHunter.travel(350);
-				}
-			} else {
-				hasRotated = true;
-				thisHunter.rotate(getRandomRotationSingle());
-			}
-		}
+//		System.out.println(((double) robot.getX() / 350) * 2);
+//
+//		System.out.println((robot.getX() / 350) * 2);
+////		(x * this.model.getCellWidth()) / 2
+//
+//		List<ArrayList<MyGridCell>> gridArrayList = controller.getGrid();
+//
+//		for (ArrayList<MyGridCell> arrayList : gridArrayList) {
+//			System.out.println(arrayList);
+//		}
 	}
 
 }

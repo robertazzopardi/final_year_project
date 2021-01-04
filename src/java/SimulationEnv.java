@@ -1,15 +1,16 @@
 // Environment code for project final_year_project
 
-import jason.asSyntax.*;
-import jason.environment.*;
-//import jason.asSyntax.parser.*;
-
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.logging.*;
+import java.util.List;
+import java.util.logging.Logger;
 
 import comp329robosim.EnvController;
+import comp329robosim.MyGridCell;
 import comp329robosim.RobotMonitor;
+import jason.asSyntax.Structure;
+//import jason.asSyntax.parser.*;
+import jason.environment.Environment;
 
 public class SimulationEnv extends Environment {
 
@@ -18,8 +19,11 @@ public class SimulationEnv extends Environment {
 	EnvController controller;
 
 	RobotMonitor prey;
-	
+
 	RobotMonitor[] hunters;
+
+	public static final int WIDTH = 10;
+	public static final int HEIGHT = 10;
 
 	/** Called before the MAS execution with the args informed in .mas2j */
 	@Override
@@ -32,11 +36,22 @@ public class SimulationEnv extends Environment {
 //		}
 
 		// get the controller
-		controller = new EnvController("/Users/rob/_CODE/Java/final-project/defaultConfig.txt", 10, 10);
+		controller = new EnvController("/Users/rob/_CODE/Java/final-project/defaultConfig.txt", WIDTH, HEIGHT);
 
+		initRobots();
+
+//		RobotMonitor testMonitor = controller.getHunters()[0];
+//		new Prey(testMonitor, null, controller).start();
+
+	}
+
+	/**
+	 * 
+	 */
+	private void initRobots() {
 		// get and run the prey robot
 		prey = controller.getPreyRobot();
-		new Prey(prey, hunters).start();
+		new Prey(prey, hunters, controller).start();
 
 		// get and run hunters
 		hunters = controller.getHunters();
@@ -45,9 +60,21 @@ public class SimulationEnv extends Environment {
 
 			otherHunters.remove(robot);
 
-			new Hunter(robot, otherHunters.toArray(new RobotMonitor[otherHunters.size()])).start();
+			new Hunter(robot, otherHunters.toArray(new RobotMonitor[otherHunters.size()]), controller).start();
 		}
 
+		printGrid();
+	}
+
+	/**
+	 * 
+	 */
+	private void printGrid() {
+		List<ArrayList<MyGridCell>> gridArrayList = controller.getGrid();
+
+		for (ArrayList<MyGridCell> arrayList : gridArrayList) {
+			System.out.println(arrayList);
+		}
 	}
 
 	@Override
@@ -63,10 +90,6 @@ public class SimulationEnv extends Environment {
 	@Override
 	public void stop() {
 		super.stop();
-	}
-
-	public void removeElement(Object[] arr, int removedIdx) {
-		System.arraycopy(arr, removedIdx + 1, arr, removedIdx, arr.length - 1 - removedIdx);
 	}
 
 }
