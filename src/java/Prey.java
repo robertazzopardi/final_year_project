@@ -1,5 +1,5 @@
-import comp329robosim.EnvController;
-import comp329robosim.RobotMonitor;
+import comp329robosim.OccupancyType;
+import comp329robosim.SimulatedRobot;
 
 /**
  * @author rob
@@ -7,23 +7,19 @@ import comp329robosim.RobotMonitor;
  */
 public class Prey extends RobotRunner {
 
-	public Prey(RobotMonitor robot, RobotMonitor[] otherRobots, EnvController controller) {
-		super(robot, otherRobots, controller);
+	public Prey(SimulatedRobot r, int d) {
+		super(r, d);
+		// TODO Auto-generated constructor stub
+		SimulationEnv.controller.setPosition(getEnvPosX(), getEnvPosY(), OccupancyType.PREY);
 	}
 
 	@Override
-	void handleRobotMovement() {
-
-//		System.out.println(((double) robot.getX() / 350) * 2);
-//
-//		System.out.println((robot.getX() / 350) * 2);
-////		(x * this.model.getCellWidth()) / 2
-//
-//		List<ArrayList<MyGridCell>> gridArrayList = controller.getGrid();
-//
-//		for (ArrayList<MyGridCell> arrayList : gridArrayList) {
-//			System.out.println(arrayList);
+	public void run() {
+//		while (true) {
+//			//
 //		}
+
+//		super.run();
 	}
 
 }

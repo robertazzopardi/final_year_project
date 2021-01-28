@@ -1,13 +1,12 @@
 // Environment code for project final_year_project
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Logger;
 
 import comp329robosim.EnvController;
 import comp329robosim.MyGridCell;
-import comp329robosim.RobotMonitor;
+import comp329robosim.SimulatedRobot;
 import jason.asSyntax.Structure;
 //import jason.asSyntax.parser.*;
 import jason.environment.Environment;
@@ -16,14 +15,12 @@ public class SimulationEnv extends Environment {
 
 	private Logger logger = Logger.getLogger("final_year_project." + SimulationEnv.class.getName());
 
-	EnvController controller;
-
-	RobotMonitor prey;
-
-	RobotMonitor[] hunters;
+	public static EnvController controller;
 
 	public static final int WIDTH = 10;
 	public static final int HEIGHT = 10;
+
+	private static final String CONFIG_FILE = "/Users/rob/_CODE/Java/final-project/defaultConfig.txt";
 
 	/** Called before the MAS execution with the args informed in .mas2j */
 	@Override
@@ -36,34 +33,35 @@ public class SimulationEnv extends Environment {
 //		}
 
 		// get the controller
-		controller = new EnvController("/Users/rob/_CODE/Java/final-project/defaultConfig.txt", WIDTH, HEIGHT);
+		controller = new EnvController(CONFIG_FILE, WIDTH, HEIGHT);
 
-		initRobots();
+		initPrey();
 
-//		RobotMonitor testMonitor = controller.getHunters()[0];
-//		new Prey(testMonitor, null, controller).start();
+		initHunters();
+
+		printGrid();
 
 	}
 
 	/**
 	 * 
 	 */
-	private void initRobots() {
-		// get and run the prey robot
-		prey = controller.getPreyRobot();
-		new Prey(prey, hunters, controller).start();
-
-		// get and run hunters
-		hunters = controller.getHunters();
-		for (RobotMonitor robot : hunters) {
-			ArrayList<RobotMonitor> otherHunters = new ArrayList<RobotMonitor>(Arrays.asList(hunters));
-
-			otherHunters.remove(robot);
-
-			new Hunter(robot, otherHunters.toArray(new RobotMonitor[otherHunters.size()]), controller).start();
+	private void initHunters() {
+		SimulatedRobot[] smHunters = controller.getHunters();
+		Hunter[] hunters = new Hunter[smHunters.length];
+		for (int i = 0; i < smHunters.length; i++) {
+			hunters[i] = new Hunter(smHunters[i], 1000);
+			hunters[i].start();
 		}
+	}
 
-		printGrid();
+	/**
+	 * 
+	 */
+	private void initPrey() {
+		SimulatedRobot smPrey = controller.getSimulatedRobot();
+		Prey prey = new Prey(smPrey, 1000);
+		prey.start();
 	}
 
 	/**
@@ -72,8 +70,8 @@ public class SimulationEnv extends Environment {
 	private void printGrid() {
 		List<ArrayList<MyGridCell>> gridArrayList = controller.getGrid();
 
-		for (ArrayList<MyGridCell> arrayList : gridArrayList) {
-			System.out.println(arrayList);
+		for (int i = 0; i < gridArrayList.size(); i++) {
+			System.out.println(gridArrayList.get(i));
 		}
 	}
 
