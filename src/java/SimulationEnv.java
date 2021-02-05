@@ -18,9 +18,16 @@ public class SimulationEnv extends Environment {
 	public static EnvController controller;
 
 	public static final int WIDTH = 10;
+
 	public static final int HEIGHT = 10;
 
 	private static final String CONFIG_FILE = "/Users/rob/_CODE/Java/final-project/defaultConfig.txt";
+
+	public static QLearning network;
+
+	private Prey prey;
+
+	private Hunter[] hunters;
 
 	/** Called before the MAS execution with the args informed in .mas2j */
 	@Override
@@ -35,22 +42,37 @@ public class SimulationEnv extends Environment {
 		// get the controller
 		controller = new EnvController(CONFIG_FILE, WIDTH, HEIGHT);
 
-		initPrey();
+		initRobots();
 
-		initHunters();
+		network = new QLearning();
 
-		printGrid();
+		network.printPolicy();
+
+		startRobots();
 
 	}
 
 	/**
 	 * 
 	 */
-	private void initHunters() {
+	private void initRobots() {
+		SimulatedRobot smPrey = controller.getSimulatedRobot();
+		prey = new Prey(smPrey, 1000);
+
 		SimulatedRobot[] smHunters = controller.getHunters();
-		Hunter[] hunters = new Hunter[smHunters.length];
+		hunters = new Hunter[smHunters.length];
 		for (int i = 0; i < smHunters.length; i++) {
 			hunters[i] = new Hunter(smHunters[i], 1000);
+		}
+
+	}
+
+	/**
+	 * 
+	 */
+	private void startRobots() {
+		prey.start();
+		for (int i = 0; i < hunters.length; i++) {
 			hunters[i].start();
 		}
 	}
@@ -58,21 +80,19 @@ public class SimulationEnv extends Environment {
 	/**
 	 * 
 	 */
-	private void initPrey() {
-		SimulatedRobot smPrey = controller.getSimulatedRobot();
-		Prey prey = new Prey(smPrey, 1000);
-		prey.start();
-	}
-
-	/**
-	 * 
-	 */
-	private void printGrid() {
+	public static void printGrid() {
 		List<ArrayList<MyGridCell>> gridArrayList = controller.getGrid();
 
 		for (int i = 0; i < gridArrayList.size(); i++) {
 			System.out.println(gridArrayList.get(i));
 		}
+	}
+
+	/**
+	 * 
+	 */
+	public static List<ArrayList<MyGridCell>> getGrid() {
+		return controller.getGrid();
 	}
 
 	@Override

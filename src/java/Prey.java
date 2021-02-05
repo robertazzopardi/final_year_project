@@ -16,10 +16,10 @@ public class Prey extends RobotRunner {
 	@Override
 	public void run() {
 //		while (true) {
-//			//
+//			travel(350);
 //		}
 
-//		super.run();
+		super.run();
 	}
 
 }
