@@ -1,3 +1,5 @@
+import java.util.logging.Logger;
+
 import comp329robosim.RobotMonitor;
 import comp329robosim.SimulatedRobot;
 
@@ -9,7 +11,9 @@ public abstract class RobotRunner extends RobotMonitor {
 
 	protected SimulationEnv env;
 
-	public RobotRunner(SimulatedRobot r, int d, SimulationEnv env) {
+	private Logger logger = Logger.getLogger("final_year_project." + RobotRunner.class.getName());
+
+	protected RobotRunner(SimulatedRobot r, int d, SimulationEnv env) {
 		super(r, d);
 
 		monitorRobotStatus(false);
@@ -18,64 +22,84 @@ public abstract class RobotRunner extends RobotMonitor {
 
 		this.env = env;
 
-		System.out.println("x " + getEnvPosX() + " y " + getEnvPosY());
-
 	}
 
+	/**
+	 * 
+	 * @param currX
+	 * @param currY
+	 * @return
+	 */
+	protected final int getCurentState(int currX, int currY) {
+		return Integer.parseInt(Integer.toString(currY) + Integer.toString(currX));
+	}
+
+	/**
+	 * 
+	 * @return
+	 */
 	protected final int getEnvPosX() {
 		return (int) ((((double) getX() / 350) * 2) - 1) / 2;
 	}
 
+	/**
+	 * 
+	 * @return
+	 */
 	protected final int getEnvPosY() {
 		return (int) ((((double) getY() / 350) * 2) - 1) / 2;
 	}
 
-	protected final int getCurentState(int currX, int currY) {
-		return Integer.parseInt(Integer.toString(currY) + Integer.toString(currX));
+	/**
+	 * 
+	 */
+	protected void printPosition() {
+		String posString = String.format("x: %d, y: %d", getEnvPosX(), getEnvPosY());
+		logger.info(posString);
 	}
 
 }
 
 // sets some rules for the robots movements
-//private void handleRobotMovement() {
-//	thisHunter.setTravelSpeed(100); // 10cm per sec myRobot.setDirection(0);
+// private void handleRobotMovement() {
+// thisHunter.setTravelSpeed(100); // 10cm per sec myRobot.setDirection(0);
 //
-////	thisHunter.rotate(-90);
+//// thisHunter.rotate(-90);
 //
-//	System.out.println(thisHunter.getUSenseRange());
+// System.out.println(thisHunter.getUSenseRange());
 //
-////	System.out.println(thisHunter.getCSenseColor() == Color.WHITE);
+//// System.out.println(thisHunter.getCSenseColor() == Color.WHITE);
 //
-//	while (true) {
+// while (true) {
 //
-////		Color colourColor = thisHunter.getCSenseColor();
-////		System.out.println(colourColor);
+//// Color colourColor = thisHunter.getCSenseColor();
+//// System.out.println(colourColor);
 //
-//		// range of next object
-//		int sensedRange = thisHunter.getUSenseRange();
-//		System.out.println(sensedRange);
+// // range of next object
+// int sensedRange = thisHunter.getUSenseRange();
+// System.out.println(sensedRange);
 ////
-////		thisHunter.rotate(getRandomRotation());
+//// thisHunter.rotate(getRandomRotation());
 ////
-////		if (sensedRange < 350) {
-////			thisHunter.rotate(getRandomRotation());
-////		} else {
-////			thisHunter.travel(350);
-////		}
+//// if (sensedRange < 350) {
+//// thisHunter.rotate(getRandomRotation());
+//// } else {
+//// thisHunter.travel(350);
+//// }
 //
-//		if (sensedRange > 180) {
-//			thisHunter.travel(350);
-//		} else {
-//			thisHunter.rotate(getRandomRotationSingle());
-//		}
+// if (sensedRange > 180) {
+// thisHunter.travel(350);
+// } else {
+// thisHunter.rotate(getRandomRotationSingle());
+// }
 //
-//	}
+// }
 //
-////	while (!robot.isBumperPressed()) {
-////		robot.travel(350); // travel 35 cm
-////		if (robot.getCSenseColor().equals(Color.GREEN)) {
-////			System.out.println("found Green cell at location (" + robot.getX() + ","
-////					+ robot.getY() + ") with heading " + robot.getHeading());
-////		}
-////	}
-//}
+//// while (!robot.isBumperPressed()) {
+//// robot.travel(350); // travel 35 cm
+//// if (robot.getCSenseColor().equals(Color.GREEN)) {
+//// System.out.println("found Green cell at location (" + robot.getX() + ","
+//// + robot.getY() + ") with heading " + robot.getHeading());
+//// }
+//// }
+// }

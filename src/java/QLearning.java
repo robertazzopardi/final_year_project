@@ -1,5 +1,4 @@
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Random;
 
 import comp329robosim.MyGridCell;
@@ -13,23 +12,26 @@ public class QLearning {
 	private static final double ALPHA = 0.1; // Learning rate
 	private static final double GAMMA = 0.9; // Eagerness - 0 looks in the near future, 1 looks in the distant future
 
-	private static final int PENALTY = -100;;
+	private static final int PENALTY = -100;
+
+	private static final Random rand = new Random();
 
 	private static final int REWARD = 100;
-
 	private static final int STATESCOUNT = SimulationEnv.WIDTH * SimulationEnv.HEIGHT;
+
 	private SimulationEnv env;
 
-	private List<ArrayList<MyGridCell>> maze;
+	private MyGridCell[][] maze;
+
 	private double[][] Q; // Q learning
 
-//	public static void qlearn() {
-//		QLearning ql = new QLearning();
-//		ql.init();
-//		ql.calculateQ();
-//		ql.printQ();
-//		ql.printPolicy();
-//	}
+	// public static void qlearn() {
+	// QLearning ql = new QLearning();
+	// ql.init();
+	// ql.calculateQ();
+	// ql.printQ();
+	// ql.printPolicy();
+	// }
 
 	private int[][] R; // Reward lookup
 
@@ -38,12 +40,11 @@ public class QLearning {
 
 		init();
 		calculateQ();
-//		printQ();
-//		printPolicy();
+		// printQ();
+		// printPolicy();
 	}
 
 	private void calculateQ() {
-		Random rand = new Random();
 
 		for (int i = 0; i < 1000; i++) { // Train cycles
 			// Select random initial state
@@ -108,15 +109,15 @@ public class QLearning {
 			}
 			// If not in final state or a wall try moving in all directions in the maze
 
-			if (maze.get(i).get(j).getCellType() != OccupancyType.GOAL) {
+			if (maze[i][j].getCellType() != OccupancyType.GOAL) {
 				// Try to move left in the maze
 				int goLeft = j - 1;
 				if (goLeft >= 0) {
 					int target = i * SimulationEnv.WIDTH + goLeft;
 
-					if (maze.get(i).get(goLeft).getCellType() == OccupancyType.EMPTY) {
+					if (maze[i][goLeft].getCellType() == OccupancyType.EMPTY) {
 						R[k][target] = 0;
-					} else if (maze.get(i).get(goLeft).getCellType() == OccupancyType.GOAL) {
+					} else if (maze[i][goLeft].getCellType() == OccupancyType.GOAL) {
 						R[k][target] = REWARD;
 					} else {
 						R[k][target] = PENALTY;
@@ -128,9 +129,9 @@ public class QLearning {
 				if (goRight < SimulationEnv.WIDTH) {
 					int target = i * SimulationEnv.WIDTH + goRight;
 
-					if (maze.get(i).get(goRight).getCellType() == OccupancyType.EMPTY) {
+					if (maze[i][goRight].getCellType() == OccupancyType.EMPTY) {
 						R[k][target] = 0;
-					} else if (maze.get(i).get(goRight).getCellType() == OccupancyType.GOAL) {
+					} else if (maze[i][goRight].getCellType() == OccupancyType.GOAL) {
 						R[k][target] = REWARD;
 					} else {
 						R[k][target] = PENALTY;
@@ -141,9 +142,9 @@ public class QLearning {
 				if (goUp >= 0) {
 					int target = goUp * SimulationEnv.WIDTH + j;
 
-					if (maze.get(goUp).get(j).getCellType() == OccupancyType.EMPTY) {
+					if (maze[goUp][j].getCellType() == OccupancyType.EMPTY) {
 						R[k][target] = 0;
-					} else if (maze.get(goUp).get(j).getCellType() == OccupancyType.GOAL) {
+					} else if (maze[goUp][j].getCellType() == OccupancyType.GOAL) {
 						R[k][target] = REWARD;
 					} else {
 						R[k][target] = PENALTY;
@@ -154,9 +155,9 @@ public class QLearning {
 				if (goDown < SimulationEnv.WIDTH) {
 					int target = goDown * SimulationEnv.WIDTH + j;
 
-					if (maze.get(goDown).get(j).getCellType() == OccupancyType.EMPTY) {
+					if (maze[goDown][j].getCellType() == OccupancyType.EMPTY) {
 						R[k][target] = 0;
-					} else if (maze.get(goDown).get(j).getCellType() == OccupancyType.GOAL) {
+					} else if (maze[goDown][j].getCellType() == OccupancyType.GOAL) {
 						R[k][target] = REWARD;
 					} else {
 						R[k][target] = PENALTY;
@@ -165,7 +166,7 @@ public class QLearning {
 			}
 		}
 		initializeQ();
-//		printR(R);
+		// printR(R);
 	}
 
 	// Set Q values to R values
@@ -181,7 +182,7 @@ public class QLearning {
 		int i = state / SimulationEnv.WIDTH;
 		int j = state - i * SimulationEnv.WIDTH;
 
-		return maze.get(i).get(j).getCellType() == OccupancyType.GOAL;
+		return maze[i][j].getCellType() == OccupancyType.GOAL;
 	}
 
 	private double maxQ(int nextState) {
