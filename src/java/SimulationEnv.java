@@ -6,6 +6,7 @@ import java.util.logging.Logger;
 
 import comp329robosim.EnvController;
 import comp329robosim.MyGridCell;
+import comp329robosim.OccupancyType;
 import comp329robosim.SimulatedRobot;
 import jason.asSyntax.Structure;
 //import jason.asSyntax.parser.*;
@@ -15,7 +16,7 @@ public class SimulationEnv extends Environment {
 
 	private Logger logger = Logger.getLogger("final_year_project." + SimulationEnv.class.getName());
 
-	public static EnvController controller;
+	public EnvController controller;
 
 	public static final int WIDTH = 10;
 
@@ -23,7 +24,7 @@ public class SimulationEnv extends Environment {
 
 	private static final String CONFIG_FILE = "/Users/rob/_CODE/Java/final-project/defaultConfig.txt";
 
-	public static QLearning network;
+	public QLearning network;
 
 	private Prey prey;
 
@@ -44,12 +45,16 @@ public class SimulationEnv extends Environment {
 
 		initRobots();
 
-		network = new QLearning();
+		network = new QLearning(this);
 
-		network.printPolicy();
+//		network.printPolicy();
 
 		startRobots();
 
+	}
+
+	synchronized void updateEnv(int x, int y, OccupancyType occupancyType) {
+		controller.setPosition(x, y, occupancyType);
 	}
 
 	/**
@@ -57,12 +62,12 @@ public class SimulationEnv extends Environment {
 	 */
 	private void initRobots() {
 		SimulatedRobot smPrey = controller.getSimulatedRobot();
-		prey = new Prey(smPrey, 1000);
+		prey = new Prey(smPrey, 1000, this);
 
 		SimulatedRobot[] smHunters = controller.getHunters();
 		hunters = new Hunter[smHunters.length];
 		for (int i = 0; i < smHunters.length; i++) {
-			hunters[i] = new Hunter(smHunters[i], 1000);
+			hunters[i] = new Hunter(smHunters[i], 1000, this);
 		}
 
 	}
@@ -80,18 +85,20 @@ public class SimulationEnv extends Environment {
 	/**
 	 * 
 	 */
-	public static void printGrid() {
+	public void printGrid() {
 		List<ArrayList<MyGridCell>> gridArrayList = controller.getGrid();
 
 		for (int i = 0; i < gridArrayList.size(); i++) {
 			System.out.println(gridArrayList.get(i));
 		}
+
+		System.out.println();
 	}
 
 	/**
 	 * 
 	 */
-	public static List<ArrayList<MyGridCell>> getGrid() {
+	public List<ArrayList<MyGridCell>> getGrid() {
 		return controller.getGrid();
 	}
 

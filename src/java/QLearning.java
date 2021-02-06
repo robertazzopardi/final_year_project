@@ -10,20 +10,17 @@ import comp329robosim.OccupancyType;
  *
  */
 public class QLearning {
-	private final double alpha = 0.1; // Learning rate
-	private final double gamma = 0.9; // Eagerness - 0 looks in the near future, 1 looks in the distant future
+	private static final double ALPHA = 0.1; // Learning rate
+	private static final double GAMMA = 0.9; // Eagerness - 0 looks in the near future, 1 looks in the distant future
 
-	private final int mazeWidth = SimulationEnv.WIDTH;
-	private final int mazeHeight = SimulationEnv.HEIGHT;
+	private static final int PENALTY = -100;;
 
-	private final int statesCount = mazeHeight * mazeWidth;
+	private static final int REWARD = 100;
 
-	List<ArrayList<MyGridCell>> maze = SimulationEnv.getGrid();
+	private static final int STATESCOUNT = SimulationEnv.WIDTH * SimulationEnv.HEIGHT;
+	private SimulationEnv env;
 
-	private final int reward = 100;
-	private final int penalty = -10;
-
-	private int[][] R; // Reward lookup
+	private List<ArrayList<MyGridCell>> maze;
 	private double[][] Q; // Q learning
 
 //	public static void qlearn() {
@@ -34,125 +31,23 @@ public class QLearning {
 //		ql.printPolicy();
 //	}
 
-	public QLearning() {
+	private int[][] R; // Reward lookup
+
+	public QLearning(SimulationEnv env) {
+		this.env = env;
+
 		init();
 		calculateQ();
 //		printQ();
 //		printPolicy();
 	}
 
-	public void init() {
-		SimulationEnv.printGrid();
-
-		R = new int[statesCount][statesCount];
-		Q = new double[statesCount][statesCount];
-
-		int i = 0;
-		int j = 0;
-
-		// We will navigate through the reward matrix R using k index
-		for (int k = 0; k < statesCount; k++) {
-			// We will navigate with i and j through the maze, so we need
-			// to translate k into i and j
-			i = k / mazeWidth;
-			j = k - i * mazeWidth;
-			// Fill in the reward matrix with -1
-			for (int s = 0; s < statesCount; s++) {
-				R[k][s] = -1;
-			}
-			// If not in final state or a wall try moving in all directions in the maze
-
-			if (maze.get(i).get(j).getCellType() != OccupancyType.PREY) {
-				// Try to move left in the maze
-				int goLeft = j - 1;
-				if (goLeft >= 0) {
-					int target = i * mazeWidth + goLeft;
-
-					if (maze.get(i).get(goLeft).getCellType() == OccupancyType.EMPTY) {
-						R[k][target] = 0;
-					} else if (maze.get(i).get(goLeft).getCellType() == OccupancyType.PREY) {
-						R[k][target] = reward;
-					} else {
-						R[k][target] = penalty;
-					}
-				}
-
-				// Try to move right in the maze
-				int goRight = j + 1;
-				if (goRight < mazeWidth) {
-					int target = i * mazeWidth + goRight;
-
-					if (maze.get(i).get(goRight).getCellType() == OccupancyType.EMPTY) {
-						R[k][target] = 0;
-					} else if (maze.get(i).get(goRight).getCellType() == OccupancyType.PREY) {
-						R[k][target] = reward;
-					} else {
-						R[k][target] = penalty;
-					}
-				}
-				// Try to move up in the maze
-				int goUp = i - 1;
-				if (goUp >= 0) {
-					int target = goUp * mazeWidth + j;
-
-					if (maze.get(goUp).get(j).getCellType() == OccupancyType.EMPTY) {
-						R[k][target] = 0;
-					} else if (maze.get(goUp).get(j).getCellType() == OccupancyType.PREY) {
-						R[k][target] = reward;
-					} else {
-						R[k][target] = penalty;
-					}
-				}
-				// Try to move down in the maze
-				int goDown = i + 1;
-				if (goDown < mazeHeight) {
-					int target = goDown * mazeWidth + j;
-
-					if (maze.get(goDown).get(j).getCellType() == OccupancyType.EMPTY) {
-						R[k][target] = 0;
-					} else if (maze.get(goDown).get(j).getCellType() == OccupancyType.PREY) {
-						R[k][target] = reward;
-					} else {
-						R[k][target] = penalty;
-					}
-				}
-			}
-		}
-		initializeQ();
-//		printR(R);
-	}
-
-	// Set Q values to R values
-	void initializeQ() {
-		for (int i = 0; i < statesCount; i++) {
-			for (int j = 0; j < statesCount; j++) {
-				Q[i][j] = (double) R[i][j];
-			}
-		}
-	}
-
-	// Used for debug
-	void printR(int[][] matrix) {
-		System.out.printf("%25s", "States: ");
-		for (int i = 0; i <= 8; i++) {
-			System.out.printf("%4s", i);
-		}
-		System.out.println();
-		for (int i = 0; i < statesCount; i++) {
-			System.out.print("Possible states from " + i + " :[");
-			for (int j = 0; j < statesCount; j++) {
-				System.out.printf("%4s", matrix[i][j]);
-			}
-			System.out.println("]");
-		}
-	}
-
-	void calculateQ() {
+	private void calculateQ() {
 		Random rand = new Random();
 
 		for (int i = 0; i < 1000; i++) { // Train cycles
 			// Select random initial state
-			int crtState = rand.nextInt(statesCount);
+			int crtState = rand.nextInt(STATESCOUNT);
 
 			while (!isFinalState(crtState)) {
 				int[] actionsFromCurrentState = possibleActionsFromState(crtState);
@@ -166,7 +61,7 @@ public class QLearning {
 				double q = Q[crtState][nextState];
 				double maxQ = maxQ(nextState);
 				int r = R[crtState][nextState];
-				double value = q + alpha * (r + gamma * maxQ - q);
+				double value = q + ALPHA * (r + GAMMA * maxQ - q);
 
 				Q[crtState][nextState] = value;
 				crtState = nextState;
@@ -174,43 +69,7 @@ public class QLearning {
 		}
 	}
 
-	boolean isFinalState(int state) {
-		int i = state / mazeWidth;
-		int j = state - i * mazeWidth;
-
-		return maze.get(i).get(j).getCellType() == OccupancyType.PREY;
-	}
-
-	int[] possibleActionsFromState(int state) {
-		ArrayList<Integer> result = new ArrayList<>();
-		for (int i = 0; i < statesCount; i++) {
-			if (R[state][i] != -1) {
-				result.add(i);
-			}
-		}
-		return result.stream().mapToInt(i -> i).toArray();
-	}
-
-	double maxQ(int nextState) {
-		int[] actionsFromState = possibleActionsFromState(nextState);
-		// the learning rate and eagerness will keep the W value above the lowest reward
-		double maxValue = -10;
-		for (int nextAction : actionsFromState) {
-			double value = Q[nextState][nextAction];
-			if (value > maxValue)
-				maxValue = value;
-		}
-		return maxValue;
-	}
-
-	void printPolicy() {
-		System.out.println("\nPrint policy");
-		for (int i = 0; i < statesCount; i++) {
-			System.out.println("From state " + i + " goto state " + getPolicyFromState(i));
-		}
-	}
-
-	int getPolicyFromState(int state) {
+	public int getPolicyFromState(int state) {
 		int[] actionsFromState = possibleActionsFromState(state);
 		double maxValue = Double.MIN_VALUE;
 		int policyGotoState = state;
@@ -226,7 +85,135 @@ public class QLearning {
 		return policyGotoState;
 	}
 
-	void printQ() {
+	private void init() {
+		maze = env.getGrid();
+
+		env.printGrid();
+
+		R = new int[STATESCOUNT][STATESCOUNT];
+		Q = new double[STATESCOUNT][STATESCOUNT];
+
+		int i = 0;
+		int j = 0;
+
+		// We will navigate through the reward matrix R using k index
+		for (int k = 0; k < STATESCOUNT; k++) {
+			// We will navigate with i and j through the maze, so we need
+			// to translate k into i and j
+			i = k / SimulationEnv.WIDTH;
+			j = k - i * SimulationEnv.WIDTH;
+			// Fill in the reward matrix with -1
+			for (int s = 0; s < STATESCOUNT; s++) {
+				R[k][s] = -1;
+			}
+			// If not in final state or a wall try moving in all directions in the maze
+
+			if (maze.get(i).get(j).getCellType() != OccupancyType.GOAL) {
+				// Try to move left in the maze
+				int goLeft = j - 1;
+				if (goLeft >= 0) {
+					int target = i * SimulationEnv.WIDTH + goLeft;
+
+					if (maze.get(i).get(goLeft).getCellType() == OccupancyType.EMPTY) {
+						R[k][target] = 0;
+					} else if (maze.get(i).get(goLeft).getCellType() == OccupancyType.GOAL) {
+						R[k][target] = REWARD;
+					} else {
+						R[k][target] = PENALTY;
+					}
+				}
+
+				// Try to move right in the maze
+				int goRight = j + 1;
+				if (goRight < SimulationEnv.WIDTH) {
+					int target = i * SimulationEnv.WIDTH + goRight;
+
+					if (maze.get(i).get(goRight).getCellType() == OccupancyType.EMPTY) {
+						R[k][target] = 0;
+					} else if (maze.get(i).get(goRight).getCellType() == OccupancyType.GOAL) {
+						R[k][target] = REWARD;
+					} else {
+						R[k][target] = PENALTY;
+					}
+				}
+				// Try to move up in the maze
+				int goUp = i - 1;
+				if (goUp >= 0) {
+					int target = goUp * SimulationEnv.WIDTH + j;
+
+					if (maze.get(goUp).get(j).getCellType() == OccupancyType.EMPTY) {
+						R[k][target] = 0;
+					} else if (maze.get(goUp).get(j).getCellType() == OccupancyType.GOAL) {
+						R[k][target] = REWARD;
+					} else {
+						R[k][target] = PENALTY;
+					}
+				}
+				// Try to move down in the maze
+				int goDown = i + 1;
+				if (goDown < SimulationEnv.WIDTH) {
+					int target = goDown * SimulationEnv.WIDTH + j;
+
+					if (maze.get(goDown).get(j).getCellType() == OccupancyType.EMPTY) {
+						R[k][target] = 0;
+					} else if (maze.get(goDown).get(j).getCellType() == OccupancyType.GOAL) {
+						R[k][target] = REWARD;
+					} else {
+						R[k][target] = PENALTY;
+					}
+				}
+			}
+		}
+		initializeQ();
+//		printR(R);
+	}
+
+	// Set Q values to R values
+	private void initializeQ() {
+		for (int i = 0; i < STATESCOUNT; i++) {
+			for (int j = 0; j < STATESCOUNT; j++) {
+				Q[i][j] = R[i][j];
+			}
+		}
+	}
+
+	private boolean isFinalState(int state) {
+		int i = state / SimulationEnv.WIDTH;
+		int j = state - i * SimulationEnv.WIDTH;
+
+		return maze.get(i).get(j).getCellType() == OccupancyType.GOAL;
+	}
+
+	private double maxQ(int nextState) {
+		int[] actionsFromState = possibleActionsFromState(nextState);
+		// the learning rate and eagerness will keep the W value above the lowest reward
+		double maxValue = -10;
+		for (int nextAction : actionsFromState) {
+			double value = Q[nextState][nextAction];
+			if (value > maxValue)
+				maxValue = value;
+		}
+		return maxValue;
+	}
+
+	public int[] possibleActionsFromState(int state) {
+		ArrayList<Integer> result = new ArrayList<>();
+		for (int i = 0; i < STATESCOUNT; i++) {
+			if (R[state][i] != -1) {
+				result.add(i);
+			}
+		}
+		return result.stream().mapToInt(i -> i).toArray();
+	}
+
+	public void printPolicy() {
+		System.out.println("\nPrint policy");
+		for (int i = 0; i < STATESCOUNT; i++) {
+			System.out.println("From state " + i + " goto state " + getPolicyFromState(i));
+		}
+	}
+
+	public void printQ() {
 		System.out.println("Q matrix");
 		for (int i = 0; i < Q.length; i++) {
 			System.out.print("From state " + i + ":  ");
@@ -235,6 +222,27 @@ public class QLearning {
 			}
 			System.out.println();
 		}
+	}
+
+	// Used for debug
+	public void printR(int[][] matrix) {
+		System.out.printf("%25s", "States: ");
+		for (int i = 0; i <= 8; i++) {
+			System.out.printf("%4s", i);
+		}
+		System.out.println();
+		for (int i = 0; i < STATESCOUNT; i++) {
+			System.out.print("Possible states from " + i + " :[");
+			for (int j = 0; j < STATESCOUNT; j++) {
+				System.out.printf("%4s", matrix[i][j]);
+			}
+			System.out.println("]");
+		}
+	}
+
+	public synchronized void retrain() {
+		init();
+		calculateQ();
 	}
 
 }

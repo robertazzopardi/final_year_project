@@ -1,5 +1,3 @@
-import java.util.Random;
-
 import comp329robosim.RobotMonitor;
 import comp329robosim.SimulatedRobot;
 
@@ -9,39 +7,31 @@ import comp329robosim.SimulatedRobot;
  */
 public abstract class RobotRunner extends RobotMonitor {
 
-	private final int[] rotationAmount = new int[] { 0, 90, 180, 270, 360 };
+	protected SimulationEnv env;
 
-	private final int singleRotation = 90;
-
-	final Random random = new Random();
-
-	public RobotRunner(SimulatedRobot r, int d) {
+	public RobotRunner(SimulatedRobot r, int d, SimulationEnv env) {
 		super(r, d);
 
 		monitorRobotStatus(false);
 
 		setTravelSpeed(100);
 
+		this.env = env;
+
 		System.out.println("x " + getEnvPosX() + " y " + getEnvPosY());
 
 	}
 
-	// generate a random rotation to rotate by
-	// also picking a random direction for roation
-	synchronized int getRandomRotation() {
-		return rotationAmount[random.nextInt(rotationAmount.length)] * (random.nextBoolean() ? 1 : -1);
-	}
-
-	synchronized int getRandomRotationSingle() {
-		return singleRotation * (random.nextBoolean() ? 1 : -1);
-	}
-
-	synchronized int getEnvPosX() {
+	protected final int getEnvPosX() {
 		return (int) ((((double) getX() / 350) * 2) - 1) / 2;
 	}
 
-	synchronized int getEnvPosY() {
+	protected final int getEnvPosY() {
 		return (int) ((((double) getY() / 350) * 2) - 1) / 2;
+	}
+
+	protected final int getCurentState(int currX, int currY) {
+		return Integer.parseInt(Integer.toString(currY) + Integer.toString(currX));
 	}
 
 }
