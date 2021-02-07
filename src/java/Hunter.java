@@ -1,3 +1,5 @@
+import java.util.logging.Logger;
+
 import comp329robosim.MyGridCell;
 import comp329robosim.OccupancyType;
 import comp329robosim.SimulatedRobot;
@@ -7,25 +9,30 @@ import comp329robosim.SimulatedRobot;
  *
  */
 public class Hunter extends RobotRunner {
+	protected final Logger logger = Logger.getLogger("final_year_project." + Hunter.class.getName());
 
 	public Hunter(SimulatedRobot r, int d, SimulationEnv env) {
 		super(r, d, env);
 
-		env.updateEnv(getEnvPosX(), getEnvPosY(), OccupancyType.HUNTER);
+		env.updateEnvH(getEnvPosX(), getEnvPosY(), OccupancyType.HUNTER);
 	}
 
 	private void moveDown(int theta, int currX, int currY) {
-		if (theta == 0 || theta == 360 || theta == -360) {
+		if (theta == 360) {
+			rotate(-180);
+		} else if (theta == 0 || theta == -360) {
 			rotate(180);
 		} else if (theta == 90 || theta == -270) {
 			rotate(90);
 		} else if (theta == 180 || theta == -180) {
-			// set previous pos to empty
-			env.updateEnv(currX, currY, OccupancyType.EMPTY);
-			// set new position
-			env.updateEnv(currX, currY - 1, OccupancyType.HUNTER);
+
 			// move forward
 			travel(350);
+			// set previous pos to empty
+			env.updateEnvH(currX, currY, OccupancyType.EMPTY);
+			// set new position
+			env.updateEnvH(currX, currY - 1, OccupancyType.HUNTER);
+
 			// retrain network with new position
 			env.getNetwork().retrain();
 		} else if (theta == 270 || theta == -90) {
@@ -34,51 +41,63 @@ public class Hunter extends RobotRunner {
 	}
 
 	private void moveLeft(int theta, int currX, int currY) {
-		if (theta == 0 || theta == 360 || theta == -360) {
+		if (theta == -360) {
+			rotate(90);
+		} else if (theta == 0 || theta == 360) {
 			rotate(-90);
 		} else if (theta == 90 || theta == -270) {
 			rotate(180);
 		} else if (theta == 180 || theta == -180) {
 			rotate(90);
 		} else if (theta == 270 || theta == -90) {
-			// set previous pos to empty
-			env.updateEnv(currX, currY, OccupancyType.EMPTY);
-			// set new position
-			env.updateEnv(currX - 1, currY, OccupancyType.HUNTER);
+
 			// move forward
 			travel(350);
+			// set previous pos to empty
+			env.updateEnvH(currX, currY, OccupancyType.EMPTY);
+			// set new position
+			env.updateEnvH(currX - 1, currY, OccupancyType.HUNTER);
+
 			// retrain network with new position
 			env.getNetwork().retrain();
 		}
 	}
 
 	private void moveRight(int theta, int currX, int currY) {
-		if (theta == 0 || theta == 360 || theta == -360) {
+		if (theta == 360) {
+			rotate(-90);
+		} else if (theta == 0 || theta == -360) {
 			rotate(90);
 		} else if (theta == 90 || theta == -270) {
-			// set previous pos to empty
-			env.updateEnv(currX, currY, OccupancyType.EMPTY);
-			// set new position
-			env.updateEnv(currX + 1, currY, OccupancyType.HUNTER);
+
 			// move forward
 			travel(350);
+			// set previous pos to empty
+			env.updateEnvH(currX, currY, OccupancyType.EMPTY);
+			// set new position
+			env.updateEnvH(currX + 1, currY, OccupancyType.HUNTER);
+
 			// retrain network with new position
 			env.getNetwork().retrain();
 		} else if (theta == 180 || theta == -180) {
 			rotate(-90);
-		} else if (theta == 270 || theta == -90) {
+		} else if (theta == 270) {
+			rotate(-180);
+		} else if (theta == -90) {
 			rotate(180);
 		}
 	}
 
 	private void moveUp(int theta, int currX, int currY) {
 		if (theta == 0 || theta == 360 || theta == -360) {
-			// set previous pos to empty
-			env.updateEnv(currX, currY, OccupancyType.EMPTY);
-			// set new position
-			env.updateEnv(currX, currY + 1, OccupancyType.HUNTER);
+
 			// move forward
 			travel(350);
+			// set previous pos to empty
+			env.updateEnvH(currX, currY, OccupancyType.EMPTY);
+			// set new position
+			env.updateEnvH(currX, currY + 1, OccupancyType.HUNTER);
+
 			// retrain network with new position
 			env.getNetwork().retrain();
 		} else if (theta == 90 || theta == -270) {
@@ -99,12 +118,17 @@ public class Hunter extends RobotRunner {
 
 			// check if in a goal state
 			MyGridCell[][] grid = env.getGrid();
+
 			if (grid[currX - 1][currY].getCellType() == OccupancyType.PREY
 					|| grid[currX + 1][currY].getCellType() == OccupancyType.PREY
 					|| grid[currX][currY - 1].getCellType() == OccupancyType.PREY
 					|| grid[currX][currY + 1].getCellType() == OccupancyType.PREY) {
 				// Do nothing while in goal state
-				continue;
+
+				logger.info("in goal state");
+
+				break;
+
 			}
 
 			int currState = getCurentState(currX, currY);
@@ -113,7 +137,7 @@ public class Hunter extends RobotRunner {
 
 			int theta = getHeading();
 
-			System.out.println(theta);
+//			System.out.println(theta);
 
 			if (currState + 1 == nextState) {
 				// right
@@ -130,9 +154,9 @@ public class Hunter extends RobotRunner {
 			}
 
 			// // set previous pos to empty
-			// env.updateEnv(currX, currY, OccupancyType.EMPTY);
+			// env.updateEnvH(currX, currY, OccupancyType.EMPTY);
 			// // set new position
-			// env.updateEnv(getEnvPosX(), getEnvPosY(), OccupancyType.HUNTER);
+			// env.updateEnvH(getEnvPosX(), getEnvPosY(), OccupancyType.HUNTER);
 
 			// // retrain network with new position
 			// env.getNetwork().retrain();

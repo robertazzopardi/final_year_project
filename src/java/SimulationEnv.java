@@ -114,7 +114,7 @@ public class SimulationEnv extends Environment {
 	 * 
 	 * @param network
 	 */
-	public void setNetwork(QLearning network) {
+	private void setNetwork(QLearning network) {
 		this.network = network;
 	}
 
@@ -141,7 +141,13 @@ public class SimulationEnv extends Environment {
 	 * @param y
 	 * @param occupancyType
 	 */
-	synchronized void updateEnv(int x, int y, OccupancyType occupancyType) {
+	public synchronized void updateEnvH(int x, int y, OccupancyType occupancyType) {
+		if (getGrid()[x][y].getCellType() != OccupancyType.OBSTACLE) {
+			controller.setPosition(x, y, occupancyType);
+		}
+	}
+
+	public void updateEnvP(int x, int y, OccupancyType occupancyType) {
 		if (getGrid()[x][y].getCellType() != OccupancyType.OBSTACLE) {
 			controller.setPosition(x, y, occupancyType);
 		}

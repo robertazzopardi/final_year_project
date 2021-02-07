@@ -89,7 +89,7 @@ public class QLearning {
 	private void init() {
 		maze = env.getGrid();
 
-		env.printGrid();
+//		env.printGrid();
 
 		R = new int[STATESCOUNT][STATESCOUNT];
 		Q = new double[STATESCOUNT][STATESCOUNT];

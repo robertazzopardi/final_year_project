@@ -1,5 +1,3 @@
-import java.util.logging.Logger;
-
 import comp329robosim.RobotMonitor;
 import comp329robosim.SimulatedRobot;
 
@@ -10,8 +8,6 @@ import comp329robosim.SimulatedRobot;
 public abstract class RobotRunner extends RobotMonitor {
 
 	protected SimulationEnv env;
-
-	private Logger logger = Logger.getLogger("final_year_project." + RobotRunner.class.getName());
 
 	protected RobotRunner(SimulatedRobot r, int d, SimulationEnv env) {
 		super(r, d);
@@ -53,10 +49,10 @@ public abstract class RobotRunner extends RobotMonitor {
 	/**
 	 * 
 	 */
-	protected void printPosition() {
-		String posString = String.format("x: %d, y: %d", getEnvPosX(), getEnvPosY());
-		logger.info(posString);
-	}
+//	protected final void printPosition() {
+//		String posString = String.format("x: %d, y: %d", getEnvPosX(), getEnvPosY());
+//		logger.info(posString);
+//	}
 
 }
 
