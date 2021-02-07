@@ -38,8 +38,8 @@ public class QLearning {
 	public QLearning(SimulationEnv env) {
 		this.env = env;
 
-		init();
-		calculateQ();
+//		init();
+//		calculateQ();
 		// printQ();
 		// printPolicy();
 	}
@@ -52,6 +52,10 @@ public class QLearning {
 
 			while (!isFinalState(crtState)) {
 				int[] actionsFromCurrentState = possibleActionsFromState(crtState);
+
+				if (actionsFromCurrentState.length == 0) {
+					return;
+				}
 
 				// Pick a random action from the ones possible
 				int index = rand.nextInt(actionsFromCurrentState.length);
@@ -241,7 +245,7 @@ public class QLearning {
 		}
 	}
 
-	public synchronized void retrain() {
+	public void train() {
 		init();
 		calculateQ();
 	}

@@ -10,9 +10,9 @@ import comp329robosim.SimulatedRobot;
  *
  */
 public class Prey extends RobotRunner {
-	protected final Logger logger = Logger.getLogger("final_year_project." + Prey.class.getName());
-
 	private static final Random RANDOM = new Random();
+
+	protected final Logger logger = Logger.getLogger("final_year_project." + Prey.class.getName());
 
 	public Prey(SimulatedRobot r, int d, SimulationEnv env) {
 		super(r, d, env);
@@ -21,280 +21,333 @@ public class Prey extends RobotRunner {
 		int y = getEnvPosY();
 
 		// right
-		env.updateEnvP(x + 1, y, OccupancyType.GOAL);
+		env.updateEnv(x + 1, y, OccupancyType.GOAL);
 		// left
-		env.updateEnvP(x - 1, y, OccupancyType.GOAL);
-		// up
-		env.updateEnvP(x, y + 1, OccupancyType.GOAL);
+		env.updateEnv(x - 1, y, OccupancyType.GOAL);
 		// down
-		env.updateEnvP(x, y - 1, OccupancyType.GOAL);
+		env.updateEnv(x, y + 1, OccupancyType.GOAL);
+		// up
+		env.updateEnv(x, y - 1, OccupancyType.GOAL);
 		// actual position
-		env.updateEnvP(x, y, OccupancyType.PREY);
+		env.updateEnv(x, y, OccupancyType.PREY);
 
 	}
 
-	private boolean canMove(int currX, int currY, MyGridCell[][] grid) {
-		return grid[currX][currY].getCellType() == OccupancyType.EMPTY
-				|| grid[currX][currY].getCellType() == OccupancyType.GOAL;
+	private boolean canMove(int x, int y, MyGridCell[][] grid) {
+		return grid[x][y].getCellType() == OccupancyType.EMPTY || grid[x][y].getCellType() == OccupancyType.GOAL;
+
+//		return grid[x][y].getCellType() != OccupancyType.HUNTER
+//				&& grid[x][y].getCellType() != OccupancyType.OBSTACLE;
 	}
 
 	private int getRandomNumber() {
 		return RANDOM.nextInt((4 - 1) + 1) + 1;
 	}
 
-	private void setPreviousPosition(int currX, int currY) {
-		// set previous pos to empty
-		env.updateEnvP(currX, currY, OccupancyType.EMPTY);
-		// right
-		env.updateEnvP(currX + 1, currY, OccupancyType.EMPTY);
-		// left
-		env.updateEnvP(currX - 1, currY, OccupancyType.EMPTY);
-		// up
-		env.updateEnvP(currX, currY + 1, OccupancyType.EMPTY);
-		// down
-		env.updateEnvP(currX, currY - 1, OccupancyType.EMPTY);
+	private void moveDown() {
+		if (a == 0 || a == 360 || a == -360) {
+
+			// move forward
+//			travel(350);
+
+//			env.setPreviousPosition(x, y);
+//
+//			setNewDownPosition();
+			env.setPreviousPositionDown(x, y);
+
+			travel(350);
+
+		} else if (a == 90 || a == -270) {
+
+			rotate(-90);
+//			travel(350);
+
+//			env.setPreviousPosition(x, y);
+//
+//			setNewDownPosition();
+			env.setPreviousPositionDown(x, y);
+
+			travel(350);
+		} else if (a == 180 || a == -180) {
+
+			rotate(180);
+//			travel(350);
+
+//			env.setPreviousPosition(x, y);
+//
+//			setNewDownPosition();
+			env.setPreviousPositionDown(x, y);
+
+			travel(350);
+		} else if (a == 270 || a == -90) {
+
+			rotate(90);
+//			travel(350);
+
+//			env.setPreviousPosition(x, y);
+//
+//			setNewDownPosition();
+			env.setPreviousPositionDown(x, y);
+
+			travel(350);
+		} else {
+			logger.info(Integer.toString(a));
+		}
+
 	}
 
-	private void moveDown(int theta, int currX, int currY) {
-		if (theta == 360) {
+	private void moveLeft() {
+		if (a == -360) {
+			rotate(90);
+//			travel(350);
+
+//			env.setPreviousPosition(x, y);
+//
+//			setNewLeftPosition();
+			env.setPreviousPositionLeft(x, y);
+
+			travel(350);
+		} else if (a == 0 || a == 360) {
+
+			rotate(-90);
+//			travel(350);
+
+//			env.setPreviousPosition(x, y);
+//
+//			setNewLeftPosition();
+			env.setPreviousPositionLeft(x, y);
+
+			travel(350);
+		} else if (a == 90 || a == -270) {
+
+			rotate(180);
+//			travel(350);
+
+//			env.setPreviousPosition(x, y);
+//
+//			setNewLeftPosition();
+			env.setPreviousPositionLeft(x, y);
+
+			travel(350);
+		} else if (a == 180 || a == -180) {
+
+			rotate(90);
+//			travel(350);
+
+//			env.setPreviousPosition(x, y);
+//
+//			setNewLeftPosition();
+			env.setPreviousPositionLeft(x, y);
+
+			travel(350);
+		} else if (a == 270 || a == -90) {
+
+			// move forward
+//			travel(350);
+
+//			env.setPreviousPosition(x, y);
+//
+//			setNewLeftPosition();
+			env.setPreviousPositionLeft(x, y);
+
+			travel(350);
+
+		} else {
+			logger.info(Integer.toString(a));
+		}
+	}
+
+	private void moveRight() {
+		if (a == 360) {
+			rotate(-90);
+//			travel(350);
+
+//			env.setPreviousPosition(x, y);
+//
+//			setNewRightPosition();
+			env.setPreviousPositionRight(x, y);
+
+			travel(350);
+		} else if (a == 0 || a == -360) {
+
+			rotate(90);
+//			travel(350);
+
+//			env.setPreviousPosition(x, y);
+//
+//			setNewRightPosition();
+			env.setPreviousPositionRight(x, y);
+
+			travel(350);
+		} else if (a == 90 || a == -270) {
+
+			// move forward
+//			travel(350);
+
+//			env.setPreviousPosition(x, y);
+//
+//			setNewRightPosition();
+			env.setPreviousPositionRight(x, y);
+
+			travel(350);
+		} else if (a == 180 || a == -180) {
+
+			rotate(-90);
+//			travel(350);
+
+//			env.setPreviousPosition(x, y);
+//
+//			setNewRightPosition();
+			env.setPreviousPositionRight(x, y);
+
+			travel(350);
+		} else if (a == 270) {
+
 			rotate(-180);
+//			travel(350);
+
+//			env.setPreviousPosition(x, y);
+//
+//			setNewRightPosition();
+			env.setPreviousPositionRight(x, y);
+
 			travel(350);
-
-			setPreviousPosition(currX, currY);
-
-			setNewDownPosition(currX, currY);
-		} else if (theta == 0 || theta == -360) {
+		} else if (a == -90) {
 
 			rotate(180);
+//			travel(350);
+
+//			env.setPreviousPosition(x, y);
+//
+//			setNewRightPosition();
+			env.setPreviousPositionRight(x, y);
+
 			travel(350);
-
-			setPreviousPosition(currX, currY);
-
-			setNewDownPosition(currX, currY);
-
-		} else if (theta == 90 || theta == -270) {
-
-			rotate(90);
-			travel(350);
-
-			setPreviousPosition(currX, currY);
-
-			setNewDownPosition(currX, currY);
-		} else if (theta == 180 || theta == -180) {
-
-			// move forward
-			travel(350);
-
-			setPreviousPosition(currX, currY);
-
-			setNewDownPosition(currX, currY);
-
-		} else if (theta == 270 || theta == -90) {
-
-			rotate(-90);
-			travel(350);
-
-			setPreviousPosition(currX, currY);
-
-			setNewDownPosition(currX, currY);
 		} else {
-			logger.info(Integer.toString(theta));
+			logger.info(Integer.toString(a));
 		}
 	}
 
-	private void moveLeft(int theta, int currX, int currY) {
-		if (theta == -360) {
-			rotate(90);
-			travel(350);
-
-			setPreviousPosition(currX, currY);
-
-			setNewLeftPosition(currX, currY);
-		} else if (theta == 0 || theta == 360) {
-
-			rotate(-90);
-			travel(350);
-
-			setPreviousPosition(currX, currY);
-
-			setNewLeftPosition(currX, currY);
-
-		} else if (theta == 90 || theta == -270) {
-
-			rotate(180);
-			travel(350);
-
-			setPreviousPosition(currX, currY);
-
-			setNewLeftPosition(currX, currY);
-		} else if (theta == 180 || theta == -180) {
-
-			rotate(90);
-			travel(350);
-
-			setPreviousPosition(currX, currY);
-
-			setNewLeftPosition(currX, currY);
-		} else if (theta == 270 || theta == -90) {
-
-			// move forward
-			travel(350);
-
-			setPreviousPosition(currX, currY);
-
-			setNewLeftPosition(currX, currY);
-
-		} else {
-			logger.info(Integer.toString(theta));
-		}
-	}
-
-	private void moveRight(int theta, int currX, int currY) {
-		if (theta == 360) {
-			rotate(-90);
-			travel(350);
-
-			setPreviousPosition(currX, currY);
-
-			setNewRightPosition(currX, currY);
-		} else if (theta == 0 || theta == -360) {
-
-			rotate(90);
-			travel(350);
-
-			setPreviousPosition(currX, currY);
-
-			setNewRightPosition(currX, currY);
-		} else if (theta == 90 || theta == -270) {
-
-			// move forward
-			travel(350);
-
-			setPreviousPosition(currX, currY);
-
-			setNewRightPosition(currX, currY);
-
-		} else if (theta == 180 || theta == -180) {
-
-			rotate(-90);
-			travel(350);
-
-			setPreviousPosition(currX, currY);
-
-			setNewRightPosition(currX, currY);
-		} else if (theta == 270) {
-
+	private void moveUp() {
+		if (a == 360) {
 			rotate(-180);
+//			travel(350);
+
+//			env.setPreviousPosition(x, y);
+//
+//			setNewUpPosition();
+			env.setPreviousPositionUp(x, y);
+
 			travel(350);
-
-			setPreviousPosition(currX, currY);
-
-			setNewRightPosition(currX, currY);
-		} else if (theta == -90) {
+		} else if (a == 0 || a == -360) {
 
 			rotate(180);
+//			travel(350);
+
+//			env.setPreviousPosition(x, y);
+//
+//			setNewUpPosition();
+			env.setPreviousPositionUp(x, y);
+
 			travel(350);
 
-			setPreviousPosition(currX, currY);
-
-			setNewRightPosition(currX, currY);
-		} else {
-			logger.info(Integer.toString(theta));
-		}
-	}
-
-	private void moveUp(int theta, int currX, int currY) {
-		if (theta == 0 || theta == 360 || theta == -360) {
-
-			// move forward
-			travel(350);
-
-			setPreviousPosition(currX, currY);
-
-			setNewUpPosition(currX, currY);
-
-		} else if (theta == 90 || theta == -270) {
-
-			rotate(-90);
-			travel(350);
-
-			setPreviousPosition(currX, currY);
-
-			setNewUpPosition(currX, currY);
-		} else if (theta == 180 || theta == -180) {
-
-			rotate(180);
-			travel(350);
-
-			setPreviousPosition(currX, currY);
-
-			setNewUpPosition(currX, currY);
-		} else if (theta == 270 || theta == -90) {
+		} else if (a == 90 || a == -270) {
 
 			rotate(90);
+//			travel(350);
+
+//			env.setPreviousPosition(x, y);
+//
+//			setNewUpPosition();
+			env.setPreviousPositionUp(x, y);
+
+			travel(350);
+		} else if (a == 180 || a == -180) {
+
+			// move forward
+//			travel(350);
+
+//			env.setPreviousPosition(x, y);
+//
+//			setNewUpPosition();
+			env.setPreviousPositionUp(x, y);
+
 			travel(350);
 
-			setPreviousPosition(currX, currY);
+		} else if (a == 270 || a == -90) {
 
-			setNewUpPosition(currX, currY);
+			rotate(-90);
+//			travel(350);
+
+//			env.setPreviousPosition(x, y);
+//
+//			setNewUpPosition();
+			env.setPreviousPositionUp(x, y);
+
+			travel(350);
 		} else {
-			logger.info(Integer.toString(theta));
+			logger.info(Integer.toString(a));
 		}
-
 	}
 
 	@Override
 	public void run() {
 		while (true) {
 
-			// System.out.println(getRandomNumber());
 			// travel(350);
 
 			int randomMove = getRandomNumber();
 
-			int currX = getEnvPosX();
-			int currY = getEnvPosY();
+			x = getEnvPosX();
+			y = getEnvPosY();
 
 			MyGridCell[][] grid = env.getGrid();
 
-			int theta = getHeading();
+			a = getHeading();
 
-//			System.out.println(theta);
-//			logger.info(Integer.toString(theta));
+//			logger.info(Integer.toString(a));
 
 			switch (randomMove) {
 			case 1:
 				// right
-				if (canMove(currX + 1, currY, grid)) {
+				if (canMove(x + 1, y, grid)) {
 					// System.out.println("right");
-					moveRight(theta, currX, currY);
+					moveRight();
+
+					env.resumeHunters();
 				}
 
 				break;
 
 			case 2:
-				// up
-				if (canMove(currX, currY + 1, grid)) {
+				// down
+				if (canMove(x, y + 1, grid)) {
 					// System.out.println("up");
-					moveUp(theta, currX, currY);
+					moveDown();
+
+					env.resumeHunters();
 				}
 
 				break;
 
 			case 3:
 				// left
-				if (canMove(currX - 1, currY, grid)) {
+				if (canMove(x - 1, y, grid)) {
 					// System.out.println("left");
-					moveLeft(theta, currX, currY);
+					moveLeft();
+
+					env.resumeHunters();
 				}
 
 				break;
 
 			case 4:
-				// down
-				if (canMove(currX, currY - 1, grid)) {
+				// up
+				if (canMove(x, y - 1, grid)) {
 					// System.out.println("down");
-					moveDown(theta, currX, currY);
+					moveUp();
+
+					env.resumeHunters();
 				}
 
 				break;
@@ -304,50 +357,52 @@ public class Prey extends RobotRunner {
 			}
 
 			// break;
-			env.printGrid();
+			env.printGrid(logger);
+
+//			env.resumeHunters();
 		}
 
 		// super.run();
 	}
 
-	private void setNewDownPosition(int currX, int currY) {
-		// set new position
-		env.updateEnvP(currX, currY - 1, OccupancyType.PREY);
+//	private void setNewDownPosition() {
+//		// set new position
+//		env.updateEnv(x, y + 1, OccupancyType.PREY);
+//
+//		env.updateEnv(x, y + 2, OccupancyType.GOAL);
+//		env.updateEnv(x, y, OccupancyType.GOAL);
+//		env.updateEnv(x + 1, y + 1, OccupancyType.GOAL);
+//		env.updateEnv(x - 1, y + 1, OccupancyType.GOAL);
+//	}
 
-		env.updateEnvP(currX, currY - 2, OccupancyType.GOAL);
-		env.updateEnvP(currX, currY, OccupancyType.GOAL);
-		env.updateEnvP(currX + 1, currY - 1, OccupancyType.GOAL);
-		env.updateEnvP(currX - 1, currY - 1, OccupancyType.GOAL);
-	}
+//	private void setNewLeftPosition() {
+//		// set new position
+//		env.updateEnv(x - 1, y, OccupancyType.PREY);
+//
+//		env.updateEnv(x - 2, y, OccupancyType.GOAL);
+//		env.updateEnv(x, y, OccupancyType.GOAL);
+//		env.updateEnv(x - 1, y + 1, OccupancyType.GOAL);
+//		env.updateEnv(x - 1, y - 1, OccupancyType.GOAL);
+//	}
 
-	private void setNewLeftPosition(int currX, int currY) {
-		// set new position
-		env.updateEnvP(currX - 1, currY, OccupancyType.PREY);
+//	private void setNewRightPosition() {
+//		// set new position
+//		env.updateEnv(x + 1, y, OccupancyType.PREY);
+//
+//		env.updateEnv(x + 2, y, OccupancyType.GOAL);
+//		env.updateEnv(x, y, OccupancyType.GOAL);
+//		env.updateEnv(x + 1, y + 1, OccupancyType.GOAL);
+//		env.updateEnv(x + 1, y - 1, OccupancyType.GOAL);
+//	}
 
-		env.updateEnvP(currX - 2, currY, OccupancyType.GOAL);
-		env.updateEnvP(currX, currY, OccupancyType.GOAL);
-		env.updateEnvP(currX - 1, currY + 1, OccupancyType.GOAL);
-		env.updateEnvP(currX - 1, currY - 1, OccupancyType.GOAL);
-	}
-
-	private void setNewRightPosition(int currX, int currY) {
-		// set new position
-		env.updateEnvP(currX + 1, currY, OccupancyType.PREY);
-
-		env.updateEnvP(currX + 2, currY, OccupancyType.GOAL);
-		env.updateEnvP(currX, currY, OccupancyType.GOAL);
-		env.updateEnvP(currX + 1, currY + 1, OccupancyType.GOAL);
-		env.updateEnvP(currX + 1, currY - 1, OccupancyType.GOAL);
-	}
-
-	private void setNewUpPosition(int currX, int currY) {
-		// set new position
-		env.updateEnvP(currX, currY + 1, OccupancyType.PREY);
-
-		env.updateEnvP(currX, currY + 2, OccupancyType.GOAL);
-		env.updateEnvP(currX, currY, OccupancyType.GOAL);
-		env.updateEnvP(currX + 1, currY + 1, OccupancyType.GOAL);
-		env.updateEnvP(currX - 1, currY + 1, OccupancyType.GOAL);
-	}
+//	private void setNewUpPosition() {
+//		// set new position
+//		env.updateEnv(x, y - 1, OccupancyType.PREY);
+//
+//		env.updateEnv(x, y - 2, OccupancyType.GOAL);
+//		env.updateEnv(x, y, OccupancyType.GOAL);
+//		env.updateEnv(x + 1, y - 1, OccupancyType.GOAL);
+//		env.updateEnv(x - 1, y - 1, OccupancyType.GOAL);
+//	}
 
 }

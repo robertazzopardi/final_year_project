@@ -25,8 +25,6 @@ public class SimulationEnv extends Environment {
 
 	private Logger logger = Logger.getLogger("final_year_project." + SimulationEnv.class.getName());
 
-	private QLearning network;
-
 	private Prey prey;
 
 	@Override
@@ -40,19 +38,11 @@ public class SimulationEnv extends Environment {
 	}
 
 	/**
-	 * 
+	 *
 	 * @return
 	 */
-	public MyGridCell[][] getGrid() {
+	public synchronized MyGridCell[][] getGrid() {
 		return controller.getGrid();
-	}
-
-	/**
-	 * 
-	 * @return
-	 */
-	public QLearning getNetwork() {
-		return network;
 	}
 
 	/** Called before the MAS execution with the args informed in .mas2j */
@@ -69,11 +59,6 @@ public class SimulationEnv extends Environment {
 		controller = new EnvController(CONFIG_FILE, WIDTH, HEIGHT);
 
 		initRobots();
-
-		// network = new QLearning(this);
-		setNetwork(new QLearning(this));
-
-		// network.printPolicy();
 
 		startRobots();
 
@@ -97,25 +82,211 @@ public class SimulationEnv extends Environment {
 	/**
 	 *
 	 */
-	public void printGrid() {
+	public synchronized void printGrid(Logger inLogger) {
 		MyGridCell[][] gridArrayList = controller.getGrid();
 
 		for (int i = 0; i < gridArrayList.length; i++) {
-			// System.out.println(Arrays.toString(gridArrayList[i]));
 			String row = Arrays.toString(gridArrayList[i]);
-			logger.info(row);
+			inLogger.info(row);
 		}
 
-		// System.out.println();
-		logger.info("");
+		inLogger.info("");
 	}
 
-	/**
-	 * 
-	 * @param network
-	 */
-	private void setNetwork(QLearning network) {
-		this.network = network;
+	public void resumeHunters() {
+		for (Hunter hunter : hunters) {
+			if (hunter.isPaused()) {
+				String rlog = "resuming hunter: " + hunter.getName();
+				logger.info(rlog);
+				hunter.resumeHunter();
+			}
+		}
+	}
+
+//	public synchronized void setPreviousPosition(int x, int y) {
+//		// set previous pos to empty
+//		if (getGrid()[x][y].getCellType() != OccupancyType.OBSTACLE) {
+//			controller.setPosition(x, y, OccupancyType.EMPTY);
+//		}
+//		// right
+//		if (getGrid()[x + 1][y].getCellType() != OccupancyType.OBSTACLE) {
+//			controller.setPosition(x + 1, y, OccupancyType.EMPTY);
+//		}
+//		// left
+//		if (getGrid()[x - 1][y].getCellType() != OccupancyType.OBSTACLE) {
+//			controller.setPosition(x - 1, y, OccupancyType.EMPTY);
+//		}
+//		// up
+//		if (getGrid()[x][y + 1].getCellType() != OccupancyType.OBSTACLE) {
+//			controller.setPosition(x, y + 1, OccupancyType.EMPTY);
+//		}
+//		// down
+//		if (getGrid()[x][y - 1].getCellType() != OccupancyType.OBSTACLE) {
+//			controller.setPosition(x, y - 1, OccupancyType.EMPTY);
+//		}
+//
+//	}
+
+	public synchronized void setPreviousPositionUp(int x, int y) {
+		// set previous pos to empty
+		if (getGrid()[x][y].getCellType() != OccupancyType.OBSTACLE) {
+			controller.setPosition(x, y, OccupancyType.EMPTY);
+		}
+		// right
+		if (getGrid()[x + 1][y].getCellType() != OccupancyType.OBSTACLE) {
+			controller.setPosition(x + 1, y, OccupancyType.EMPTY);
+		}
+		// left
+		if (getGrid()[x - 1][y].getCellType() != OccupancyType.OBSTACLE) {
+			controller.setPosition(x - 1, y, OccupancyType.EMPTY);
+		}
+		// up
+		if (getGrid()[x][y + 1].getCellType() != OccupancyType.OBSTACLE) {
+			controller.setPosition(x, y + 1, OccupancyType.EMPTY);
+		}
+		// down
+		if (getGrid()[x][y - 1].getCellType() != OccupancyType.OBSTACLE) {
+			controller.setPosition(x, y - 1, OccupancyType.EMPTY);
+		}
+
+		controller.setPosition(x, y - 1, OccupancyType.PREY);
+
+		if (getGrid()[x][y - 2].getCellType() != OccupancyType.OBSTACLE) {
+			controller.setPosition(x, y - 2, OccupancyType.GOAL);
+		}
+		if (getGrid()[x][y].getCellType() != OccupancyType.OBSTACLE) {
+			controller.setPosition(x, y, OccupancyType.GOAL);
+		}
+		if (getGrid()[x + 1][y - 1].getCellType() != OccupancyType.OBSTACLE) {
+			controller.setPosition(x + 1, y - 1, OccupancyType.GOAL);
+		}
+		if (getGrid()[x - 1][y - 1].getCellType() != OccupancyType.OBSTACLE) {
+			controller.setPosition(x - 1, y - 1, OccupancyType.GOAL);
+		}
+
+	}
+
+	public synchronized void setPreviousPositionRight(int x, int y) {
+		// set previous pos to empty
+		if (getGrid()[x][y].getCellType() != OccupancyType.OBSTACLE) {
+			controller.setPosition(x, y, OccupancyType.EMPTY);
+		}
+		// right
+		if (getGrid()[x + 1][y].getCellType() != OccupancyType.OBSTACLE) {
+			controller.setPosition(x + 1, y, OccupancyType.EMPTY);
+		}
+		// left
+		if (getGrid()[x - 1][y].getCellType() != OccupancyType.OBSTACLE) {
+			controller.setPosition(x - 1, y, OccupancyType.EMPTY);
+		}
+		// up
+		if (getGrid()[x][y + 1].getCellType() != OccupancyType.OBSTACLE) {
+			controller.setPosition(x, y + 1, OccupancyType.EMPTY);
+		}
+		// down
+		if (getGrid()[x][y - 1].getCellType() != OccupancyType.OBSTACLE) {
+			controller.setPosition(x, y - 1, OccupancyType.EMPTY);
+		}
+
+		controller.setPosition(x + 1, y, OccupancyType.PREY);
+
+		if (getGrid()[x + 2][y].getCellType() != OccupancyType.OBSTACLE) {
+			controller.setPosition(x + 2, y, OccupancyType.GOAL);
+		}
+
+		if (getGrid()[x][y].getCellType() != OccupancyType.OBSTACLE) {
+			controller.setPosition(x, y, OccupancyType.GOAL);
+		}
+
+		if (getGrid()[x + 1][y + 1].getCellType() != OccupancyType.OBSTACLE) {
+			controller.setPosition(x + 1, y + 1, OccupancyType.GOAL);
+		}
+		if (getGrid()[x + 1][y - 1].getCellType() != OccupancyType.OBSTACLE) {
+			controller.setPosition(x + 1, y - 1, OccupancyType.GOAL);
+		}
+
+	}
+
+	public synchronized void setPreviousPositionLeft(int x, int y) {
+		// set previous pos to empty
+		if (getGrid()[x][y].getCellType() != OccupancyType.OBSTACLE) {
+			controller.setPosition(x, y, OccupancyType.EMPTY);
+		}
+		// right
+		if (getGrid()[x + 1][y].getCellType() != OccupancyType.OBSTACLE) {
+			controller.setPosition(x + 1, y, OccupancyType.EMPTY);
+		}
+		// left
+		if (getGrid()[x - 1][y].getCellType() != OccupancyType.OBSTACLE) {
+			controller.setPosition(x - 1, y, OccupancyType.EMPTY);
+		}
+		// up
+		if (getGrid()[x][y + 1].getCellType() != OccupancyType.OBSTACLE) {
+			controller.setPosition(x, y + 1, OccupancyType.EMPTY);
+		}
+		// down
+		if (getGrid()[x][y - 1].getCellType() != OccupancyType.OBSTACLE) {
+			controller.setPosition(x, y - 1, OccupancyType.EMPTY);
+		}
+
+		controller.setPosition(x - 1, y, OccupancyType.PREY);
+
+		if (getGrid()[x - 2][y].getCellType() != OccupancyType.OBSTACLE) {
+			controller.setPosition(x - 2, y, OccupancyType.GOAL);
+		}
+
+		if (getGrid()[x][y].getCellType() != OccupancyType.OBSTACLE) {
+			controller.setPosition(x, y, OccupancyType.GOAL);
+		}
+
+		if (getGrid()[x - 1][y + 1].getCellType() != OccupancyType.OBSTACLE) {
+			controller.setPosition(x - 1, y + 1, OccupancyType.GOAL);
+		}
+		if (getGrid()[x - 1][y - 1].getCellType() != OccupancyType.OBSTACLE) {
+			controller.setPosition(x - 1, y - 1, OccupancyType.GOAL);
+		}
+
+	}
+
+	public synchronized void setPreviousPositionDown(int x, int y) {
+		// set previous pos to empty
+		if (getGrid()[x][y].getCellType() != OccupancyType.OBSTACLE) {
+			controller.setPosition(x, y, OccupancyType.EMPTY);
+		}
+		// right
+		if (getGrid()[x + 1][y].getCellType() != OccupancyType.OBSTACLE) {
+			controller.setPosition(x + 1, y, OccupancyType.EMPTY);
+		}
+		// left
+		if (getGrid()[x - 1][y].getCellType() != OccupancyType.OBSTACLE) {
+			controller.setPosition(x - 1, y, OccupancyType.EMPTY);
+		}
+		// up
+		if (getGrid()[x][y + 1].getCellType() != OccupancyType.OBSTACLE) {
+			controller.setPosition(x, y + 1, OccupancyType.EMPTY);
+		}
+		// down
+		if (getGrid()[x][y - 1].getCellType() != OccupancyType.OBSTACLE) {
+			controller.setPosition(x, y - 1, OccupancyType.EMPTY);
+		}
+
+		controller.setPosition(x, y + 1, OccupancyType.PREY);
+
+		if (getGrid()[x][y + 2].getCellType() != OccupancyType.OBSTACLE) {
+			controller.setPosition(x, y + 2, OccupancyType.GOAL);
+		}
+
+		if (getGrid()[x][y].getCellType() != OccupancyType.OBSTACLE) {
+			controller.setPosition(x, y, OccupancyType.GOAL);
+		}
+
+		if (getGrid()[x + 1][y + 1].getCellType() != OccupancyType.OBSTACLE) {
+			controller.setPosition(x + 1, y + 1, OccupancyType.GOAL);
+		}
+		if (getGrid()[x - 1][y + 1].getCellType() != OccupancyType.OBSTACLE) {
+			controller.setPosition(x - 1, y + 1, OccupancyType.GOAL);
+		}
+
 	}
 
 	/**
@@ -126,29 +297,25 @@ public class SimulationEnv extends Environment {
 		for (int i = 0; i < hunters.length; i++) {
 			hunters[i].start();
 		}
-		//
 	}
 
 	/** Called before the end of MAS execution */
-	@Override
-	public void stop() {
-		super.stop();
-	}
+//	@Override
+//	public void stop() {
+//		super.stop();
+//	}
 
 	/**
-	 * 
+	 *
 	 * @param x
 	 * @param y
 	 * @param occupancyType
 	 */
-	public synchronized void updateEnvH(int x, int y, OccupancyType occupancyType) {
+	public synchronized void updateEnv(int x, int y, OccupancyType occupancyType) {
 		if (getGrid()[x][y].getCellType() != OccupancyType.OBSTACLE) {
-			controller.setPosition(x, y, occupancyType);
-		}
-	}
-
-	public void updateEnvP(int x, int y, OccupancyType occupancyType) {
-		if (getGrid()[x][y].getCellType() != OccupancyType.OBSTACLE) {
+			if (occupancyType == OccupancyType.GOAL && getGrid()[x][y].getCellType() == OccupancyType.HUNTER) {
+				return;
+			}
 			controller.setPosition(x, y, occupancyType);
 		}
 	}

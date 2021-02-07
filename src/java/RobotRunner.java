@@ -9,6 +9,10 @@ public abstract class RobotRunner extends RobotMonitor {
 
 	protected SimulationEnv env;
 
+	protected int x;
+	protected int y;
+	protected int a; // heading
+
 	protected RobotRunner(SimulatedRobot r, int d, SimulationEnv env) {
 		super(r, d);
 
@@ -20,39 +24,17 @@ public abstract class RobotRunner extends RobotMonitor {
 
 	}
 
-	/**
-	 * 
-	 * @param currX
-	 * @param currY
-	 * @return
-	 */
 	protected final int getCurentState(int currX, int currY) {
 		return Integer.parseInt(Integer.toString(currY) + Integer.toString(currX));
 	}
 
-	/**
-	 * 
-	 * @return
-	 */
 	protected final int getEnvPosX() {
 		return (int) ((((double) getX() / 350) * 2) - 1) / 2;
 	}
 
-	/**
-	 * 
-	 * @return
-	 */
 	protected final int getEnvPosY() {
 		return (int) ((((double) getY() / 350) * 2) - 1) / 2;
 	}
-
-	/**
-	 * 
-	 */
-//	protected final void printPosition() {
-//		String posString = String.format("x: %d, y: %d", getEnvPosX(), getEnvPosY());
-//		logger.info(posString);
-//	}
 
 }
 
