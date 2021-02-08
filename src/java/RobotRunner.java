@@ -13,6 +13,10 @@ public abstract class RobotRunner extends RobotMonitor {
 	protected int y;
 	protected int a; // heading
 
+	protected volatile boolean paused = false;
+
+	protected final Object pauseLock = new Object();
+
 	protected RobotRunner(SimulatedRobot r, int d, SimulationEnv env) {
 		super(r, d);
 
@@ -22,6 +26,38 @@ public abstract class RobotRunner extends RobotMonitor {
 
 		this.env = env;
 
+	}
+
+	public final boolean isPaused() {
+		return paused;
+	}
+
+	protected final void pauseRobot() {
+		// you may want to throw an IllegalStateException if !running
+		paused = true;
+	}
+
+	protected final void resumeRobot() {
+		synchronized (pauseLock) {
+			paused = false;
+//			pauseLock.notifyAll(); // Unblocks thread
+			pauseLock.notify();
+		}
+	}
+
+	protected final void checkWaitingStatus() {
+		synchronized (pauseLock) {
+			if (paused) {
+				try {
+					synchronized (pauseLock) {
+						pauseLock.wait();
+					}
+				} catch (InterruptedException ex) {
+					// break;
+					ex.printStackTrace();
+				}
+			}
+		}
 	}
 
 	protected final int getCurentState(int currX, int currY) {

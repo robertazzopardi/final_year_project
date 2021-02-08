@@ -38,8 +38,8 @@ public class QLearning {
 	public QLearning(SimulationEnv env) {
 		this.env = env;
 
-//		init();
-//		calculateQ();
+		init();
+		calculateQ();
 		// printQ();
 		// printPolicy();
 	}
@@ -113,7 +113,7 @@ public class QLearning {
 			}
 			// If not in final state or a wall try moving in all directions in the maze
 
-			if (maze[i][j].getCellType() != OccupancyType.GOAL) {
+			if (maze[i][j].getCellType() != OccupancyType.PREY) {
 				// Try to move left in the maze
 				int goLeft = j - 1;
 				if (goLeft >= 0) {
@@ -121,7 +121,7 @@ public class QLearning {
 
 					if (maze[i][goLeft].getCellType() == OccupancyType.EMPTY) {
 						R[k][target] = 0;
-					} else if (maze[i][goLeft].getCellType() == OccupancyType.GOAL) {
+					} else if (maze[i][goLeft].getCellType() == OccupancyType.PREY) {
 						R[k][target] = REWARD;
 					} else {
 						R[k][target] = PENALTY;
@@ -135,7 +135,7 @@ public class QLearning {
 
 					if (maze[i][goRight].getCellType() == OccupancyType.EMPTY) {
 						R[k][target] = 0;
-					} else if (maze[i][goRight].getCellType() == OccupancyType.GOAL) {
+					} else if (maze[i][goRight].getCellType() == OccupancyType.PREY) {
 						R[k][target] = REWARD;
 					} else {
 						R[k][target] = PENALTY;
@@ -148,7 +148,7 @@ public class QLearning {
 
 					if (maze[goUp][j].getCellType() == OccupancyType.EMPTY) {
 						R[k][target] = 0;
-					} else if (maze[goUp][j].getCellType() == OccupancyType.GOAL) {
+					} else if (maze[goUp][j].getCellType() == OccupancyType.PREY) {
 						R[k][target] = REWARD;
 					} else {
 						R[k][target] = PENALTY;
@@ -161,7 +161,7 @@ public class QLearning {
 
 					if (maze[goDown][j].getCellType() == OccupancyType.EMPTY) {
 						R[k][target] = 0;
-					} else if (maze[goDown][j].getCellType() == OccupancyType.GOAL) {
+					} else if (maze[goDown][j].getCellType() == OccupancyType.PREY) {
 						R[k][target] = REWARD;
 					} else {
 						R[k][target] = PENALTY;
@@ -186,7 +186,7 @@ public class QLearning {
 		int i = state / SimulationEnv.WIDTH;
 		int j = state - i * SimulationEnv.WIDTH;
 
-		return maze[i][j].getCellType() == OccupancyType.GOAL;
+		return maze[i][j].getCellType() == OccupancyType.PREY;
 	}
 
 	private double maxQ(int nextState) {
@@ -245,7 +245,7 @@ public class QLearning {
 		}
 	}
 
-	public void train() {
+	public synchronized void train() {
 		init();
 		calculateQ();
 	}

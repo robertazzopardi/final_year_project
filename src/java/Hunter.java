@@ -14,12 +14,6 @@ public class Hunter extends RobotRunner {
 
 	private final QLearning network;
 
-	private volatile boolean paused = false;
-
-	private final Object pauseLock = new Object();
-
-	private volatile boolean running = true;
-
 	public Hunter(SimulatedRobot r, int d, SimulationEnv env) {
 		super(r, d, env);
 
@@ -36,32 +30,27 @@ public class Hunter extends RobotRunner {
 	 * @param grid
 	 * @return
 	 */
-	private boolean isAdjacentToPrey(MyGridCell[][] grid) {
+	private boolean isAdjacentToPrey() {
+		MyGridCell[][] grid = env.getGrid();
 		return grid[x - 1][y].getCellType() == OccupancyType.PREY || grid[x + 1][y].getCellType() == OccupancyType.PREY
 				|| grid[x][y - 1].getCellType() == OccupancyType.PREY
 				|| grid[x][y + 1].getCellType() == OccupancyType.PREY;
-	}
-
-	public boolean isPaused() {
-		return paused;
 	}
 
 	private void moveDown() {
 		if (a == 0 || a == 360 || a == -360) {
 
 			// move forward
-			// travel(350);
-			// set previous pos to empty
-			env.updateEnv(x, y, OccupancyType.EMPTY);
-			// set new position
-			env.updateEnv(x, y + 1, OccupancyType.HUNTER);
+
+//			env.updateEnv(x, y, OccupancyType.EMPTY);
+//			// set new position
+//			env.updateEnv(x, y + 1, OccupancyType.HUNTER);
+			env.updateEnvOldNew(x, y + 1, x, y);
 
 			travel(350);
 
 			env.printGrid(logger);
 
-			// retrain network with new position
-			// getNetwork().retrain();
 		} else if (a == 90 || a == -270) {
 			rotate(-90);
 		} else if (a == 180 || a == -180) {
@@ -84,18 +73,17 @@ public class Hunter extends RobotRunner {
 		} else if (a == 270 || a == -90) {
 
 			// move forward
-			// travel(350);
-			// set previous pos to empty
-			env.updateEnv(x, y, OccupancyType.EMPTY);
-			// set new position
-			env.updateEnv(x - 1, y, OccupancyType.HUNTER);
+
+//			env.updateEnv(x, y, OccupancyType.EMPTY);
+//			// set new position
+//			env.updateEnv(x - 1, y, OccupancyType.HUNTER);
+
+			env.updateEnvOldNew(x - 1, y, x, y);
 
 			travel(350);
 
 			env.printGrid(logger);
 
-			// retrain network with new position
-			// getNetwork().retrain();
 		}
 	}
 
@@ -107,18 +95,17 @@ public class Hunter extends RobotRunner {
 		} else if (a == 90 || a == -270) {
 
 			// move forward
-			// travel(350);
-			// set previous pos to empty
-			env.updateEnv(x, y, OccupancyType.EMPTY);
-			// set new position
-			env.updateEnv(x + 1, y, OccupancyType.HUNTER);
+
+//			env.updateEnv(x, y, OccupancyType.EMPTY);
+//			// set new position
+//			env.updateEnv(x + 1, y, OccupancyType.HUNTER);
+
+			env.updateEnvOldNew(x + 1, y, x, y);
 
 			travel(350);
 
 			env.printGrid(logger);
 
-			// retrain network with new position
-			// getNetwork().retrain();
 		} else if (a == 180 || a == -180) {
 			rotate(-90);
 		} else if (a == 270) {
@@ -138,32 +125,20 @@ public class Hunter extends RobotRunner {
 		} else if (a == 180 || a == -180) {
 
 			// move forward
-			// travel(350);
+
 			// set previous pos to empty
-			env.updateEnv(x, y, OccupancyType.EMPTY);
-			// set new position
-			env.updateEnv(x, y - 1, OccupancyType.HUNTER);
+//			env.updateEnv(x, y, OccupancyType.EMPTY);
+//			// set new position
+//			env.updateEnv(x, y - 1, OccupancyType.HUNTER);
+
+			env.updateEnvOldNew(x, y - 1, x, y);
 
 			travel(350);
 
 			env.printGrid(logger);
 
-			// retrain network with new position
-			// getNetwork().retrain();
 		} else if (a == 270 || a == -90) {
 			rotate(-90);
-		}
-	}
-
-	public void pauseHunter() {
-		// you may want to throw an IllegalStateException if !running
-		paused = true;
-	}
-
-	public void resumeHunter() {
-		synchronized (pauseLock) {
-			paused = false;
-			pauseLock.notifyAll(); // Unblocks thread
 		}
 	}
 
@@ -176,44 +151,21 @@ public class Hunter extends RobotRunner {
 			y = getEnvPosY();
 
 			// check if in a goal state
-			MyGridCell[][] grid = env.getGrid();
 
-			if (isAdjacentToPrey(grid)) {
+			if (isAdjacentToPrey()) {
+				env.updateEnv(x, y, OccupancyType.HUNTER);
 				// Do nothing while in goal state
 
-				logger.info("in goal state");
+				logger.info("in a goal state");
 
 				// break;
-				pauseHunter();
+				pauseRobot();
 
 			}
 
 			////
 
-			synchronized (pauseLock) {
-				if (!running) { // may have changed while waiting to
-					// synchronize on pauseLock
-					break;
-				}
-				if (paused) {
-					try {
-						synchronized (pauseLock) {
-							pauseLock.wait(); // will cause this Thread to block until
-							// another thread calls pauseLock.notifyAll()
-							// Note that calling wait() will
-							// relinquish the synchronized lock that this
-							// thread holds on pauseLock so another thread
-							// can acquire the lock to call notifyAll()
-							// (link with explanation below this code)
-						}
-					} catch (InterruptedException ex) {
-						break;
-					}
-					if (!running) { // running might have changed since we paused
-						break;
-					}
-				}
-			}
+			checkWaitingStatus();
 
 			/////
 
@@ -222,8 +174,6 @@ public class Hunter extends RobotRunner {
 			int nextState = network.getPolicyFromState(currState);
 
 			a = getHeading();
-
-			// System.out.println(a);
 
 			if (currState + 1 == nextState) {
 				// right
@@ -250,16 +200,17 @@ public class Hunter extends RobotRunner {
 			// super.run();
 
 			// env.printGrid(logger);
+
 		}
 
 	}
 
-	public void stopHunter() {
-		running = false;
-		// you might also want to interrupt() the Thread that is
-		// running this Runnable, too, or perhaps call:
-		resumeHunter();
-		// to unblock
-	}
+	// public void stopHunter() {
+	// running = false;
+	// // you might also want to interrupt() the Thread that is
+	// // running this Runnable, too, or perhaps call:
+	// resumeHunter();
+	// // to unblock
+	// }
 
 }
