@@ -1,5 +1,6 @@
 import java.util.logging.Logger;
 
+import comp329robosim.MyGridCell;
 import comp329robosim.RobotMonitor;
 import comp329robosim.SimulatedRobot;
 
@@ -18,11 +19,14 @@ public abstract class RobotRunner extends RobotMonitor {
 	protected Logger logger;
 
 	protected volatile boolean paused = false;
+
 	protected final Object pauseLock = new Object();
 
 	protected int x;
 
 	protected int y;
+
+	protected final MyGridCell[][] grid;
 
 	protected RobotRunner(final SimulatedRobot r, final int d, final SimulationEnv env,
 			final RobotController controller) {
@@ -33,25 +37,12 @@ public abstract class RobotRunner extends RobotMonitor {
 		setTravelSpeed(100);
 
 		this.env = env;
+		this.grid = env.getGrid();
+
 		this.controller = controller;
 	}
 
 	protected abstract boolean canMove(int dx, int dy);
-
-	// protected final void checkWaitingStatus() {
-	// synchronized (pauseLock) {
-	// if (paused) {
-	// try {
-	// // synchronized (pauseLock) {
-	// pauseLock.wait();
-	// // }
-	// } catch (InterruptedException ex) {
-	// // break;
-	// ex.printStackTrace();
-	// }
-	// }
-	// }
-	// }
 
 	protected final int getCurentState(final int currX, final int currY) {
 		return Integer.parseInt(Integer.toString(currY) + Integer.toString(currX));

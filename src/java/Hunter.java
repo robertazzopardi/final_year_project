@@ -1,6 +1,5 @@
 import java.util.logging.Logger;
 
-import comp329robosim.MyGridCell;
 import comp329robosim.OccupancyType;
 import comp329robosim.SimulatedRobot;
 
@@ -21,18 +20,17 @@ public class Hunter extends RobotRunner {
 
 		this.network = new QLearning(env);
 
-		// network.train();
 	}
 
 	@Override
 	protected boolean canMove(final int dx, final int dy) {
-		final MyGridCell[][] grid = env.getGrid();
-		return grid[dx][dy].getCellType() == OccupancyType.EMPTY && grid[x + 1][y].getCellType() != OccupancyType.HUNTER
-				&& grid[x + 1][y].getCellType() != OccupancyType.PREY;
+//		final MyGridCell[][] grid = env.getGrid();
+
+		return grid[dx][dy].getCellType() != OccupancyType.OBSTACLE;
 	}
 
 	private boolean isAdjacentToPrey() {
-		final MyGridCell[][] grid = env.getGrid();
+//		final MyGridCell[][] grid = env.getGrid();
 
 		return grid[x - 1][y].getCellType() == OccupancyType.PREY || grid[x + 1][y].getCellType() == OccupancyType.PREY
 				|| grid[x][y - 1].getCellType() == OccupancyType.PREY
@@ -40,31 +38,26 @@ public class Hunter extends RobotRunner {
 	}
 
 	private boolean isGoalState() {
-		final MyGridCell[][] grid = env.getGrid();
+//		final MyGridCell[][] grid = env.getGrid();
 		return grid[x][y].getCellType() == OccupancyType.GOAL;
 	}
 
 	private void moveDown() {
 		if (a == 0 || a == 360 || a == -360) {
-
-			// move forward
 			if (canMove(x, y + 1)) {
-				env.updateEnvOldNew(x, y + 1, x, y);
-
+				env.updateGridEmpty(x, y);
+				env.updateGridHunter(x, y + 1);
 				travel(350);
+
 			}
-
 			env.printGrid(logger);
-
 		} else if (a == 90 || a == -270) {
 			rotate(-90);
 		} else if (a == 180 || a == -180) {
-			// rotate(180);
-			rotate(90);
+			rotate(180);
 		} else if (a == 270 || a == -90) {
 			rotate(90);
 		}
-
 	}
 
 	private void moveLeft() {
@@ -73,21 +66,16 @@ public class Hunter extends RobotRunner {
 		} else if (a == 0 || a == 360) {
 			rotate(-90);
 		} else if (a == 90 || a == -270) {
-			// rotate(180);
-			rotate(90);
+			rotate(180);
 		} else if (a == 180 || a == -180) {
 			rotate(90);
 		} else if (a == 270 || a == -90) {
-
-			// move forward
 			if (canMove(x - 1, y)) {
-				env.updateEnvOldNew(x - 1, y, x, y);
-
+				env.updateGridEmpty(x, y);
+				env.updateGridHunter(x - 1, y);
 				travel(350);
 			}
-
 			env.printGrid(logger);
-
 		}
 	}
 
@@ -97,47 +85,35 @@ public class Hunter extends RobotRunner {
 		} else if (a == 0 || a == -360) {
 			rotate(90);
 		} else if (a == 90 || a == -270) {
-
-			// move forward
 			if (canMove(x + 1, y)) {
-				env.updateEnvOldNew(x + 1, y, x, y);
-
+				env.updateGridEmpty(x, y);
+				env.updateGridHunter(x + 1, y);
 				travel(350);
 			}
-
 			env.printGrid(logger);
-
 		} else if (a == 180 || a == -180) {
 			rotate(-90);
 		} else if (a == 270) {
-			// rotate(-180);
-			rotate(-90);
+			rotate(-180);
 		} else if (a == -90) {
-			// rotate(180);
-			rotate(90);
+			rotate(180);
 		}
 	}
 
 	private void moveUp() {
 		if (a == 360) {
-			// rotate(-180);
-			rotate(-90);
+			rotate(-180);
 		} else if (a == 0 || a == -360) {
-			// rotate(180);
-			rotate(90);
+			rotate(180);
 		} else if (a == 90 || a == -270) {
 			rotate(90);
 		} else if (a == 180 || a == -180) {
-
-			// move forward
 			if (canMove(x, y - 1)) {
-				env.updateEnvOldNew(x, y - 1, x, y);
-
+				env.updateGridEmpty(x, y);
+				env.updateGridHunter(x, y - 1);
 				travel(350);
 			}
-
 			env.printGrid(logger);
-
 		} else if (a == 270 || a == -90) {
 			rotate(-90);
 		}
@@ -145,7 +121,6 @@ public class Hunter extends RobotRunner {
 
 	@Override
 	public void run() {
-
 		while (true) {
 			network.train();
 
@@ -157,7 +132,7 @@ public class Hunter extends RobotRunner {
 			// check if in a goal state
 
 			if (isAdjacentToPrey()) {
-				// if (isGoalState()) {
+//			if (isGoalState()) {
 
 				// Do nothing while in goal state
 				logger.info("in a goal state");
@@ -182,29 +157,26 @@ public class Hunter extends RobotRunner {
 
 			/////
 
+//			MyGridCell[][] grid = env.getGrid();
+//			logger.info(grid[x + 1][y] + " " + grid[x][y + 1] + " " + grid[x - 1][y] + " " + grid[x][y - 1]);
+
 			final int currState = getCurentState(x, y);
 
 			final int nextState = network.getPolicyFromState(currState);
 
 			if (currState + 1 == nextState) {
 				// right
-				// if (canMove(x + 1, y))
 				moveRight();
 			} else if (currState - 1 == nextState) {
 				// left
-				// if (canMove(x - 1, y))
 				moveLeft();
 			} else if (currState + 10 == nextState) {
 				// up
-				// if (canMove(x, y + 1))
 				moveDown();
 			} else if (currState - 10 == nextState) {
 				// down
-				// if (canMove(x, y - 1))
 				moveUp();
 			}
-
-			// network.train();
 
 		}
 

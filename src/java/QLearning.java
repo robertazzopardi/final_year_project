@@ -93,51 +93,6 @@ public class QLearning {
 	private void init() {
 		maze = env.getGrid();
 
-		//////
-
-		// MyGridCell[][] tmpMaze = env.getGrid();
-		// maze = new MyGridCell[tmpMaze.length][];
-		// for (int i = 0; i < tmpMaze.length; i++) {
-		// MyGridCell[] aMatrix = tmpMaze[i];
-		// int aLength = aMatrix.length;
-		// maze[i] = new MyGridCell[aLength];
-		// System.arraycopy(aMatrix, 0, maze[i], 0, aLength);
-		// }
-		//
-		// Prey prey = env.getPrey();
-		// int preyX = prey.getEnvPosX();
-		// int preyY = prey.getEnvPosY();
-		//
-		// for (MyGridCell[] row : maze) {
-		// for (MyGridCell cell : row) {
-		// if (cell.getCellType() == OccupancyType.GOAL) {
-		// cell.setCellType(OccupancyType.EMPTY);
-		// }
-		// }
-		// }
-		//
-		// int right = preyX + 1;
-		// int left = preyX - 1;
-		// int up = preyY - 1;
-		// int down = preyY + 1;
-		//
-		// if (maze[preyY][right].getCellType() != OccupancyType.OBSTACLE
-		// && maze[preyY][right].getCellType() != OccupancyType.HUNTER)
-		// maze[preyY][right].setCellType(OccupancyType.GOAL);
-		// if (maze[preyY][left].getCellType() != OccupancyType.OBSTACLE
-		// && maze[preyY][right].getCellType() != OccupancyType.HUNTER)
-		// maze[preyY][left].setCellType(OccupancyType.GOAL);
-		// if (maze[up][preyX].getCellType() != OccupancyType.OBSTACLE
-		// && maze[preyY][right].getCellType() != OccupancyType.HUNTER)
-		// maze[up][preyX].setCellType(OccupancyType.GOAL);
-		// if (maze[down][preyX].getCellType() != OccupancyType.OBSTACLE
-		// && maze[preyY][right].getCellType() != OccupancyType.HUNTER)
-		// maze[down][preyX].setCellType(OccupancyType.GOAL);
-		//
-		// env.printGrid(prey.logger);
-
-		//////////////////////////////////
-
 		R = new int[STATESCOUNT][STATESCOUNT];
 		Q = new double[STATESCOUNT][STATESCOUNT];
 
@@ -156,8 +111,8 @@ public class QLearning {
 			}
 			// If not in final state or a wall try moving in all directions in the maze
 
-			if (maze[i][j].getCellType() != OccupancyType.PREY) {
-				// if (maze[i][j].getCellType() != OccupancyType.GOAL) {
+//			if (maze[i][j].getCellType() != OccupancyType.PREY) {
+			if (maze[i][j].getCellType() != OccupancyType.GOAL) {
 				// Try to move left in the maze
 				final int goLeft = j - 1;
 				if (goLeft >= 0) {
@@ -165,8 +120,8 @@ public class QLearning {
 
 					if (maze[i][goLeft].getCellType() == OccupancyType.EMPTY) {
 						R[k][target] = 0;
-					} else if (maze[i][goLeft].getCellType() == OccupancyType.PREY) {
-						// } else if (maze[i][goLeft].getCellType() == OccupancyType.GOAL) {
+//					} else if (maze[i][goLeft].getCellType() == OccupancyType.PREY) {
+					} else if (maze[i][goLeft].getCellType() == OccupancyType.GOAL) {
 						R[k][target] = REWARD;
 					} else {
 						R[k][target] = PENALTY;
@@ -180,8 +135,8 @@ public class QLearning {
 
 					if (maze[i][goRight].getCellType() == OccupancyType.EMPTY) {
 						R[k][target] = 0;
-					} else if (maze[i][goRight].getCellType() == OccupancyType.PREY) {
-						// } else if (maze[i][goRight].getCellType() == OccupancyType.GOAL) {
+//					} else if (maze[i][goRight].getCellType() == OccupancyType.PREY) {
+					} else if (maze[i][goRight].getCellType() == OccupancyType.GOAL) {
 						R[k][target] = REWARD;
 					} else {
 						R[k][target] = PENALTY;
@@ -195,8 +150,8 @@ public class QLearning {
 
 					if (maze[goUp][j].getCellType() == OccupancyType.EMPTY) {
 						R[k][target] = 0;
-					} else if (maze[goUp][j].getCellType() == OccupancyType.PREY) {
-						// } else if (maze[goUp][j].getCellType() == OccupancyType.GOAL) {
+//					} else if (maze[goUp][j].getCellType() == OccupancyType.PREY) {
+					} else if (maze[goUp][j].getCellType() == OccupancyType.GOAL) {
 						R[k][target] = REWARD;
 					} else {
 						R[k][target] = PENALTY;
@@ -210,8 +165,8 @@ public class QLearning {
 
 					if (maze[goDown][j].getCellType() == OccupancyType.EMPTY) {
 						R[k][target] = 0;
-					} else if (maze[goDown][j].getCellType() == OccupancyType.PREY) {
-						// } else if (maze[goDown][j].getCellType() == OccupancyType.GOAL) {
+//					} else if (maze[goDown][j].getCellType() == OccupancyType.PREY) {
+					} else if (maze[goDown][j].getCellType() == OccupancyType.GOAL) {
 						R[k][target] = REWARD;
 					} else {
 						R[k][target] = PENALTY;
@@ -236,8 +191,8 @@ public class QLearning {
 		final int i = state / SimulationEnv.WIDTH;
 		final int j = state - i * SimulationEnv.WIDTH;
 
-		return maze[i][j].getCellType() == OccupancyType.PREY;
-		// return maze[i][j].getCellType() == OccupancyType.GOAL;
+//		return maze[i][j].getCellType() == OccupancyType.PREY;
+		return maze[i][j].getCellType() == OccupancyType.GOAL;
 	}
 
 	private double maxQ(final int nextState) {
