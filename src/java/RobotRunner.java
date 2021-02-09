@@ -1,3 +1,5 @@
+import java.util.logging.Logger;
+
 import comp329robosim.RobotMonitor;
 import comp329robosim.SimulatedRobot;
 
@@ -7,17 +9,23 @@ import comp329robosim.SimulatedRobot;
  */
 public abstract class RobotRunner extends RobotMonitor {
 
-	protected SimulationEnv env;
-
-	protected int x;
-	protected int y;
 	protected int a; // heading
 
-	protected volatile boolean paused = false;
+	protected final RobotController controller;
 
+	protected SimulationEnv env;
+
+	protected Logger logger;
+
+	protected volatile boolean paused = false;
 	protected final Object pauseLock = new Object();
 
-	protected RobotRunner(SimulatedRobot r, int d, SimulationEnv env) {
+	protected int x;
+
+	protected int y;
+
+	protected RobotRunner(final SimulatedRobot r, final int d, final SimulationEnv env,
+			final RobotController controller) {
 		super(r, d);
 
 		monitorRobotStatus(false);
@@ -25,7 +33,36 @@ public abstract class RobotRunner extends RobotMonitor {
 		setTravelSpeed(100);
 
 		this.env = env;
+		this.controller = controller;
+	}
 
+	protected abstract boolean canMove(int dx, int dy);
+
+	// protected final void checkWaitingStatus() {
+	// synchronized (pauseLock) {
+	// if (paused) {
+	// try {
+	// // synchronized (pauseLock) {
+	// pauseLock.wait();
+	// // }
+	// } catch (InterruptedException ex) {
+	// // break;
+	// ex.printStackTrace();
+	// }
+	// }
+	// }
+	// }
+
+	protected final int getCurentState(final int currX, final int currY) {
+		return Integer.parseInt(Integer.toString(currY) + Integer.toString(currX));
+	}
+
+	protected final int getEnvPosX() {
+		return (int) ((((double) getX() / 350) * 2) - 1) / 2;
+	}
+
+	protected final int getEnvPosY() {
+		return (int) ((((double) getY() / 350) * 2) - 1) / 2;
 	}
 
 	public final boolean isPaused() {
@@ -40,38 +77,10 @@ public abstract class RobotRunner extends RobotMonitor {
 	protected final void resumeRobot() {
 		synchronized (pauseLock) {
 			paused = false;
-//			pauseLock.notifyAll(); // Unblocks thread
-			pauseLock.notify();
+			pauseLock.notifyAll(); // Unblocks thread
+			// pauseLock.notify();
 		}
 	}
-
-	protected final void checkWaitingStatus() {
-		synchronized (pauseLock) {
-			if (paused) {
-				try {
-					synchronized (pauseLock) {
-						pauseLock.wait();
-					}
-				} catch (InterruptedException ex) {
-					// break;
-					ex.printStackTrace();
-				}
-			}
-		}
-	}
-
-	protected final int getCurentState(int currX, int currY) {
-		return Integer.parseInt(Integer.toString(currY) + Integer.toString(currX));
-	}
-
-	protected final int getEnvPosX() {
-		return (int) ((((double) getX() / 350) * 2) - 1) / 2;
-	}
-
-	protected final int getEnvPosY() {
-		return (int) ((((double) getY() / 350) * 2) - 1) / 2;
-	}
-
 }
 
 // sets some rules for the robots movements

@@ -19,7 +19,7 @@ public class QLearning {
 	private static final int REWARD = 100;
 	private static final int STATESCOUNT = SimulationEnv.WIDTH * SimulationEnv.HEIGHT;
 
-	private SimulationEnv env;
+	private final SimulationEnv env;
 
 	private MyGridCell[][] maze;
 
@@ -35,7 +35,7 @@ public class QLearning {
 
 	private int[][] R; // Reward lookup
 
-	public QLearning(SimulationEnv env) {
+	public QLearning(final SimulationEnv env) {
 		this.env = env;
 
 		init();
@@ -51,22 +51,22 @@ public class QLearning {
 			int crtState = rand.nextInt(STATESCOUNT);
 
 			while (!isFinalState(crtState)) {
-				int[] actionsFromCurrentState = possibleActionsFromState(crtState);
+				final int[] actionsFromCurrentState = possibleActionsFromState(crtState);
 
 				if (actionsFromCurrentState.length == 0) {
 					return;
 				}
 
 				// Pick a random action from the ones possible
-				int index = rand.nextInt(actionsFromCurrentState.length);
-				int nextState = actionsFromCurrentState[index];
+				final int index = rand.nextInt(actionsFromCurrentState.length);
+				final int nextState = actionsFromCurrentState[index];
 
 				// Q(state,action)= Q(state,action) + alpha * (R(state,action) + gamma *
 				// Max(next state, all actions) - Q(state,action))
-				double q = Q[crtState][nextState];
-				double maxQ = maxQ(nextState);
-				int r = R[crtState][nextState];
-				double value = q + ALPHA * (r + GAMMA * maxQ - q);
+				final double q = Q[crtState][nextState];
+				final double maxQ = maxQ(nextState);
+				final int r = R[crtState][nextState];
+				final double value = q + ALPHA * (r + GAMMA * maxQ - q);
 
 				Q[crtState][nextState] = value;
 				crtState = nextState;
@@ -74,14 +74,14 @@ public class QLearning {
 		}
 	}
 
-	public int getPolicyFromState(int state) {
-		int[] actionsFromState = possibleActionsFromState(state);
+	public int getPolicyFromState(final int state) {
+		final int[] actionsFromState = possibleActionsFromState(state);
 		double maxValue = Double.MIN_VALUE;
 		int policyGotoState = state;
 
 		// Pick to move to the state that has the maximum Q value
-		for (int nextState : actionsFromState) {
-			double value = Q[state][nextState];
+		for (final int nextState : actionsFromState) {
+			final double value = Q[state][nextState];
 			if (value > maxValue) {
 				maxValue = value;
 				policyGotoState = nextState;
@@ -93,7 +93,50 @@ public class QLearning {
 	private void init() {
 		maze = env.getGrid();
 
-//		env.printGrid();
+		//////
+
+		// MyGridCell[][] tmpMaze = env.getGrid();
+		// maze = new MyGridCell[tmpMaze.length][];
+		// for (int i = 0; i < tmpMaze.length; i++) {
+		// MyGridCell[] aMatrix = tmpMaze[i];
+		// int aLength = aMatrix.length;
+		// maze[i] = new MyGridCell[aLength];
+		// System.arraycopy(aMatrix, 0, maze[i], 0, aLength);
+		// }
+		//
+		// Prey prey = env.getPrey();
+		// int preyX = prey.getEnvPosX();
+		// int preyY = prey.getEnvPosY();
+		//
+		// for (MyGridCell[] row : maze) {
+		// for (MyGridCell cell : row) {
+		// if (cell.getCellType() == OccupancyType.GOAL) {
+		// cell.setCellType(OccupancyType.EMPTY);
+		// }
+		// }
+		// }
+		//
+		// int right = preyX + 1;
+		// int left = preyX - 1;
+		// int up = preyY - 1;
+		// int down = preyY + 1;
+		//
+		// if (maze[preyY][right].getCellType() != OccupancyType.OBSTACLE
+		// && maze[preyY][right].getCellType() != OccupancyType.HUNTER)
+		// maze[preyY][right].setCellType(OccupancyType.GOAL);
+		// if (maze[preyY][left].getCellType() != OccupancyType.OBSTACLE
+		// && maze[preyY][right].getCellType() != OccupancyType.HUNTER)
+		// maze[preyY][left].setCellType(OccupancyType.GOAL);
+		// if (maze[up][preyX].getCellType() != OccupancyType.OBSTACLE
+		// && maze[preyY][right].getCellType() != OccupancyType.HUNTER)
+		// maze[up][preyX].setCellType(OccupancyType.GOAL);
+		// if (maze[down][preyX].getCellType() != OccupancyType.OBSTACLE
+		// && maze[preyY][right].getCellType() != OccupancyType.HUNTER)
+		// maze[down][preyX].setCellType(OccupancyType.GOAL);
+		//
+		// env.printGrid(prey.logger);
+
+		//////////////////////////////////
 
 		R = new int[STATESCOUNT][STATESCOUNT];
 		Q = new double[STATESCOUNT][STATESCOUNT];
@@ -114,14 +157,16 @@ public class QLearning {
 			// If not in final state or a wall try moving in all directions in the maze
 
 			if (maze[i][j].getCellType() != OccupancyType.PREY) {
+				// if (maze[i][j].getCellType() != OccupancyType.GOAL) {
 				// Try to move left in the maze
-				int goLeft = j - 1;
+				final int goLeft = j - 1;
 				if (goLeft >= 0) {
-					int target = i * SimulationEnv.WIDTH + goLeft;
+					final int target = i * SimulationEnv.WIDTH + goLeft;
 
 					if (maze[i][goLeft].getCellType() == OccupancyType.EMPTY) {
 						R[k][target] = 0;
 					} else if (maze[i][goLeft].getCellType() == OccupancyType.PREY) {
+						// } else if (maze[i][goLeft].getCellType() == OccupancyType.GOAL) {
 						R[k][target] = REWARD;
 					} else {
 						R[k][target] = PENALTY;
@@ -129,39 +174,44 @@ public class QLearning {
 				}
 
 				// Try to move right in the maze
-				int goRight = j + 1;
+				final int goRight = j + 1;
 				if (goRight < SimulationEnv.WIDTH) {
-					int target = i * SimulationEnv.WIDTH + goRight;
+					final int target = i * SimulationEnv.WIDTH + goRight;
 
 					if (maze[i][goRight].getCellType() == OccupancyType.EMPTY) {
 						R[k][target] = 0;
 					} else if (maze[i][goRight].getCellType() == OccupancyType.PREY) {
+						// } else if (maze[i][goRight].getCellType() == OccupancyType.GOAL) {
 						R[k][target] = REWARD;
 					} else {
 						R[k][target] = PENALTY;
 					}
 				}
+
 				// Try to move up in the maze
-				int goUp = i - 1;
+				final int goUp = i - 1;
 				if (goUp >= 0) {
-					int target = goUp * SimulationEnv.WIDTH + j;
+					final int target = goUp * SimulationEnv.WIDTH + j;
 
 					if (maze[goUp][j].getCellType() == OccupancyType.EMPTY) {
 						R[k][target] = 0;
 					} else if (maze[goUp][j].getCellType() == OccupancyType.PREY) {
+						// } else if (maze[goUp][j].getCellType() == OccupancyType.GOAL) {
 						R[k][target] = REWARD;
 					} else {
 						R[k][target] = PENALTY;
 					}
 				}
+
 				// Try to move down in the maze
-				int goDown = i + 1;
+				final int goDown = i + 1;
 				if (goDown < SimulationEnv.WIDTH) {
-					int target = goDown * SimulationEnv.WIDTH + j;
+					final int target = goDown * SimulationEnv.WIDTH + j;
 
 					if (maze[goDown][j].getCellType() == OccupancyType.EMPTY) {
 						R[k][target] = 0;
 					} else if (maze[goDown][j].getCellType() == OccupancyType.PREY) {
+						// } else if (maze[goDown][j].getCellType() == OccupancyType.GOAL) {
 						R[k][target] = REWARD;
 					} else {
 						R[k][target] = PENALTY;
@@ -182,27 +232,28 @@ public class QLearning {
 		}
 	}
 
-	private boolean isFinalState(int state) {
-		int i = state / SimulationEnv.WIDTH;
-		int j = state - i * SimulationEnv.WIDTH;
+	private boolean isFinalState(final int state) {
+		final int i = state / SimulationEnv.WIDTH;
+		final int j = state - i * SimulationEnv.WIDTH;
 
 		return maze[i][j].getCellType() == OccupancyType.PREY;
+		// return maze[i][j].getCellType() == OccupancyType.GOAL;
 	}
 
-	private double maxQ(int nextState) {
-		int[] actionsFromState = possibleActionsFromState(nextState);
+	private double maxQ(final int nextState) {
+		final int[] actionsFromState = possibleActionsFromState(nextState);
 		// the learning rate and eagerness will keep the W value above the lowest reward
 		double maxValue = -10;
-		for (int nextAction : actionsFromState) {
-			double value = Q[nextState][nextAction];
+		for (final int nextAction : actionsFromState) {
+			final double value = Q[nextState][nextAction];
 			if (value > maxValue)
 				maxValue = value;
 		}
 		return maxValue;
 	}
 
-	public int[] possibleActionsFromState(int state) {
-		ArrayList<Integer> result = new ArrayList<>();
+	public int[] possibleActionsFromState(final int state) {
+		final ArrayList<Integer> result = new ArrayList<>();
 		for (int i = 0; i < STATESCOUNT; i++) {
 			if (R[state][i] != -1) {
 				result.add(i);
@@ -230,7 +281,7 @@ public class QLearning {
 	}
 
 	// Used for debug
-	public void printR(int[][] matrix) {
+	public void printR(final int[][] matrix) {
 		System.out.printf("%25s", "States: ");
 		for (int i = 0; i <= 8; i++) {
 			System.out.printf("%4s", i);
@@ -245,7 +296,7 @@ public class QLearning {
 		}
 	}
 
-	public synchronized void train() {
+	public void train() {
 		init();
 		calculateQ();
 	}
