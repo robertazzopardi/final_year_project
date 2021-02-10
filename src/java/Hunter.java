@@ -16,150 +16,180 @@ public class Hunter extends RobotRunner {
 
 		this.logger = Logger.getLogger("final_year_project." + getName().replace("Thread", "Hunter"));
 
-		env.updateEnv(getEnvPosX(), getEnvPosY(), OccupancyType.HUNTER);
+		env.updateEnv(getGridPosX(), getGridPosY(), OccupancyType.HUNTER);
 
-		this.network = new QLearning(env);
+		this.network = new QLearning(grid);
 
 	}
 
 	@Override
-	protected boolean canMove(final int dx, final int dy) {
-//		final MyGridCell[][] grid = env.getGrid();
-
+	boolean canMove(final int dx, final int dy) {
 		return grid[dx][dy].getCellType() != OccupancyType.OBSTACLE;
 	}
 
 	private boolean isAdjacentToPrey() {
-//		final MyGridCell[][] grid = env.getGrid();
-
 		return grid[x - 1][y].getCellType() == OccupancyType.PREY || grid[x + 1][y].getCellType() == OccupancyType.PREY
 				|| grid[x][y - 1].getCellType() == OccupancyType.PREY
 				|| grid[x][y + 1].getCellType() == OccupancyType.PREY;
 	}
 
-	private boolean isGoalState() {
-//		final MyGridCell[][] grid = env.getGrid();
-		return grid[x][y].getCellType() == OccupancyType.GOAL;
-	}
-
-	private void moveDown() {
-		if (a == 0 || a == 360 || a == -360) {
+	@Override
+	void moveDown() {
+		switch (a) {
+		case 0:
+		case 360:
+		case -360:
 			if (canMove(x, y + 1)) {
 				env.updateGridEmpty(x, y);
 				env.updateGridHunter(x, y + 1);
 				travel(350);
-
 			}
 			env.printGrid(logger);
-		} else if (a == 90 || a == -270) {
+			break;
+		case 90:
+		case -270:
 			rotate(-90);
-		} else if (a == 180 || a == -180) {
+			break;
+		case 180:
+		case -180:
 			rotate(180);
-		} else if (a == 270 || a == -90) {
+			break;
+		case 270:
+		case -90:
 			rotate(90);
+			break;
+		default:
+			break;
 		}
 	}
 
-	private void moveLeft() {
-		if (a == -360) {
+	@Override
+	void moveLeft() {
+		switch (a) {
+		case -360:
 			rotate(90);
-		} else if (a == 0 || a == 360) {
+			break;
+		case 0:
+		case 360:
 			rotate(-90);
-		} else if (a == 90 || a == -270) {
+			break;
+		case 90:
+		case -270:
 			rotate(180);
-		} else if (a == 180 || a == -180) {
+			break;
+		case 180:
+		case -180:
 			rotate(90);
-		} else if (a == 270 || a == -90) {
+			break;
+		case 270:
+		case -90:
 			if (canMove(x - 1, y)) {
 				env.updateGridEmpty(x, y);
 				env.updateGridHunter(x - 1, y);
 				travel(350);
 			}
 			env.printGrid(logger);
+			break;
+		default:
+			break;
 		}
 	}
 
-	private void moveRight() {
-		if (a == 360) {
+	@Override
+	void moveRight() {
+		switch (a) {
+		case 360:
 			rotate(-90);
-		} else if (a == 0 || a == -360) {
+			break;
+		case 0:
+		case -360:
 			rotate(90);
-		} else if (a == 90 || a == -270) {
+			break;
+		case 90:
+		case -270:
 			if (canMove(x + 1, y)) {
 				env.updateGridEmpty(x, y);
 				env.updateGridHunter(x + 1, y);
 				travel(350);
 			}
 			env.printGrid(logger);
-		} else if (a == 180 || a == -180) {
+			break;
+		case 180:
+		case -180:
 			rotate(-90);
-		} else if (a == 270) {
+			break;
+		case 270:
 			rotate(-180);
-		} else if (a == -90) {
+			break;
+		case -90:
 			rotate(180);
+			break;
+		default:
+			break;
 		}
 	}
 
-	private void moveUp() {
-		if (a == 360) {
+	@Override
+	void moveUp() {
+		switch (a) {
+		case 360:
 			rotate(-180);
-		} else if (a == 0 || a == -360) {
+			break;
+		case 0:
+		case -360:
 			rotate(180);
-		} else if (a == 90 || a == -270) {
+			break;
+		case 90:
+		case -270:
 			rotate(90);
-		} else if (a == 180 || a == -180) {
+			break;
+		case 180:
+		case -180:
 			if (canMove(x, y - 1)) {
 				env.updateGridEmpty(x, y);
 				env.updateGridHunter(x, y - 1);
 				travel(350);
 			}
 			env.printGrid(logger);
-		} else if (a == 270 || a == -90) {
+			break;
+		case 270:
+		case -90:
 			rotate(-90);
+			break;
+		default:
+			break;
 		}
 	}
 
 	@Override
 	public void run() {
 		while (true) {
+			// train
 			network.train();
 
-			x = getEnvPosX();
-			y = getEnvPosY();
-
+			x = getGridPosX();
+			y = getGridPosY();
 			a = getHeading();
 
 			// check if in a goal state
-
 			if (isAdjacentToPrey()) {
-//			if (isGoalState()) {
-
 				// Do nothing while in goal state
 				logger.info("in a goal state");
 				pauseRobot();
 			}
 
-			////
-
-			// checkWaitingStatus();
+			// check if paused and should be waiting
 			synchronized (pauseLock) {
 				if (paused) {
 					try {
-						// synchronized (pauseLock) {
 						pauseLock.wait();
-						// }
 					} catch (final InterruptedException ex) {
-						// break;
-//						ex.printStackTrace();
+						ex.printStackTrace();
 					}
 				}
 			}
 
-			/////
-
-//			MyGridCell[][] grid = env.getGrid();
-//			logger.info(grid[x + 1][y] + " " + grid[x][y + 1] + " " + grid[x - 1][y] + " " + grid[x][y - 1]);
-
+			// compare the current state to the next state produced from qlearning
 			final int currState = getCurentState(x, y);
 
 			final int nextState = network.getPolicyFromState(currState);

@@ -16,37 +16,23 @@ public class QLearning {
 
 	private static final Random rand = new Random();
 
+	private static final int EPOCH = 1000;
+
 	private static final int REWARD = 100;
 	private static final int STATESCOUNT = SimulationEnv.WIDTH * SimulationEnv.HEIGHT;
 
-	private final SimulationEnv env;
+	private final MyGridCell[][] maze;
 
-	private MyGridCell[][] maze;
+	private double[][] Q;
 
-	private double[][] Q; // Q learning
+	private int[][] R;
 
-	// public static void qlearn() {
-	// QLearning ql = new QLearning();
-	// ql.init();
-	// ql.calculateQ();
-	// ql.printQ();
-	// ql.printPolicy();
-	// }
-
-	private int[][] R; // Reward lookup
-
-	public QLearning(final SimulationEnv env) {
-		this.env = env;
-
-		init();
-		calculateQ();
-		// printQ();
-		// printPolicy();
+	public QLearning(final MyGridCell[][] grid) {
+		this.maze = grid;
 	}
 
 	private void calculateQ() {
-
-		for (int i = 0; i < 1000; i++) { // Train cycles
+		for (int i = 0; i < EPOCH; i++) {
 			// Select random initial state
 			int crtState = rand.nextInt(STATESCOUNT);
 
@@ -91,8 +77,6 @@ public class QLearning {
 	}
 
 	private void init() {
-		maze = env.getGrid();
-
 		R = new int[STATESCOUNT][STATESCOUNT];
 		Q = new double[STATESCOUNT][STATESCOUNT];
 
@@ -105,77 +89,125 @@ public class QLearning {
 			// to translate k into i and j
 			i = k / SimulationEnv.WIDTH;
 			j = k - i * SimulationEnv.WIDTH;
+
 			// Fill in the reward matrix with -1
 			for (int s = 0; s < STATESCOUNT; s++) {
 				R[k][s] = -1;
 			}
 			// If not in final state or a wall try moving in all directions in the maze
 
-//			if (maze[i][j].getCellType() != OccupancyType.PREY) {
 			if (maze[i][j].getCellType() != OccupancyType.GOAL) {
 				// Try to move left in the maze
-				final int goLeft = j - 1;
-				if (goLeft >= 0) {
-					final int target = i * SimulationEnv.WIDTH + goLeft;
-
-					if (maze[i][goLeft].getCellType() == OccupancyType.EMPTY) {
-						R[k][target] = 0;
-//					} else if (maze[i][goLeft].getCellType() == OccupancyType.PREY) {
-					} else if (maze[i][goLeft].getCellType() == OccupancyType.GOAL) {
-						R[k][target] = REWARD;
-					} else {
-						R[k][target] = PENALTY;
-					}
-				}
+				tryMoveLeft(i, j, k);
 
 				// Try to move right in the maze
-				final int goRight = j + 1;
-				if (goRight < SimulationEnv.WIDTH) {
-					final int target = i * SimulationEnv.WIDTH + goRight;
-
-					if (maze[i][goRight].getCellType() == OccupancyType.EMPTY) {
-						R[k][target] = 0;
-//					} else if (maze[i][goRight].getCellType() == OccupancyType.PREY) {
-					} else if (maze[i][goRight].getCellType() == OccupancyType.GOAL) {
-						R[k][target] = REWARD;
-					} else {
-						R[k][target] = PENALTY;
-					}
-				}
+				tryMoveRight(i, j, k);
 
 				// Try to move up in the maze
-				final int goUp = i - 1;
-				if (goUp >= 0) {
-					final int target = goUp * SimulationEnv.WIDTH + j;
-
-					if (maze[goUp][j].getCellType() == OccupancyType.EMPTY) {
-						R[k][target] = 0;
-//					} else if (maze[goUp][j].getCellType() == OccupancyType.PREY) {
-					} else if (maze[goUp][j].getCellType() == OccupancyType.GOAL) {
-						R[k][target] = REWARD;
-					} else {
-						R[k][target] = PENALTY;
-					}
-				}
+				tryMoveUp(i, j, k);
 
 				// Try to move down in the maze
-				final int goDown = i + 1;
-				if (goDown < SimulationEnv.WIDTH) {
-					final int target = goDown * SimulationEnv.WIDTH + j;
-
-					if (maze[goDown][j].getCellType() == OccupancyType.EMPTY) {
-						R[k][target] = 0;
-//					} else if (maze[goDown][j].getCellType() == OccupancyType.PREY) {
-					} else if (maze[goDown][j].getCellType() == OccupancyType.GOAL) {
-						R[k][target] = REWARD;
-					} else {
-						R[k][target] = PENALTY;
-					}
-				}
+				tryMoveDown(i, j, k);
 			}
 		}
 		initializeQ();
 		// printR(R);
+	}
+
+	/**
+	 * @param i
+	 * @param j
+	 * @param k
+	 */
+	private void tryMoveDown(int i, int j, int k) {
+		final int goDown = i + 1;
+		if (goDown < SimulationEnv.WIDTH) {
+			final int target = goDown * SimulationEnv.WIDTH + j;
+
+			switch (maze[goDown][j].getCellType()) {
+			case EMPTY:
+				R[k][target] = 0;
+				break;
+			case GOAL:
+				R[k][target] = REWARD;
+				break;
+			default:
+				R[k][target] = PENALTY;
+				break;
+			}
+		}
+	}
+
+	/**
+	 * @param i
+	 * @param j
+	 * @param k
+	 */
+	private void tryMoveUp(int i, int j, int k) {
+		final int goUp = i - 1;
+		if (goUp >= 0) {
+			final int target = goUp * SimulationEnv.WIDTH + j;
+
+			switch (maze[goUp][j].getCellType()) {
+			case EMPTY:
+				R[k][target] = 0;
+				break;
+			case GOAL:
+				R[k][target] = REWARD;
+				break;
+			default:
+				R[k][target] = PENALTY;
+				break;
+			}
+		}
+	}
+
+	/**
+	 * @param i
+	 * @param j
+	 * @param k
+	 */
+	private void tryMoveRight(int i, int j, int k) {
+		final int goRight = j + 1;
+		if (goRight < SimulationEnv.WIDTH) {
+			final int target = i * SimulationEnv.WIDTH + goRight;
+
+			switch (maze[i][goRight].getCellType()) {
+			case EMPTY:
+				R[k][target] = 0;
+				break;
+			case GOAL:
+				R[k][target] = REWARD;
+				break;
+			default:
+				R[k][target] = PENALTY;
+				break;
+			}
+		}
+	}
+
+	/**
+	 * @param i
+	 * @param j
+	 * @param k
+	 */
+	private void tryMoveLeft(int i, int j, int k) {
+		final int goLeft = j - 1;
+		if (goLeft >= 0) {
+			final int target = i * SimulationEnv.WIDTH + goLeft;
+
+			switch (maze[i][goLeft].getCellType()) {
+			case EMPTY:
+				R[k][target] = 0;
+				break;
+			case GOAL:
+				R[k][target] = REWARD;
+				break;
+			default:
+				R[k][target] = PENALTY;
+				break;
+			}
+		}
 	}
 
 	// Set Q values to R values
@@ -191,7 +223,6 @@ public class QLearning {
 		final int i = state / SimulationEnv.WIDTH;
 		final int j = state - i * SimulationEnv.WIDTH;
 
-//		return maze[i][j].getCellType() == OccupancyType.PREY;
 		return maze[i][j].getCellType() == OccupancyType.GOAL;
 	}
 
@@ -201,8 +232,9 @@ public class QLearning {
 		double maxValue = -10;
 		for (final int nextAction : actionsFromState) {
 			final double value = Q[nextState][nextAction];
-			if (value > maxValue)
+			if (value > maxValue) {
 				maxValue = value;
+			}
 		}
 		return maxValue;
 	}
@@ -214,42 +246,43 @@ public class QLearning {
 				result.add(i);
 			}
 		}
+
 		return result.stream().mapToInt(i -> i).toArray();
 	}
 
-	public void printPolicy() {
-		System.out.println("\nPrint policy");
-		for (int i = 0; i < STATESCOUNT; i++) {
-			System.out.println("From state " + i + " goto state " + getPolicyFromState(i));
-		}
-	}
-
-	public void printQ() {
-		System.out.println("Q matrix");
-		for (int i = 0; i < Q.length; i++) {
-			System.out.print("From state " + i + ":  ");
-			for (int j = 0; j < Q[i].length; j++) {
-				System.out.printf("%6.2f ", (Q[i][j]));
-			}
-			System.out.println();
-		}
-	}
-
-	// Used for debug
-	public void printR(final int[][] matrix) {
-		System.out.printf("%25s", "States: ");
-		for (int i = 0; i <= 8; i++) {
-			System.out.printf("%4s", i);
-		}
-		System.out.println();
-		for (int i = 0; i < STATESCOUNT; i++) {
-			System.out.print("Possible states from " + i + " :[");
-			for (int j = 0; j < STATESCOUNT; j++) {
-				System.out.printf("%4s", matrix[i][j]);
-			}
-			System.out.println("]");
-		}
-	}
+//	public void printPolicy() {
+//		System.out.println("\nPrint policy");
+//		for (int i = 0; i < STATESCOUNT; i++) {
+//			System.out.println("From state " + i + " goto state " + getPolicyFromState(i));
+//		}
+//	}
+//
+//	public void printQ() {
+//		System.out.println("Q matrix");
+//		for (int i = 0; i < Q.length; i++) {
+//			System.out.print("From state " + i + ":  ");
+//			for (int j = 0; j < Q[i].length; j++) {
+//				System.out.printf("%6.2f ", (Q[i][j]));
+//			}
+//			System.out.println();
+//		}
+//	}
+//
+//	// Used for debug
+//	public void printR(final int[][] matrix) {
+//		System.out.printf("%25s", "States: ");
+//		for (int i = 0; i <= 8; i++) {
+//			System.out.printf("%4s", i);
+//		}
+//		System.out.println();
+//		for (int i = 0; i < STATESCOUNT; i++) {
+//			System.out.print("Possible states from " + i + " :[");
+//			for (int j = 0; j < STATESCOUNT; j++) {
+//				System.out.printf("%4s", matrix[i][j]);
+//			}
+//			System.out.println("]");
+//		}
+//	}
 
 	public void train() {
 		init();

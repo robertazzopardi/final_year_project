@@ -24,20 +24,6 @@ public class SimulationEnv extends Environment {
 
 	private final Logger logger = Logger.getLogger("final_year_project." + SimulationEnv.class.getName());
 
-	/** Called before the MAS execution with the args informed in .mas2j */
-	@Override
-	public void init(final String[] args) {
-		super.init(args);
-
-		// get the controller
-		controller = new EnvController(CONFIG_FILE, WIDTH, HEIGHT);
-
-		grid = controller.getGrid();
-
-		new RobotController(this);
-
-	}
-
 	@Override
 	public boolean executeAction(final String agName, final Structure action) {
 		final String executionInfo = String.format("executing: %s, but not implemented!", action);
@@ -56,8 +42,21 @@ public class SimulationEnv extends Environment {
 		return grid;
 	}
 
-	public void printGrid(final Logger inLogger) {
+	/** Called before the MAS execution with the args informed in .mas2j */
+	@Override
+	public void init(final String[] args) {
+		super.init(args);
 
+		// get the controller
+		controller = new EnvController(CONFIG_FILE, WIDTH, HEIGHT);
+
+		grid = controller.getGrid();
+
+		new RobotController(this);
+
+	}
+
+	public void printGrid(final Logger inLogger) {
 		synchronized (grid) {
 			for (int i = 0; i < grid.length; i++) {
 				final String row = Arrays.toString(grid[i]);
@@ -68,65 +67,9 @@ public class SimulationEnv extends Environment {
 		}
 	}
 
-//	public synchronized void setPreviousPositionDown(final int x, final int y) {
-//
-////		if (grid[y][x].getCellType() != OccupancyType.OBSTACLE && grid[y][x].getCellType() != OccupancyType.HUNTER) {
-////			grid[y][x].setEmpty();
-////		}
-//
-//		if (grid[y + 1][x].getCellType() == OccupancyType.EMPTY) {
-//			grid[y][x].setEmpty();
-//			grid[y + 1][x].setCellType(OccupancyType.PREY);
-//		}
-//
-//	}
-//
-//	public synchronized void setPreviousPositionLeft(final int x, final int y) {
-//
-////		if (grid[y][x].getCellType() != OccupancyType.OBSTACLE && grid[y][x].getCellType() != OccupancyType.HUNTER) {
-////			grid[y][x].setEmpty();
-////		}
-//
-//		if (grid[y][x - 1].getCellType() == OccupancyType.EMPTY) {
-//			grid[y][x].setEmpty();
-//			grid[y][x - 1].setCellType(OccupancyType.PREY);
-//		}
-//
-//	}
-//
-//	public synchronized void setPreviousPositionRight(final int x, final int y) {
-//
-////		if (grid[y][x].getCellType() != OccupancyType.OBSTACLE && grid[y][x].getCellType() != OccupancyType.HUNTER) {
-////			grid[y][x].setEmpty();
-////		}
-//
-//		if (grid[y][x + 1].getCellType() == OccupancyType.EMPTY) {
-//			grid[y][x].setEmpty();
-//			grid[y][x + 1].setCellType(OccupancyType.PREY);
-//		}
-//
-//	}
-//
-//	public synchronized void setPreviousPositionUp(final int x, final int y) {
-//
-////		if (grid[y][x].getCellType() != OccupancyType.OBSTACLE && grid[y][x].getCellType() != OccupancyType.HUNTER) {
-////			grid[y][x].setEmpty();
-////		}
-//
-//		if (grid[y - 1][x].getCellType() == OccupancyType.EMPTY) {
-//			grid[y][x].setEmpty();
-//			grid[y - 1][x].setCellType(OccupancyType.PREY);
-//		}
-//
-//	}
-
-	public synchronized void updateEnv(final int x, final int y, final OccupancyType occupancyType) {
-		grid[y][x].setCellType(occupancyType);
-	}
-
-	public void updateGridHunter(int x, int y) {
+	public void updateEnv(final int x, final int y, final OccupancyType occupancyType) {
 		synchronized (grid[y][x]) {
-			grid[y][x].setCellType(OccupancyType.HUNTER);
+			grid[y][x].setCellType(occupancyType);
 		}
 	}
 
@@ -136,24 +79,16 @@ public class SimulationEnv extends Environment {
 		}
 	}
 
+	public void updateGridHunter(int x, int y) {
+		synchronized (grid[y][x]) {
+			grid[y][x].setCellType(OccupancyType.HUNTER);
+		}
+	}
+
 	public void updateGridPrey(int x, int y) {
 		synchronized (grid[y][x]) {
 			grid[y][x].setCellType(OccupancyType.PREY);
 		}
 	}
-
-//	public void updateEnvOldNew(final int nx, final int ny, final int ox, final int oy) {
-//
-////		if (grid[ny][nx] != grid[oy][ox]) {
-////			grid[oy][ox].setEmpty();
-////		}
-//
-////		if (grid[ny][nx].getCellType() != OccupancyType.PREY) {
-//		if (grid[ny][nx].isEmpty()) {
-//			grid[oy][ox].setEmpty();
-//			grid[ny][nx].setCellType(OccupancyType.HUNTER);
-//		}
-//
-//	}
 
 }

@@ -10,26 +10,25 @@ import comp329robosim.SimulatedRobot;
  */
 public abstract class RobotRunner extends RobotMonitor {
 
-	protected int a; // heading
+	int a; // heading
 
-	protected final RobotController controller;
+	final RobotController controller;
 
-	protected SimulationEnv env;
+	SimulationEnv env;
 
-	protected Logger logger;
+	final MyGridCell[][] grid;
 
-	protected volatile boolean paused = false;
+	Logger logger;
 
-	protected final Object pauseLock = new Object();
+	volatile boolean paused = false;
 
-	protected int x;
+	final Object pauseLock = new Object();
 
-	protected int y;
+	int x; // column
 
-	protected final MyGridCell[][] grid;
+	int y; // row
 
-	protected RobotRunner(final SimulatedRobot r, final int d, final SimulationEnv env,
-			final RobotController controller) {
+	RobotRunner(final SimulatedRobot r, final int d, final SimulationEnv env, final RobotController controller) {
 		super(r, d);
 
 		monitorRobotStatus(false);
@@ -42,17 +41,27 @@ public abstract class RobotRunner extends RobotMonitor {
 		this.controller = controller;
 	}
 
-	protected abstract boolean canMove(int dx, int dy);
+	abstract boolean canMove(int dx, int dy);
 
-	protected final int getCurentState(final int currX, final int currY) {
+	final int getCurentState(final int currX, final int currY) {
 		return Integer.parseInt(Integer.toString(currY) + Integer.toString(currX));
 	}
 
-	protected final int getEnvPosX() {
+	/**
+	 * get x position on the grid from the robots location
+	 * 
+	 * @return
+	 */
+	final int getGridPosX() {
 		return (int) ((((double) getX() / 350) * 2) - 1) / 2;
 	}
 
-	protected final int getEnvPosY() {
+	/**
+	 * get y position on the grid from the robots location
+	 * 
+	 * @return
+	 */
+	final int getGridPosY() {
 		return (int) ((((double) getY() / 350) * 2) - 1) / 2;
 	}
 
@@ -60,16 +69,40 @@ public abstract class RobotRunner extends RobotMonitor {
 		return paused;
 	}
 
-	protected final void pauseRobot() {
-		// you may want to throw an IllegalStateException if !running
+	final void logAdjacent() {
+		String adjacentString = String.format("%s %s %s %s", grid[x + 1][y], grid[x][y + 1], grid[x - 1][y],
+				grid[x][y - 1]);
+		logger.info(adjacentString);
+	}
+
+	/**
+	 * handle moving down a row
+	 */
+	abstract void moveDown();
+
+	/**
+	 * handle moving left a column
+	 */
+	abstract void moveLeft();
+
+	/**
+	 * handle moving right a column
+	 */
+	abstract void moveRight();
+
+	/**
+	 * handle moving up a row
+	 */
+	abstract void moveUp();
+
+	final void pauseRobot() {
 		paused = true;
 	}
 
-	protected final void resumeRobot() {
+	final void resumeRobot() {
 		synchronized (pauseLock) {
 			paused = false;
-			pauseLock.notifyAll(); // Unblocks thread
-			// pauseLock.notify();
+			pauseLock.notifyAll();
 		}
 	}
 }

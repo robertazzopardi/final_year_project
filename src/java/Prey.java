@@ -21,70 +21,40 @@ public class Prey extends RobotRunner {
 
 	private static final Random RANDOM = new Random();
 
-	public static int getRandom(final int[] array) {
+	public static int getRandomDirection(final int[] array) {
 		final int rnd = RANDOM.nextInt(array.length);
 		return array[rnd];
 	}
 
-	int randomMove = getRandom(ALL);
+	int randomMove = getRandomDirection(ALL);
 
 	public Prey(final SimulatedRobot r, final int d, final SimulationEnv env, final RobotController controller) {
 		super(r, d, env, controller);
 
 		logger = Logger.getLogger("final_year_project." + Prey.class.getName());
 
-		setPositionFilled(getEnvPosX(), getEnvPosY());
-	}
+		setPositionNew(getGridPosX(), getGridPosY());
 
-	private void setPositionFilled(int dx, int dy) {
-
-		// set position
-		env.updateEnv(dx, dy, OccupancyType.PREY);
-
-		if (grid[dx + 1][dy].getCellType() != OccupancyType.OBSTACLE)
-			env.updateEnv(dx + 1, dy, OccupancyType.GOAL);
-		if (grid[dx - 1][dy].getCellType() != OccupancyType.OBSTACLE)
-			env.updateEnv(dx - 1, dy, OccupancyType.GOAL);
-		if (grid[dx][dy + 1].getCellType() != OccupancyType.OBSTACLE)
-			env.updateEnv(dx, dy + 1, OccupancyType.GOAL);
-		if (grid[dx][dy - 1].getCellType() != OccupancyType.OBSTACLE)
-			env.updateEnv(dx, dy - 1, OccupancyType.GOAL);
-
-	}
-
-	private void setPositionEmpty(int dx, int dy) {
-
-		// set position
-		env.updateEnv(dx, dy, OccupancyType.EMPTY);
-
-		if (grid[dx + 1][dy].getCellType() != OccupancyType.OBSTACLE)
-			env.updateEnv(dx + 1, dy, OccupancyType.EMPTY);
-		if (grid[dx - 1][dy].getCellType() != OccupancyType.OBSTACLE)
-			env.updateEnv(dx - 1, dy, OccupancyType.EMPTY);
-		if (grid[dx][dy + 1].getCellType() != OccupancyType.OBSTACLE)
-			env.updateEnv(dx, dy + 1, OccupancyType.EMPTY);
-		if (grid[dx][dy - 1].getCellType() != OccupancyType.OBSTACLE)
-			env.updateEnv(dx, dy - 1, OccupancyType.EMPTY);
+		logger.info(getGridPosX() + " " + getGridPosY());
 	}
 
 	@Override
-	protected boolean canMove(final int dx, final int dy) {
+	boolean canMove(final int dx, final int dy) {
 		return grid[dx][dy].getCellType() != OccupancyType.OBSTACLE;
 	}
 
-	private void moveDown() {
+	@Override
+	void moveDown() {
 		switch (a) {
 		case 0:
 		case 360:
 		case -360:
 			if (canMove(x, y + 1)) {
-//				env.updateEnvOldNew(x, y + 1, x, y);
-
-				setPositionEmpty(x, y);
-				setPositionFilled(x, y + 1);
+				setPositionOld(x, y);
+				setPositionNew(x, y + 1);
 
 				travel(350);
-				randomMove = getRandom(ALL);
+				randomMove = getRandomDirection(ALL);
 				controller.resumeHunters();
 			}
 			break;
@@ -94,7 +64,6 @@ public class Prey extends RobotRunner {
 			break;
 		case 180:
 		case -180:
-			// rotate(180);
 			rotate(90);
 			break;
 		case 270:
@@ -102,12 +71,12 @@ public class Prey extends RobotRunner {
 			rotate(90);
 			break;
 		default:
-			logger.info(Integer.toString(a));
 			break;
 		}
 	}
 
-	private void moveLeft() {
+	@Override
+	void moveLeft() {
 		switch (a) {
 		case -360:
 			rotate(90);
@@ -118,7 +87,6 @@ public class Prey extends RobotRunner {
 			break;
 		case 90:
 		case -270:
-			// rotate(180);
 			rotate(90);
 			break;
 		case 180:
@@ -128,23 +96,21 @@ public class Prey extends RobotRunner {
 		case 270:
 		case -90:
 			if (canMove(x - 1, y)) {
-//				env.updateEnvOldNew(x - 1, y, x, y);
-
-				setPositionEmpty(x, y);
-				setPositionFilled(x - 1, y);
+				setPositionOld(x, y);
+				setPositionNew(x - 1, y);
 
 				travel(350);
-				randomMove = getRandom(ALL);
+				randomMove = getRandomDirection(ALL);
 				controller.resumeHunters();
 			}
 			break;
 		default:
-			logger.info(Integer.toString(a));
 			break;
 		}
 	}
 
-	private void moveRight() {
+	@Override
+	void moveRight() {
 		switch (a) {
 		case 360:
 			rotate(-90);
@@ -156,13 +122,11 @@ public class Prey extends RobotRunner {
 		case 90:
 		case -270:
 			if (canMove(x + 1, y)) {
-//				env.updateEnvOldNew(x + 1, y, x, y);
-
-				setPositionEmpty(x, y);
-				setPositionFilled(x + 1, y);
+				setPositionOld(x, y);
+				setPositionNew(x + 1, y);
 
 				travel(350);
-				randomMove = getRandom(ALL);
+				randomMove = getRandomDirection(ALL);
 				controller.resumeHunters();
 			}
 			break;
@@ -171,28 +135,24 @@ public class Prey extends RobotRunner {
 			rotate(-90);
 			break;
 		case 270:
-			// rotate(-180);
 			rotate(-90);
 			break;
 		case -90:
-			// rotate(180);
 			rotate(90);
 			break;
 		default:
-			logger.info(Integer.toString(a));
 			break;
 		}
 	}
 
-	private void moveUp() {
+	@Override
+	void moveUp() {
 		switch (a) {
 		case 360:
-			// rotate(-180);
 			rotate(-90);
 			break;
 		case 0:
 		case -360:
-			// rotate(180);
 			rotate(90);
 			break;
 		case 90:
@@ -202,13 +162,11 @@ public class Prey extends RobotRunner {
 		case 180:
 		case -180:
 			if (canMove(x, y - 1)) {
-//				env.updateEnvOldNew(x, y - 1, x, y);
-
-				setPositionEmpty(x, y);
-				setPositionFilled(x, y - 1);
+				setPositionOld(x, y);
+				setPositionNew(x, y - 1);
 
 				travel(350);
-				randomMove = getRandom(ALL);
+				randomMove = getRandomDirection(ALL);
 				controller.resumeHunters();
 			}
 			break;
@@ -217,7 +175,6 @@ public class Prey extends RobotRunner {
 			rotate(-90);
 			break;
 		default:
-			logger.info(Integer.toString(a));
 			break;
 		}
 	}
@@ -226,59 +183,45 @@ public class Prey extends RobotRunner {
 	public void run() {
 		while (true) {
 
-			x = getEnvPosX();
-			y = getEnvPosY();
+			// update current position
+			x = getGridPosX();
+			y = getGridPosY();
 			a = getHeading();
 
-			// check if in a goal state
-
-			// boolean right = canMove(x + 1, y);
-			// boolean down = canMove(x, y + 1);
-			// boolean left = canMove(x - 1, y);
-			// boolean up = canMove(x, y - 1);
-
-//			final MyGridCell[][] grid = env.getGrid();
-
+			// check if can move into adjacent spaces
 			final boolean right = grid[x + 1][y].getCellType() == OccupancyType.GOAL
 					&& grid[x + 1][y].getCellType() != OccupancyType.HUNTER;
+
 			final boolean down = grid[x][y + 1].getCellType() == OccupancyType.GOAL
-					&& grid[x + 1][y].getCellType() != OccupancyType.HUNTER;
+					&& grid[x][y + 1].getCellType() != OccupancyType.HUNTER;
+
 			final boolean left = grid[x - 1][y].getCellType() == OccupancyType.GOAL
-					&& grid[x + 1][y].getCellType() != OccupancyType.HUNTER;
+					&& grid[x - 1][y].getCellType() != OccupancyType.HUNTER;
+
 			final boolean up = grid[x][y - 1].getCellType() == OccupancyType.GOAL
-					&& grid[x + 1][y].getCellType() != OccupancyType.HUNTER;
+					&& grid[x][y - 1].getCellType() != OccupancyType.HUNTER;
 
-			logger.info(grid[x + 1][y] + " " + grid[x][y + 1] + " " + grid[x - 1][y] + " " + grid[x][y - 1]);
+			logAdjacent();
 
-			///
+			// check if surrounded by the hunters
 			if (!right && !left && !up && !down) {
 				// Do nothing while in goal state
-
 				logger.info("trapped");
-
-				// break;
 				pauseRobot();
-
 			}
 
-			/////
-			// checkWaitingStatus();
-
+			// check if paused
 			synchronized (pauseLock) {
 				if (paused) {
 					try {
-						// synchronized (pauseLock) {
 						pauseLock.wait();
-						// }
 					} catch (final InterruptedException ex) {
-						// break;
 						ex.printStackTrace();
 					}
 				}
 			}
 
-			/////
-
+			// Handle movement
 			switch (randomMove) {
 			case 1:
 				// right
@@ -286,7 +229,7 @@ public class Prey extends RobotRunner {
 					moveRight();
 					controller.resumeHunters();
 				} else {
-					randomMove = getRandom(NO_RIGHT);
+					randomMove = getRandomDirection(NO_RIGHT);
 				}
 				break;
 			case 2:
@@ -295,7 +238,7 @@ public class Prey extends RobotRunner {
 					moveDown();
 					controller.resumeHunters();
 				} else {
-					randomMove = getRandom(NO_DOWN);
+					randomMove = getRandomDirection(NO_DOWN);
 				}
 				break;
 			case 3:
@@ -304,7 +247,7 @@ public class Prey extends RobotRunner {
 					moveLeft();
 					controller.resumeHunters();
 				} else {
-					randomMove = getRandom(NO_LEFT);
+					randomMove = getRandomDirection(NO_LEFT);
 				}
 				break;
 			case 4:
@@ -313,18 +256,50 @@ public class Prey extends RobotRunner {
 					moveUp();
 					controller.resumeHunters();
 				} else {
-					randomMove = getRandom(NO_UP);
+					randomMove = getRandomDirection(NO_UP);
 				}
 				break;
 			default:
 				break;
 			}
+		}
+	}
 
-//			env.printGrid(logger);
+	private void setPositionOld(int dx, int dy) {
+		// set position
+		env.updateEnv(dx, dy, OccupancyType.EMPTY);
 
+		if (grid[dx + 1][dy].getCellType() != OccupancyType.OBSTACLE) {
+			env.updateEnv(dx + 1, dy, OccupancyType.EMPTY);
+		}
+		if (grid[dx - 1][dy].getCellType() != OccupancyType.OBSTACLE) {
+			env.updateEnv(dx - 1, dy, OccupancyType.EMPTY);
+		}
+		if (grid[dx][dy + 1].getCellType() != OccupancyType.OBSTACLE) {
+			env.updateEnv(dx, dy + 1, OccupancyType.EMPTY);
+		}
+		if (grid[dx][dy - 1].getCellType() != OccupancyType.OBSTACLE) {
+			env.updateEnv(dx, dy - 1, OccupancyType.EMPTY);
+		}
+	}
+
+	private void setPositionNew(int dx, int dy) {
+		// set position
+		env.updateEnv(dx, dy, OccupancyType.PREY);
+
+		if (grid[dx + 1][dy].getCellType() != OccupancyType.OBSTACLE) {
+			env.updateEnv(dx + 1, dy, OccupancyType.GOAL);
+		}
+		if (grid[dx - 1][dy].getCellType() != OccupancyType.OBSTACLE) {
+			env.updateEnv(dx - 1, dy, OccupancyType.GOAL);
+		}
+		if (grid[dx][dy + 1].getCellType() != OccupancyType.OBSTACLE) {
+			env.updateEnv(dx, dy + 1, OccupancyType.GOAL);
+		}
+		if (grid[dx][dy - 1].getCellType() != OccupancyType.OBSTACLE) {
+			env.updateEnv(dx, dy - 1, OccupancyType.GOAL);
 		}
 
-		// super.run();
 	}
 
 }
