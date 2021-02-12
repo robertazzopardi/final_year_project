@@ -22,7 +22,7 @@ public class SimulationEnv extends Environment {
 
 	private MyGridCell[][] grid;
 
-	private final Logger logger = Logger.getLogger("final_year_project." + SimulationEnv.class.getName());
+	final Logger logger = Logger.getLogger("final_year_project." + SimulationEnv.class.getName());
 
 	@Override
 	public boolean executeAction(final String agName, final Structure action) {
@@ -38,7 +38,7 @@ public class SimulationEnv extends Environment {
 		return controller;
 	}
 
-	public synchronized MyGridCell[][] getGrid() {
+	public MyGridCell[][] getGrid() {
 		return grid;
 	}
 
@@ -57,37 +57,34 @@ public class SimulationEnv extends Environment {
 	}
 
 	public void printGrid(final Logger inLogger) {
-		synchronized (grid) {
-			for (int i = 0; i < grid.length; i++) {
-				final String row = Arrays.toString(grid[i]);
-				inLogger.info(row);
-			}
-
-			inLogger.info("");
+		for (final MyGridCell[] myGridCells : grid) {
+			final String row = Arrays.toString(myGridCells);
+			inLogger.info(row);
 		}
+		inLogger.info("");
 	}
 
-	public void updateEnv(final int x, final int y, final OccupancyType occupancyType) {
+	public void updateGridEmpty(final int x, final int y) {
 		synchronized (grid[y][x]) {
-			grid[y][x].setCellType(occupancyType);
+			grid[y][x].setEmpty();
 		}
 	}
 
-	public void updateGridEmpty(int x, int y) {
-		synchronized (grid[y][x]) {
-			grid[y][x].setCellType(OccupancyType.EMPTY);
-		}
-	}
-
-	public void updateGridHunter(int x, int y) {
+	public void updateGridHunter(final int x, final int y) {
 		synchronized (grid[y][x]) {
 			grid[y][x].setCellType(OccupancyType.HUNTER);
 		}
 	}
 
-	public void updateGridPrey(int x, int y) {
+	public void updateGridPrey(final int x, final int y) {
 		synchronized (grid[y][x]) {
 			grid[y][x].setCellType(OccupancyType.PREY);
+		}
+	}
+
+	public void updateGridGoal(final int x, final int y) {
+		synchronized (grid[y][x]) {
+			grid[y][x].setCellType(OccupancyType.GOAL);
 		}
 	}
 

@@ -16,148 +16,152 @@ public class Hunter extends RobotRunner {
 
 		this.logger = Logger.getLogger("final_year_project." + getName().replace("Thread", "Hunter"));
 
-		env.updateEnv(getGridPosX(), getGridPosY(), OccupancyType.HUNTER);
+		// env.updateEnv(getGridPosX(), getGridPosY(), OccupancyType.HUNTER);
+		env.updateGridHunter(getGridPosX(), getGridPosY());
 
 		this.network = new QLearning(grid);
 
 	}
 
 	@Override
-	boolean canMove(final int dx, final int dy) {
-		return grid[dx][dy].getCellType() != OccupancyType.OBSTACLE;
+	boolean canMove(final int x, final int y) {
+		return grid[y][x].getCellType() != OccupancyType.OBSTACLE;
 	}
 
-	private boolean isAdjacentToPrey() {
-		return grid[x - 1][y].getCellType() == OccupancyType.PREY || grid[x + 1][y].getCellType() == OccupancyType.PREY
-				|| grid[x][y - 1].getCellType() == OccupancyType.PREY
-				|| grid[x][y + 1].getCellType() == OccupancyType.PREY;
-	}
-
-	@Override
-	void moveDown() {
-		switch (a) {
-		case 0:
-		case 360:
-		case -360:
-			if (canMove(x, y + 1)) {
-				env.updateGridEmpty(x, y);
-				env.updateGridHunter(x, y + 1);
-				travel(350);
-			}
-			env.printGrid(logger);
-			break;
-		case 90:
-		case -270:
-			rotate(-90);
-			break;
-		case 180:
-		case -180:
-			rotate(180);
-			break;
-		case 270:
-		case -90:
-			rotate(90);
-			break;
-		default:
-			break;
+	private boolean isAdjacentToPrey(final int x, final int y) {
+		synchronized (grid) {
+			return grid[y][x - 1].getCellType() == OccupancyType.PREY
+					|| grid[y][x + 1].getCellType() == OccupancyType.PREY
+					|| grid[y - 1][x].getCellType() == OccupancyType.PREY
+					|| grid[y + 1][x].getCellType() == OccupancyType.PREY;
 		}
 	}
 
 	@Override
-	void moveLeft() {
+	void moveDown(final int x, final int y, final int a) {
+		// env.updateGridHunter(x, y);
 		switch (a) {
-		case -360:
-			rotate(90);
-			break;
-		case 0:
-		case 360:
-			rotate(-90);
-			break;
-		case 90:
-		case -270:
-			rotate(180);
-			break;
-		case 180:
-		case -180:
-			rotate(90);
-			break;
-		case 270:
-		case -90:
-			if (canMove(x - 1, y)) {
-				env.updateGridEmpty(x, y);
-				env.updateGridHunter(x - 1, y);
-				travel(350);
-			}
-			env.printGrid(logger);
-			break;
-		default:
-			break;
+			case 0:
+			case 360:
+			case -360:
+				if (canMove(x, y + 1)) {
+					env.updateGridEmpty(x, y);
+					env.updateGridHunter(x, y + 1);
+					travel(350);
+				}
+				break;
+			case 90:
+			case -270:
+				rotate(-90);
+				break;
+			case 180:
+			case -180:
+				rotate(180);
+				break;
+			case 270:
+			case -90:
+				rotate(90);
+				break;
+			default:
+				break;
 		}
 	}
 
 	@Override
-	void moveRight() {
+	void moveLeft(final int x, final int y, final int a) {
+		// env.updateGridHunter(x, y);
 		switch (a) {
-		case 360:
-			rotate(-90);
-			break;
-		case 0:
-		case -360:
-			rotate(90);
-			break;
-		case 90:
-		case -270:
-			if (canMove(x + 1, y)) {
-				env.updateGridEmpty(x, y);
-				env.updateGridHunter(x + 1, y);
-				travel(350);
-			}
-			env.printGrid(logger);
-			break;
-		case 180:
-		case -180:
-			rotate(-90);
-			break;
-		case 270:
-			rotate(-180);
-			break;
-		case -90:
-			rotate(180);
-			break;
-		default:
-			break;
+			case -360:
+				rotate(90);
+				break;
+			case 0:
+			case 360:
+				rotate(-90);
+				break;
+			case 90:
+			case -270:
+				rotate(180);
+				break;
+			case 180:
+			case -180:
+				rotate(90);
+				break;
+			case 270:
+			case -90:
+				if (canMove(x - 1, y)) {
+					env.updateGridEmpty(x, y);
+					env.updateGridHunter(x - 1, y);
+					travel(350);
+				}
+				break;
+			default:
+				break;
 		}
 	}
 
 	@Override
-	void moveUp() {
+	void moveRight(final int x, final int y, final int a) {
+		// env.updateGridHunter(x, y);
 		switch (a) {
-		case 360:
-			rotate(-180);
-			break;
-		case 0:
-		case -360:
-			rotate(180);
-			break;
-		case 90:
-		case -270:
-			rotate(90);
-			break;
-		case 180:
-		case -180:
-			if (canMove(x, y - 1)) {
-				env.updateGridEmpty(x, y);
-				env.updateGridHunter(x, y - 1);
-				travel(350);
-			}
-			env.printGrid(logger);
-			break;
-		case 270:
-		case -90:
-			rotate(-90);
-			break;
-		default:
-			break;
+			case 360:
+				rotate(-90);
+				break;
+			case 0:
+			case -360:
+				rotate(90);
+				break;
+			case 90:
+			case -270:
+				if (canMove(x + 1, y)) {
+					env.updateGridEmpty(x, y);
+					env.updateGridHunter(x + 1, y);
+					travel(350);
+				}
+				break;
+			case 180:
+			case -180:
+				rotate(-90);
+				break;
+			case 270:
+				rotate(-180);
+				break;
+			case -90:
+				rotate(180);
+				break;
+			default:
+				break;
+		}
+	}
+
+	@Override
+	void moveUp(final int x, final int y, final int a) {
+		// env.updateGridHunter(x, y);
+		switch (a) {
+			case 360:
+				rotate(-180);
+				break;
+			case 0:
+			case -360:
+				rotate(180);
+				break;
+			case 90:
+			case -270:
+				rotate(90);
+				break;
+			case 180:
+			case -180:
+				if (canMove(x, y - 1)) {
+					env.updateGridEmpty(x, y);
+					env.updateGridHunter(x, y - 1);
+					travel(350);
+				}
+				break;
+			case 270:
+			case -90:
+				rotate(-90);
+				break;
+			default:
+				break;
 		}
 	}
 
@@ -167,14 +171,16 @@ public class Hunter extends RobotRunner {
 			// train
 			network.train();
 
-			x = getGridPosX();
-			y = getGridPosY();
-			a = getHeading();
+			final int x = getGridPosX();
+			final int y = getGridPosY();
+			final int a = getHeading();
 
 			// check if in a goal state
-			if (isAdjacentToPrey()) {
+			if (isAdjacentToPrey(x, y)) {
+				// if (controller.comparePosOr(x, y)) {
 				// Do nothing while in goal state
 				logger.info("in a goal state");
+				env.updateGridHunter(x, y);
 				pauseRobot();
 			}
 
@@ -185,6 +191,7 @@ public class Hunter extends RobotRunner {
 						pauseLock.wait();
 					} catch (final InterruptedException ex) {
 						ex.printStackTrace();
+						Thread.currentThread().interrupt();
 					}
 				}
 			}
@@ -196,16 +203,16 @@ public class Hunter extends RobotRunner {
 
 			if (currState + 1 == nextState) {
 				// right
-				moveRight();
+				moveRight(x, y, a);
 			} else if (currState - 1 == nextState) {
 				// left
-				moveLeft();
+				moveLeft(x, y, a);
 			} else if (currState + 10 == nextState) {
 				// up
-				moveDown();
+				moveDown(x, y, a);
 			} else if (currState - 10 == nextState) {
 				// down
-				moveUp();
+				moveUp(x, y, a);
 			}
 
 		}

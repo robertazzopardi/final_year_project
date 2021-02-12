@@ -119,7 +119,7 @@ public class QLearning {
 	 * @param j
 	 * @param k
 	 */
-	private void tryMoveDown(int i, int j, int k) {
+	private void tryMoveDown(final int i, final int j, final int k) {
 		final int goDown = i + 1;
 		if (goDown < SimulationEnv.WIDTH) {
 			final int target = goDown * SimulationEnv.WIDTH + j;
@@ -143,7 +143,7 @@ public class QLearning {
 	 * @param j
 	 * @param k
 	 */
-	private void tryMoveUp(int i, int j, int k) {
+	private void tryMoveUp(final int i, final int j, final int k) {
 		final int goUp = i - 1;
 		if (goUp >= 0) {
 			final int target = goUp * SimulationEnv.WIDTH + j;
@@ -167,7 +167,7 @@ public class QLearning {
 	 * @param j
 	 * @param k
 	 */
-	private void tryMoveRight(int i, int j, int k) {
+	private void tryMoveRight(final int i, final int j, final int k) {
 		final int goRight = j + 1;
 		if (goRight < SimulationEnv.WIDTH) {
 			final int target = i * SimulationEnv.WIDTH + goRight;
@@ -191,7 +191,7 @@ public class QLearning {
 	 * @param j
 	 * @param k
 	 */
-	private void tryMoveLeft(int i, int j, int k) {
+	private void tryMoveLeft(final int i, final int j, final int k) {
 		final int goLeft = j - 1;
 		if (goLeft >= 0) {
 			final int target = i * SimulationEnv.WIDTH + goLeft;
@@ -250,39 +250,40 @@ public class QLearning {
 		return result.stream().mapToInt(i -> i).toArray();
 	}
 
-//	public void printPolicy() {
-//		System.out.println("\nPrint policy");
-//		for (int i = 0; i < STATESCOUNT; i++) {
-//			System.out.println("From state " + i + " goto state " + getPolicyFromState(i));
-//		}
-//	}
-//
-//	public void printQ() {
-//		System.out.println("Q matrix");
-//		for (int i = 0; i < Q.length; i++) {
-//			System.out.print("From state " + i + ":  ");
-//			for (int j = 0; j < Q[i].length; j++) {
-//				System.out.printf("%6.2f ", (Q[i][j]));
-//			}
-//			System.out.println();
-//		}
-//	}
-//
-//	// Used for debug
-//	public void printR(final int[][] matrix) {
-//		System.out.printf("%25s", "States: ");
-//		for (int i = 0; i <= 8; i++) {
-//			System.out.printf("%4s", i);
-//		}
-//		System.out.println();
-//		for (int i = 0; i < STATESCOUNT; i++) {
-//			System.out.print("Possible states from " + i + " :[");
-//			for (int j = 0; j < STATESCOUNT; j++) {
-//				System.out.printf("%4s", matrix[i][j]);
-//			}
-//			System.out.println("]");
-//		}
-//	}
+	// public void printPolicy() {
+	// System.out.println("\nPrint policy");
+	// for (int i = 0; i < STATESCOUNT; i++) {
+	// System.out.println("From state " + i + " goto state " +
+	// getPolicyFromState(i));
+	// }
+	// }
+	//
+	// public void printQ() {
+	// System.out.println("Q matrix");
+	// for (int i = 0; i < Q.length; i++) {
+	// System.out.print("From state " + i + ": ");
+	// for (int j = 0; j < Q[i].length; j++) {
+	// System.out.printf("%6.2f ", (Q[i][j]));
+	// }
+	// System.out.println();
+	// }
+	// }
+	//
+	// // Used for debug
+	// public void printR(final int[][] matrix) {
+	// System.out.printf("%25s", "States: ");
+	// for (int i = 0; i <= 8; i++) {
+	// System.out.printf("%4s", i);
+	// }
+	// System.out.println();
+	// for (int i = 0; i < STATESCOUNT; i++) {
+	// System.out.print("Possible states from " + i + " :[");
+	// for (int j = 0; j < STATESCOUNT; j++) {
+	// System.out.printf("%4s", matrix[i][j]);
+	// }
+	// System.out.println("]");
+	// }
+	// }
 
 	public void train() {
 		init();

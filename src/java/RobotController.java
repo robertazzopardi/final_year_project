@@ -3,9 +3,12 @@ import java.util.logging.Logger;
 import comp329robosim.SimulatedRobot;
 
 public class RobotController {
+
 	private final SimulationEnv env;
 
 	private Hunter[] hunters;
+
+	private final PrintGridThread printGridThread;
 
 	private final Logger logger = Logger.getLogger("final_year_project." + RobotController.class.getName());
 
@@ -14,9 +17,13 @@ public class RobotController {
 	public RobotController(final SimulationEnv env) {
 		this.env = env;
 
+		this.printGridThread = new PrintGridThread(env);
+
 		initRobots();
 
 		startRobots();
+
+		printGridThread.start();
 	}
 
 	private void initRobots() {
@@ -43,9 +50,13 @@ public class RobotController {
 
 	private void startRobots() {
 		prey.start();
-		for (int i = 0; i < hunters.length; i++) {
-			hunters[i].start();
+		for (Hunter hunter : hunters) {
+			hunter.start();
 		}
+	}
+
+	public PrintGridThread getPrintGridThread() {
+		return printGridThread;
 	}
 
 }
