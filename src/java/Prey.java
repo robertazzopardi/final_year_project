@@ -1,4 +1,4 @@
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Logger;
 
 import comp329robosim.OccupancyType;
@@ -19,19 +19,19 @@ public class Prey extends RobotRunner {
 
 	private static final int[] NO_UP = new int[] { 1, 2, 3 };
 
-	private static final Random RANDOM = new Random();
-
-	public static int getRandomDirection(final int[] array) {
-		final int rnd = RANDOM.nextInt(array.length);
+	private int getRandomDirection(final int[] array) {
+		final int rnd = ThreadLocalRandom.current().nextInt(0, array.length);
 		return array[rnd];
 	}
 
-	int randomMove = getRandomDirection(ALL);
+	int randomMove;
 
 	public Prey(final SimulatedRobot r, final int d, final SimulationEnv env, final RobotController controller) {
 		super(r, d, env, controller);
 
 		logger = Logger.getLogger("final_year_project." + Prey.class.getName());
+
+		randomMove = getRandomDirection(ALL);
 
 		setPositionNew(getGridPosX(), getGridPosY());
 
@@ -170,10 +170,18 @@ public class Prey extends RobotRunner {
 				logger.info("trapped");
 				controller.getPrintGridThread().stopThread();
 
-				stopRobot();
-				controller.stopHunters();
+				controller.stopRobots();
 
-				controller.setSimulatedRobots(env);
+				// Done with current epoch, now we can restart the simulation
+
+				try {
+					Thread.sleep(2000);
+				} catch (final InterruptedException e) {
+					Thread.currentThread().interrupt();
+				}
+
+				controller.restartRobots();
+
 			}
 
 			// Handle movement

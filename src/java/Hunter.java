@@ -9,6 +9,16 @@ import comp329robosim.SimulatedRobot;
  */
 public class Hunter extends RobotRunner {
 
+	private static int hunterCount = 1;
+
+	public static int getHunterCount() {
+		return hunterCount;
+	}
+
+	private static synchronized void resetHunterCount() {
+		hunterCount = 1;
+	}
+
 	private final QLearning learning;
 
 	private final int number;
@@ -18,16 +28,15 @@ public class Hunter extends RobotRunner {
 	private final Object pauseLock = new Object();
 
 	public Hunter(final SimulatedRobot r, final int d, final SimulationEnv env, final RobotController controller,
-			final int number, final QLearning learning) {
+			final QLearning learning) {
 		super(r, d, env, controller);
 
-		this.number = number;
+		this.number = hunterCount++;
 
 		this.logger = Logger.getLogger("final_year_project.Hunter " + number);
 
 		env.updateGridHunter(getGridPosX(), getGridPosY());
 
-		// this.learning = new QLearning(grid);
 		this.learning = learning;
 
 	}
@@ -35,6 +44,10 @@ public class Hunter extends RobotRunner {
 	@Override
 	boolean canMove(final int x, final int y) {
 		return grid[y][x].getCellType() != OccupancyType.OBSTACLE;
+	}
+
+	public QLearning getLearning() {
+		return learning;
 	}
 
 	private boolean isAdjacentToPrey(final int x, final int y) {
@@ -240,6 +253,7 @@ public class Hunter extends RobotRunner {
 	public void stopRobot() {
 		super.stopRobot();
 		resumeRobot();
+		resetHunterCount();
 	}
 
 }
