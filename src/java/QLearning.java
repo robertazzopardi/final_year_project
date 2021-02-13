@@ -10,13 +10,13 @@ import comp329robosim.OccupancyType;
  */
 public class QLearning {
 	private static final double ALPHA = 0.1; // Learning rate
+	private static final int EPOCH = 1000;
+
 	private static final double GAMMA = 0.9; // Eagerness - 0 looks in the near future, 1 looks in the distant future
 
 	private static final int PENALTY = -100;
 
 	private static final Random rand = new Random();
-
-	private static final int EPOCH = 1000;
 
 	private static final int REWARD = 100;
 	private static final int STATESCOUNT = SimulationEnv.WIDTH * SimulationEnv.HEIGHT;
@@ -114,102 +114,6 @@ public class QLearning {
 		// printR(R);
 	}
 
-	/**
-	 * @param i
-	 * @param j
-	 * @param k
-	 */
-	private void tryMoveDown(final int i, final int j, final int k) {
-		final int goDown = i + 1;
-		if (goDown < SimulationEnv.WIDTH) {
-			final int target = goDown * SimulationEnv.WIDTH + j;
-
-			switch (maze[goDown][j].getCellType()) {
-			case EMPTY:
-				R[k][target] = 0;
-				break;
-			case GOAL:
-				R[k][target] = REWARD;
-				break;
-			default:
-				R[k][target] = PENALTY;
-				break;
-			}
-		}
-	}
-
-	/**
-	 * @param i
-	 * @param j
-	 * @param k
-	 */
-	private void tryMoveUp(final int i, final int j, final int k) {
-		final int goUp = i - 1;
-		if (goUp >= 0) {
-			final int target = goUp * SimulationEnv.WIDTH + j;
-
-			switch (maze[goUp][j].getCellType()) {
-			case EMPTY:
-				R[k][target] = 0;
-				break;
-			case GOAL:
-				R[k][target] = REWARD;
-				break;
-			default:
-				R[k][target] = PENALTY;
-				break;
-			}
-		}
-	}
-
-	/**
-	 * @param i
-	 * @param j
-	 * @param k
-	 */
-	private void tryMoveRight(final int i, final int j, final int k) {
-		final int goRight = j + 1;
-		if (goRight < SimulationEnv.WIDTH) {
-			final int target = i * SimulationEnv.WIDTH + goRight;
-
-			switch (maze[i][goRight].getCellType()) {
-			case EMPTY:
-				R[k][target] = 0;
-				break;
-			case GOAL:
-				R[k][target] = REWARD;
-				break;
-			default:
-				R[k][target] = PENALTY;
-				break;
-			}
-		}
-	}
-
-	/**
-	 * @param i
-	 * @param j
-	 * @param k
-	 */
-	private void tryMoveLeft(final int i, final int j, final int k) {
-		final int goLeft = j - 1;
-		if (goLeft >= 0) {
-			final int target = i * SimulationEnv.WIDTH + goLeft;
-
-			switch (maze[i][goLeft].getCellType()) {
-			case EMPTY:
-				R[k][target] = 0;
-				break;
-			case GOAL:
-				R[k][target] = REWARD;
-				break;
-			default:
-				R[k][target] = PENALTY;
-				break;
-			}
-		}
-	}
-
 	// Set Q values to R values
 	private void initializeQ() {
 		for (int i = 0; i < STATESCOUNT; i++) {
@@ -250,6 +154,83 @@ public class QLearning {
 		return result.stream().mapToInt(i -> i).toArray();
 	}
 
+	public void train() {
+		init();
+		calculateQ();
+	}
+
+	/**
+	 * @param i
+	 * @param j
+	 * @param k
+	 */
+	private void tryMoveDown(final int i, final int j, final int k) {
+		final int goDown = i + 1;
+		if (goDown < SimulationEnv.WIDTH) {
+			final int target = goDown * SimulationEnv.WIDTH + j;
+
+			switch (maze[goDown][j].getCellType()) {
+			case EMPTY:
+				R[k][target] = 0;
+				break;
+			case GOAL:
+				R[k][target] = REWARD;
+				break;
+			default:
+				R[k][target] = PENALTY;
+				break;
+			}
+		}
+	}
+
+	/**
+	 * @param i
+	 * @param j
+	 * @param k
+	 */
+	private void tryMoveLeft(final int i, final int j, final int k) {
+		final int goLeft = j - 1;
+		if (goLeft >= 0) {
+			final int target = i * SimulationEnv.WIDTH + goLeft;
+
+			switch (maze[i][goLeft].getCellType()) {
+			case EMPTY:
+				R[k][target] = 0;
+				break;
+			case GOAL:
+				R[k][target] = REWARD;
+				break;
+			default:
+				R[k][target] = PENALTY;
+				break;
+			}
+		}
+	}
+
+	/**
+	 * @param i
+	 * @param j
+	 * @param k
+	 */
+	private void tryMoveRight(final int i, final int j, final int k) {
+		final int goRight = j + 1;
+		if (goRight < SimulationEnv.WIDTH) {
+			final int target = i * SimulationEnv.WIDTH + goRight;
+
+			switch (maze[i][goRight].getCellType()) {
+			case EMPTY:
+				R[k][target] = 0;
+				break;
+			case GOAL:
+				R[k][target] = REWARD;
+				break;
+			default:
+				R[k][target] = PENALTY;
+				break;
+			}
+		}
+	}
+
 	// public void printPolicy() {
 	// System.out.println("\nPrint policy");
 	// for (int i = 0; i < STATESCOUNT; i++) {
@@ -285,9 +266,28 @@ public class QLearning {
 	// }
 	// }
 
-	public void train() {
-		init();
-		calculateQ();
+	/**
+	 * @param i
+	 * @param j
+	 * @param k
+	 */
+	private void tryMoveUp(final int i, final int j, final int k) {
+		final int goUp = i - 1;
+		if (goUp >= 0) {
+			final int target = goUp * SimulationEnv.WIDTH + j;
+
+			switch (maze[goUp][j].getCellType()) {
+			case EMPTY:
+				R[k][target] = 0;
+				break;
+			case GOAL:
+				R[k][target] = REWARD;
+				break;
+			default:
+				R[k][target] = PENALTY;
+				break;
+			}
+		}
 	}
 
 }

@@ -14,13 +14,11 @@ public abstract class RobotRunner extends RobotMonitor {
 
 	final SimulationEnv env;
 
+	volatile boolean exit = false;
+
 	final MyGridCell[][] grid;
 
 	Logger logger;
-
-	boolean paused = false;
-
-	final Object pauseLock = new Object();
 
 	RobotRunner(final SimulatedRobot r, final int d, final SimulationEnv env, final RobotController controller) {
 		super(r, d);
@@ -60,10 +58,6 @@ public abstract class RobotRunner extends RobotMonitor {
 		return (int) ((((double) getY() / 350) * 2) - 1) / 2;
 	}
 
-	public final boolean isPaused() {
-		return paused;
-	}
-
 	/**
 	 * handle moving down a row
 	 */
@@ -84,14 +78,8 @@ public abstract class RobotRunner extends RobotMonitor {
 	 */
 	abstract void moveUp(int x, int y, int a);
 
-	final void pauseRobot() {
-		paused = true;
+	public void stopRobot() {
+		exit = true;
 	}
 
-	final void resumeRobot() {
-		synchronized (pauseLock) {
-			paused = false;
-			pauseLock.notifyAll();
-		}
-	}
 }

@@ -151,21 +151,9 @@ public class Prey extends RobotRunner {
 		}
 	}
 
-	private void travelAction(final int x, final int y, final int dx, final int dy) {
-		if (canMove(dx, dy)) {
-			setPositionOld(x, y);
-			setPositionNew(dx, dy);
-
-			travel(350);
-			randomMove = getRandomDirection(ALL);
-			controller.resumeHunters();
-		}
-	}
-
 	@Override
 	public void run() {
-		while (true) {
-
+		while (!exit) {
 			// update current position
 			final int x = getGridPosX();
 			final int y = getGridPosY();
@@ -181,19 +169,11 @@ public class Prey extends RobotRunner {
 				// Do nothing while in goal state
 				logger.info("trapped");
 				controller.getPrintGridThread().stopThread();
-				pauseRobot();
-			}
 
-			// check if paused
-			synchronized (pauseLock) {
-				if (paused) {
-					try {
-						pauseLock.wait();
-					} catch (final InterruptedException ex) {
-						ex.printStackTrace();
-						Thread.currentThread().interrupt();
-					}
-				}
+				stopRobot();
+				controller.stopHunters();
+
+				controller.setSimulatedRobots(env);
 			}
 
 			// Handle movement
@@ -234,6 +214,7 @@ public class Prey extends RobotRunner {
 					break;
 			}
 		}
+		logger.info("Prey Stopped");
 	}
 
 	private void setPositionNew(final int x, final int y) {
@@ -277,6 +258,18 @@ public class Prey extends RobotRunner {
 		if (grid[y - 1][x].getCellType() != OccupancyType.OBSTACLE
 				&& grid[y - 1][x].getCellType() != OccupancyType.HUNTER) {
 			env.updateGridEmpty(x, y - 1);
+		}
+	}
+
+	private void travelAction(final int x, final int y, final int dx, final int dy) {
+		if (canMove(dx, dy)) {
+			controller.resumeHunters();
+
+			setPositionOld(x, y);
+			setPositionNew(dx, dy);
+
+			travel(350);
+			randomMove = getRandomDirection(ALL);
 		}
 	}
 

@@ -9,17 +9,26 @@ import comp329robosim.SimulatedRobot;
  */
 public class Hunter extends RobotRunner {
 
-	private final QLearning network;
+	private final QLearning learning;
 
-	public Hunter(final SimulatedRobot r, final int d, final SimulationEnv env, final RobotController controller) {
+	private final int number;
+
+	private boolean paused = false;
+
+	private final Object pauseLock = new Object();
+
+	public Hunter(final SimulatedRobot r, final int d, final SimulationEnv env, final RobotController controller,
+			final int number, final QLearning learning) {
 		super(r, d, env, controller);
 
-		this.logger = Logger.getLogger("final_year_project." + getName().replace("Thread", "Hunter"));
+		this.number = number;
 
-		// env.updateEnv(getGridPosX(), getGridPosY(), OccupancyType.HUNTER);
+		this.logger = Logger.getLogger("final_year_project.Hunter " + number);
+
 		env.updateGridHunter(getGridPosX(), getGridPosY());
 
-		this.network = new QLearning(grid);
+		// this.learning = new QLearning(grid);
+		this.learning = learning;
 
 	}
 
@@ -29,17 +38,17 @@ public class Hunter extends RobotRunner {
 	}
 
 	private boolean isAdjacentToPrey(final int x, final int y) {
-		synchronized (grid) {
-			return grid[y][x - 1].getCellType() == OccupancyType.PREY
-					|| grid[y][x + 1].getCellType() == OccupancyType.PREY
-					|| grid[y - 1][x].getCellType() == OccupancyType.PREY
-					|| grid[y + 1][x].getCellType() == OccupancyType.PREY;
-		}
+		return grid[y][x - 1].getCellType() == OccupancyType.PREY || grid[y][x + 1].getCellType() == OccupancyType.PREY
+				|| grid[y - 1][x].getCellType() == OccupancyType.PREY
+				|| grid[y + 1][x].getCellType() == OccupancyType.PREY;
+	}
+
+	public boolean isPaused() {
+		return paused;
 	}
 
 	@Override
 	void moveDown(final int x, final int y, final int a) {
-		// env.updateGridHunter(x, y);
 		switch (a) {
 			case 0:
 			case 360:
@@ -69,7 +78,6 @@ public class Hunter extends RobotRunner {
 
 	@Override
 	void moveLeft(final int x, final int y, final int a) {
-		// env.updateGridHunter(x, y);
 		switch (a) {
 			case -360:
 				rotate(90);
@@ -101,7 +109,6 @@ public class Hunter extends RobotRunner {
 
 	@Override
 	void moveRight(final int x, final int y, final int a) {
-		// env.updateGridHunter(x, y);
 		switch (a) {
 			case 360:
 				rotate(-90);
@@ -135,7 +142,6 @@ public class Hunter extends RobotRunner {
 
 	@Override
 	void moveUp(final int x, final int y, final int a) {
-		// env.updateGridHunter(x, y);
 		switch (a) {
 			case 360:
 				rotate(-180);
@@ -165,11 +171,22 @@ public class Hunter extends RobotRunner {
 		}
 	}
 
+	private void pauseRobot() {
+		paused = true;
+	}
+
+	public void resumeRobot() {
+		synchronized (pauseLock) {
+			paused = false;
+			pauseLock.notifyAll();
+		}
+	}
+
 	@Override
 	public void run() {
-		while (true) {
+		while (!exit) {
 			// train
-			network.train();
+			learning.train();
 
 			final int x = getGridPosX();
 			final int y = getGridPosY();
@@ -177,7 +194,6 @@ public class Hunter extends RobotRunner {
 
 			// check if in a goal state
 			if (isAdjacentToPrey(x, y)) {
-				// if (controller.comparePosOr(x, y)) {
 				// Do nothing while in goal state
 				logger.info("in a goal state");
 				env.updateGridHunter(x, y);
@@ -199,7 +215,7 @@ public class Hunter extends RobotRunner {
 			// compare the current state to the next state produced from qlearning
 			final int currState = getCurentState(x, y);
 
-			final int nextState = network.getPolicyFromState(currState);
+			final int nextState = learning.getPolicyFromState(currState);
 
 			if (currState + 1 == nextState) {
 				// right
@@ -214,9 +230,16 @@ public class Hunter extends RobotRunner {
 				// down
 				moveUp(x, y, a);
 			}
-
 		}
 
+		final String endLog = "Hunter " + number + " Stopped";
+		logger.info(endLog);
+	}
+
+	@Override
+	public void stopRobot() {
+		super.stopRobot();
+		resumeRobot();
 	}
 
 }

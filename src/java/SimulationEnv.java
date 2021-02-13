@@ -53,7 +53,6 @@ public class SimulationEnv extends Environment {
 		grid = controller.getGrid();
 
 		new RobotController(this);
-
 	}
 
 	public void printGrid(final Logger inLogger) {
@@ -70,6 +69,12 @@ public class SimulationEnv extends Environment {
 		}
 	}
 
+	public void updateGridGoal(final int x, final int y) {
+		synchronized (grid[y][x]) {
+			grid[y][x].setCellType(OccupancyType.GOAL);
+		}
+	}
+
 	public void updateGridHunter(final int x, final int y) {
 		synchronized (grid[y][x]) {
 			grid[y][x].setCellType(OccupancyType.HUNTER);
@@ -79,12 +84,6 @@ public class SimulationEnv extends Environment {
 	public void updateGridPrey(final int x, final int y) {
 		synchronized (grid[y][x]) {
 			grid[y][x].setCellType(OccupancyType.PREY);
-		}
-	}
-
-	public void updateGridGoal(final int x, final int y) {
-		synchronized (grid[y][x]) {
-			grid[y][x].setCellType(OccupancyType.GOAL);
 		}
 	}
 

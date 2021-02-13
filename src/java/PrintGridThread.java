@@ -1,4 +1,3 @@
-
 class PrintGridThread extends Thread {
 
     private final SimulationEnv env;
@@ -12,7 +11,6 @@ class PrintGridThread extends Thread {
     @Override
     public void run() {
         while (running) {
-
             env.printGrid(env.logger);
 
             try {
