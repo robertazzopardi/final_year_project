@@ -85,7 +85,7 @@ Temporary Items
 .vscode
 lib/comp329robosim
 lib/META-INF
-lib/jar.txt
+lib/buildRoboSim.sh
 
 target/
 pom.xml.tag

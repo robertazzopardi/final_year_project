@@ -12,7 +12,7 @@ import simulation.SimulationEnv;
  * @author rob
  *
  */
-public class QLearning {
+final class QLearning extends Intelligence {
 	private static final double ALPHA = 0.1; // Learning rate
 	private static final int EPOCH = 1000;
 
@@ -64,7 +64,24 @@ public class QLearning {
 		}
 	}
 
-	public int getPolicyFromState(final int state) {
+	// public int getPolicyFromState(final int state) {
+	// final int[] actionsFromState = possibleActionsFromState(state);
+	// double maxValue = Double.MIN_VALUE;
+	// int policyGotoState = state;
+
+	// // Pick to move to the state that has the maximum Q value
+	// for (final int nextState : actionsFromState) {
+	// final double value = Q[state][nextState];
+	// if (value > maxValue) {
+	// maxValue = value;
+	// policyGotoState = nextState;
+	// }
+	// }
+	// return policyGotoState;
+	// }
+
+	@Override
+	public int predict(final int state) {
 		final int[] actionsFromState = possibleActionsFromState(state);
 		double maxValue = Double.MIN_VALUE;
 		int policyGotoState = state;
@@ -78,6 +95,7 @@ public class QLearning {
 			}
 		}
 		return policyGotoState;
+
 	}
 
 	private void init() {
@@ -158,6 +176,7 @@ public class QLearning {
 		return result.stream().mapToInt(i -> i).toArray();
 	}
 
+	@Override
 	public void train() {
 		init();
 		calculateQ();

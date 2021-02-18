@@ -3,27 +3,30 @@ package robots;
 import java.util.logging.Logger;
 
 import comp329robosim.SimulatedRobot;
-import intelligence.QLearning;
+import intelligence.Intelligence;
+import intelligence.NoAIException;
 import simulation.SimulationEnv;
 
 public class RobotController {
 
 	private final Hunter[] hunters = new Hunter[4];
 
-	private static final Logger logger = Logger.getLogger("final_year_project." + RobotController.class.getName());
+	private static final Logger logger = Logger.getLogger(RobotController.class.getName());
 
 	private Prey prey;
 
 	private final SimulationEnv env;
 
-	public RobotController(final SimulationEnv env) {
+	private final String learningMethod;
 
+	public RobotController(final SimulationEnv env, final String learningMethod) {
 		this.env = env;
+
+		this.learningMethod = learningMethod;
 
 		initRobots();
 
 		startRobots();
-
 	}
 
 	private void initRobots() {
@@ -33,7 +36,14 @@ public class RobotController {
 
 		for (int i = 0; i < hunters.length; i++) {
 			final SimulatedRobot simulatedRobot = env.getAndSetHunter(i);
-			hunters[i] = new Hunter(simulatedRobot, 1000, env, this, new QLearning(env.getGrid()));
+			// hunters[i] = new Hunter(simulatedRobot, 1000, env, this, new
+			// QLearning(env.getGrid()));
+			try {
+				hunters[i] = new Hunter(simulatedRobot, 1000, env, this,
+						Intelligence.getIntelligence(this.learningMethod, env));
+			} catch (NoAIException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 

@@ -32,7 +32,7 @@ final class Prey extends RobotRunner {
 	public Prey(final SimulatedRobot r, final int d, final SimulationEnv env, final RobotController controller) {
 		super(r, d, env, controller);
 
-		logger = Logger.getLogger("final_year_project." + Prey.class.getName());
+		logger = Logger.getLogger(Prey.class.getName());
 
 		randomMove = getRandomDirection(ALL);
 

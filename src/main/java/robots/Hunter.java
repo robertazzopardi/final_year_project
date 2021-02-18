@@ -4,7 +4,7 @@ import java.util.logging.Logger;
 
 import comp329robosim.OccupancyType;
 import comp329robosim.SimulatedRobot;
-import intelligence.QLearning;
+import intelligence.Intelligence;
 import simulation.SimulationEnv;
 
 /**
@@ -23,7 +23,7 @@ final class Hunter extends RobotRunner {
 		hunterCount = 1;
 	}
 
-	private final QLearning learning;
+	private final Intelligence learning;
 
 	private final int number;
 
@@ -32,12 +32,12 @@ final class Hunter extends RobotRunner {
 	private final Object pauseLock = new Object();
 
 	public Hunter(final SimulatedRobot r, final int d, final SimulationEnv env, final RobotController controller,
-			final QLearning learning) {
+			final Intelligence learning) {
 		super(r, d, env, controller);
 
 		this.number = hunterCount++;
 
-		this.logger = Logger.getLogger("final_year_project.Hunter " + number);
+		this.logger = Logger.getLogger("Hunter " + number);
 
 		env.updateGridHunter(getGridPosX(), getGridPosY());
 
@@ -50,7 +50,7 @@ final class Hunter extends RobotRunner {
 		return grid[y][x].getCellType() != OccupancyType.OBSTACLE;
 	}
 
-	public QLearning getLearning() {
+	public Intelligence getLearning() {
 		return learning;
 	}
 
@@ -232,7 +232,8 @@ final class Hunter extends RobotRunner {
 			// compare the current state to the next state produced from qlearning
 			final int currState = getCurentState(x, y);
 
-			final int nextState = learning.getPolicyFromState(currState);
+			// final int nextState = learning.getPolicyFromState(currState);
+			final int nextState = learning.predict(currState);
 
 			if (currState + 1 == nextState) {
 				// right

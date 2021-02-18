@@ -7,19 +7,15 @@
     <properties>
         <dl4j-master.version>1.0.0-beta7</dl4j-master.version>
         <logback.version>1.2.3</logback.version>
-        <java.version>1.8</java.version>
         <maven-shade-plugin.version>2.4.3</maven-shade-plugin.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
     <dependencies>
-
         <dependency>
-            <groupId>robosim</groupId>
-            <artifactId>robosim</artifactId>
-            <scope>system</scope>
+            <groupId>comp329robosim</groupId>
+            <artifactId>comp329robosim</artifactId>
             <version>1.0</version>
-            <systemPath>${basedir}/lib/comp329robosim.jar</systemPath>
         </dependency>
 
         <dependency>
@@ -43,8 +39,8 @@
     </dependencies>
 
     <build>
-        <!-- <sourceDirectory>src/main/java</sourceDirectory> -->
         <plugins>
+
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.8.1</version>
@@ -54,16 +50,6 @@
                 </configuration>
             </plugin>
 
-
-            <!--
-            Maven shade plugin configuration: this is required so that if you build a single JAR file (an "uber-jar")
-            it will contain all the required native libraries, and the backends will work correctly.
-            Used for example when running the following commants
-
-            mvn package
-            cd target
-            java -cp deeplearning4j-examples-1.0.0-beta-bin.jar org.deeplearning4j.LenetMnistExample
-            -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
