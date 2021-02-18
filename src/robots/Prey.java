@@ -1,8 +1,11 @@
+package robots;
+
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Logger;
 
 import comp329robosim.OccupancyType;
 import comp329robosim.SimulatedRobot;
+import simulation.SimulationEnv;
 
 /**
  * @author rob
@@ -168,7 +171,7 @@ public class Prey extends RobotRunner {
 			if (!right && !left && !up && !down) {
 				// Do nothing while in goal state
 				logger.info("trapped");
-				controller.getPrintGridThread().stopThread();
+				// controller.getPrintGridThread().stopThread();
 
 				controller.stopRobots();
 
@@ -184,45 +187,50 @@ public class Prey extends RobotRunner {
 
 			}
 
-			// Handle movement
-			switch (randomMove) {
-				case 1:
-					// right
-					if (right) {
-						moveRight(x, y, a);
-					} else {
-						randomMove = getRandomDirection(NO_RIGHT);
-					}
-					break;
-				case 2:
-					// down
-					if (down) {
-						moveDown(x, y, a);
-					} else {
-						randomMove = getRandomDirection(NO_DOWN);
-					}
-					break;
-				case 3:
-					// left
-					if (left) {
-						moveLeft(x, y, a);
-					} else {
-						randomMove = getRandomDirection(NO_LEFT);
-					}
-					break;
-				case 4:
-					// up
-					if (up) {
-						moveUp(x, y, a);
-					} else {
-						randomMove = getRandomDirection(NO_UP);
-					}
-					break;
-				default:
-					break;
-			}
+			doAction(x, y, a, right, down, left, up);
 		}
 		logger.info("Prey Stopped");
+	}
+
+	private void doAction(final int x, final int y, final int a, final boolean right, final boolean down,
+			final boolean left, final boolean up) {
+		// Handle movement
+		switch (randomMove) {
+			case 1:
+				// right
+				if (right) {
+					moveRight(x, y, a);
+				} else {
+					randomMove = getRandomDirection(NO_RIGHT);
+				}
+				break;
+			case 2:
+				// down
+				if (down) {
+					moveDown(x, y, a);
+				} else {
+					randomMove = getRandomDirection(NO_DOWN);
+				}
+				break;
+			case 3:
+				// left
+				if (left) {
+					moveLeft(x, y, a);
+				} else {
+					randomMove = getRandomDirection(NO_LEFT);
+				}
+				break;
+			case 4:
+				// up
+				if (up) {
+					moveUp(x, y, a);
+				} else {
+					randomMove = getRandomDirection(NO_UP);
+				}
+				break;
+			default:
+				break;
+		}
 	}
 
 	private void setPositionNew(final int x, final int y) {

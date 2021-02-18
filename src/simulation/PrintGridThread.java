@@ -1,4 +1,9 @@
-class PrintGridThread extends Thread {
+package simulation;
+
+import java.util.logging.Logger;
+
+public class PrintGridThread extends Thread {
+    private static final Logger LOGGER = Logger.getLogger(PrintGridThread.class.getName());
 
     private final SimulationEnv env;
 
@@ -11,7 +16,7 @@ class PrintGridThread extends Thread {
     @Override
     public void run() {
         while (running) {
-            env.printGrid(env.logger);
+            env.printGrid(LOGGER);
 
             try {
                 Thread.sleep(2000);

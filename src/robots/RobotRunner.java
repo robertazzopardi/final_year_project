@@ -1,8 +1,11 @@
+package robots;
+
 import java.util.logging.Logger;
 
 import comp329robosim.MyGridCell;
 import comp329robosim.RobotMonitor;
 import comp329robosim.SimulatedRobot;
+import simulation.SimulationEnv;
 
 /**
  * @author rob

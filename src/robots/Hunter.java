@@ -1,7 +1,11 @@
+package robots;
+
 import java.util.logging.Logger;
 
 import comp329robosim.OccupancyType;
 import comp329robosim.SimulatedRobot;
+import intelligence.QLearning;
+import simulation.SimulationEnv;
 
 /**
  * @author rob
@@ -12,7 +16,7 @@ public class Hunter extends RobotRunner {
 	private static int hunterCount = 1;
 
 	public static int getHunterCount() {
-		return hunterCount;
+		return hunterCount - 1;
 	}
 
 	private static synchronized void resetHunterCount() {

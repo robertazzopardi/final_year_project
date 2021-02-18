@@ -1,8 +1,12 @@
+package intelligence;
+
 import java.util.ArrayList;
 import java.util.Random;
 
 import comp329robosim.MyGridCell;
 import comp329robosim.OccupancyType;
+
+import simulation.SimulationEnv;
 
 /**
  * @author rob
@@ -170,15 +174,15 @@ public class QLearning {
 			final int target = goDown * SimulationEnv.WIDTH + j;
 
 			switch (maze[goDown][j].getCellType()) {
-			case EMPTY:
-				R[k][target] = 0;
-				break;
-			case GOAL:
-				R[k][target] = REWARD;
-				break;
-			default:
-				R[k][target] = PENALTY;
-				break;
+				case EMPTY:
+					R[k][target] = 0;
+					break;
+				case GOAL:
+					R[k][target] = REWARD;
+					break;
+				default:
+					R[k][target] = PENALTY;
+					break;
 			}
 		}
 	}
@@ -194,15 +198,15 @@ public class QLearning {
 			final int target = i * SimulationEnv.WIDTH + goLeft;
 
 			switch (maze[i][goLeft].getCellType()) {
-			case EMPTY:
-				R[k][target] = 0;
-				break;
-			case GOAL:
-				R[k][target] = REWARD;
-				break;
-			default:
-				R[k][target] = PENALTY;
-				break;
+				case EMPTY:
+					R[k][target] = 0;
+					break;
+				case GOAL:
+					R[k][target] = REWARD;
+					break;
+				default:
+					R[k][target] = PENALTY;
+					break;
 			}
 		}
 	}
@@ -218,15 +222,15 @@ public class QLearning {
 			final int target = i * SimulationEnv.WIDTH + goRight;
 
 			switch (maze[i][goRight].getCellType()) {
-			case EMPTY:
-				R[k][target] = 0;
-				break;
-			case GOAL:
-				R[k][target] = REWARD;
-				break;
-			default:
-				R[k][target] = PENALTY;
-				break;
+				case EMPTY:
+					R[k][target] = 0;
+					break;
+				case GOAL:
+					R[k][target] = REWARD;
+					break;
+				default:
+					R[k][target] = PENALTY;
+					break;
 			}
 		}
 	}
@@ -277,15 +281,15 @@ public class QLearning {
 			final int target = goUp * SimulationEnv.WIDTH + j;
 
 			switch (maze[goUp][j].getCellType()) {
-			case EMPTY:
-				R[k][target] = 0;
-				break;
-			case GOAL:
-				R[k][target] = REWARD;
-				break;
-			default:
-				R[k][target] = PENALTY;
-				break;
+				case EMPTY:
+					R[k][target] = 0;
+					break;
+				case GOAL:
+					R[k][target] = REWARD;
+					break;
+				default:
+					R[k][target] = PENALTY;
+					break;
 			}
 		}
 	}
