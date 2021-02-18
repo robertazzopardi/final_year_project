@@ -6,26 +6,29 @@ import java.util.logging.Logger;
 import comp329robosim.EnvController;
 import comp329robosim.MyGridCell;
 import comp329robosim.OccupancyType;
+import intelligence.DeepQLearning;
 import robots.RobotController;
 
 public class SimulationEnv extends EnvController {
-    public static final String CONFIG_FILE = "/Users/rob/_CODE/Java/honoursYearProject/defaultConfig.txt";
+    public static final String CONFIG_FILE = "./resources/defaultConfig.txt";
 
     public static final int HEIGHT = 10;
 
     public static final int WIDTH = 10;
 
-    private MyGridCell[][] grid;
+    private final MyGridCell[][] grid;
 
-    public SimulationEnv(String confFileName, int cols, int rows) {
+    public SimulationEnv(final String confFileName, final int cols, final int rows) {
         super(confFileName, cols, rows);
 
         grid = getGrid();
 
         new RobotController(this);
+
+        new DeepQLearning();
     }
 
-    public static void main(String[] args) {
+    public static void main(final String[] args) {
         new SimulationEnv(CONFIG_FILE, WIDTH, HEIGHT);
     }
 

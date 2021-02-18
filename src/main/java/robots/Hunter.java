@@ -11,7 +11,7 @@ import simulation.SimulationEnv;
  * @author rob
  *
  */
-public class Hunter extends RobotRunner {
+final class Hunter extends RobotRunner {
 
 	private static int hunterCount = 1;
 

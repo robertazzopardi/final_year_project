@@ -1,5 +1,13 @@
 package intelligence;
 
+import org.deeplearning4j.nn.api.OptimizationAlgorithm;
+import org.deeplearning4j.nn.conf.BackpropType;
+import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
+import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
+import org.deeplearning4j.nn.weights.WeightInit;
+import org.nd4j.linalg.activations.Activation;
+import org.nd4j.linalg.learning.config.Sgd;
+
 //import org.apache.commons.io.FilenameUtils;
 
 //import org.deeplearning4j.datasets.iterator.impl.MnistDataSetIterator;
@@ -20,19 +28,19 @@ package intelligence;
 //import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
 //import org.nd4j.linalg.learning.config.Adam;
 //import org.nd4j.linalg.lossfunctions.LossFunctions;
-//import org.slf4j.Logger;
-//import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DeepQLearning {
-	// private static final Logger log =
-	// LoggerFactory.getLogger(DeepQLearning.class);
+	private static final Logger log = LoggerFactory.getLogger(DeepQLearning.class);
 
-	// private int l = 1;
-
-	// public DeepQLearning() {
-	// log.info("egg");
-
-	// }
+	public DeepQLearning() {
+		MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder().weightInit(WeightInit.XAVIER)
+				.activation(Activation.RELU).optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
+				.updater(new Sgd(0.05))
+				// ... other hyperparameters
+				.list().backpropType(BackpropType.Standard).build();
+	}
 
 	// private static final Logger log =
 	// LoggerFactory.getLogger(DeepQLearning.class);

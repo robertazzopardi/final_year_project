@@ -11,7 +11,7 @@ import simulation.SimulationEnv;
  * @author rob
  *
  */
-public class Prey extends RobotRunner {
+final class Prey extends RobotRunner {
 	private static final int[] ALL = new int[] { 1, 2, 3, 4 };
 
 	private static final int[] NO_DOWN = new int[] { 1, 3, 4 };

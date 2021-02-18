@@ -11,7 +11,7 @@ import simulation.SimulationEnv;
  * @author rob
  *
  */
-public abstract class RobotRunner extends RobotMonitor {
+abstract class RobotRunner extends RobotMonitor {
 
 	final RobotController controller;
 
