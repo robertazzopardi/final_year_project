@@ -4,9 +4,15 @@ import simulation.SimulationEnv;
 
 public abstract class Intelligence {
 
-    public abstract int predict(final int state);
+    public abstract int getActionFromState(final int state);
 
-    public abstract void train();
+    public abstract int getActionFromStates(final int[] state);
+
+    public abstract void update(final int[] states, final int action, final double score, final int[] nextState);
+
+    abstract void train();
+
+    public abstract void updateEpsilon();
 
     public static final String DQN_STRING = "DeepQLearning";
     public static final String QLEAR_STRING = "QLearning";

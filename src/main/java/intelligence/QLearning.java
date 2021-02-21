@@ -23,15 +23,15 @@ final class QLearning extends Intelligence {
 	private static final Random rand = new Random();
 
 	private static final int REWARD = 100;
-	private static final int STATESCOUNT = SimulationEnv.SIZE * SimulationEnv.SIZE;
+	private static final int STATESCOUNT = SimulationEnv.GRID_SIZE * SimulationEnv.GRID_SIZE;
 
 	private final MyGridCell[][] maze;
 
-	private double[][] Q;
+	private double[][] qValues;
 
-	private int[][] R;
+	private int[][] rValues;
 
-	public QLearning(final MyGridCell[][] grid) {
+	QLearning(final MyGridCell[][] grid) {
 		this.maze = grid;
 	}
 
@@ -53,12 +53,12 @@ final class QLearning extends Intelligence {
 
 				// Q(state,action)= Q(state,action) + alpha * (R(state,action) + gamma *
 				// Max(next state, all actions) - Q(state,action))
-				final double q = Q[crtState][nextState];
+				final double q = qValues[crtState][nextState];
 				final double maxQ = maxQ(nextState);
-				final int r = R[crtState][nextState];
+				final int r = rValues[crtState][nextState];
 				final double value = q + ALPHA * (r + GAMMA * maxQ - q);
 
-				Q[crtState][nextState] = value;
+				qValues[crtState][nextState] = value;
 				crtState = nextState;
 			}
 		}
@@ -81,26 +81,33 @@ final class QLearning extends Intelligence {
 	// }
 
 	@Override
-	public int predict(final int state) {
+	public int getActionFromStates(int[] state) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public int getActionFromState(final int state) {
+		train();
+
 		final int[] actionsFromState = possibleActionsFromState(state);
 		double maxValue = Double.MIN_VALUE;
 		int policyGotoState = state;
 
 		// Pick to move to the state that has the maximum Q value
 		for (final int nextState : actionsFromState) {
-			final double value = Q[state][nextState];
+			final double value = qValues[state][nextState];
 			if (value > maxValue) {
 				maxValue = value;
 				policyGotoState = nextState;
 			}
 		}
 		return policyGotoState;
-
 	}
 
 	private void init() {
-		R = new int[STATESCOUNT][STATESCOUNT];
-		Q = new double[STATESCOUNT][STATESCOUNT];
+		rValues = new int[STATESCOUNT][STATESCOUNT];
+		qValues = new double[STATESCOUNT][STATESCOUNT];
 
 		int i = 0;
 		int j = 0;
@@ -109,12 +116,12 @@ final class QLearning extends Intelligence {
 		for (int k = 0; k < STATESCOUNT; k++) {
 			// We will navigate with i and j through the maze, so we need
 			// to translate k into i and j
-			i = k / SimulationEnv.SIZE;
-			j = k - i * SimulationEnv.SIZE;
+			i = k / SimulationEnv.GRID_SIZE;
+			j = k - i * SimulationEnv.GRID_SIZE;
 
 			// Fill in the reward matrix with -1
 			for (int s = 0; s < STATESCOUNT; s++) {
-				R[k][s] = -1;
+				rValues[k][s] = -1;
 			}
 			// If not in final state or a wall try moving in all directions in the maze
 
@@ -140,14 +147,14 @@ final class QLearning extends Intelligence {
 	private void initializeQ() {
 		for (int i = 0; i < STATESCOUNT; i++) {
 			for (int j = 0; j < STATESCOUNT; j++) {
-				Q[i][j] = R[i][j];
+				qValues[i][j] = rValues[i][j];
 			}
 		}
 	}
 
 	private boolean isFinalState(final int state) {
-		final int i = state / SimulationEnv.SIZE;
-		final int j = state - i * SimulationEnv.SIZE;
+		final int i = state / SimulationEnv.GRID_SIZE;
+		final int j = state - i * SimulationEnv.GRID_SIZE;
 
 		return maze[i][j].getCellType() == OccupancyType.GOAL;
 	}
@@ -157,7 +164,7 @@ final class QLearning extends Intelligence {
 		// the learning rate and eagerness will keep the W value above the lowest reward
 		double maxValue = -10;
 		for (final int nextAction : actionsFromState) {
-			final double value = Q[nextState][nextAction];
+			final double value = qValues[nextState][nextAction];
 			if (value > maxValue) {
 				maxValue = value;
 			}
@@ -168,18 +175,12 @@ final class QLearning extends Intelligence {
 	public int[] possibleActionsFromState(final int state) {
 		final ArrayList<Integer> result = new ArrayList<>();
 		for (int i = 0; i < STATESCOUNT; i++) {
-			if (R[state][i] != -1) {
+			if (rValues[state][i] != -1) {
 				result.add(i);
 			}
 		}
 
 		return result.stream().mapToInt(i -> i).toArray();
-	}
-
-	@Override
-	public void train() {
-		init();
-		calculateQ();
 	}
 
 	/**
@@ -189,18 +190,18 @@ final class QLearning extends Intelligence {
 	 */
 	private void tryMoveDown(final int i, final int j, final int k) {
 		final int goDown = i + 1;
-		if (goDown < SimulationEnv.SIZE) {
-			final int target = goDown * SimulationEnv.SIZE + j;
+		if (goDown < SimulationEnv.GRID_SIZE) {
+			final int target = goDown * SimulationEnv.GRID_SIZE + j;
 
 			switch (maze[goDown][j].getCellType()) {
 				case EMPTY:
-					R[k][target] = 0;
+					rValues[k][target] = 0;
 					break;
 				case GOAL:
-					R[k][target] = REWARD;
+					rValues[k][target] = REWARD;
 					break;
 				default:
-					R[k][target] = PENALTY;
+					rValues[k][target] = PENALTY;
 					break;
 			}
 		}
@@ -214,17 +215,17 @@ final class QLearning extends Intelligence {
 	private void tryMoveLeft(final int i, final int j, final int k) {
 		final int goLeft = j - 1;
 		if (goLeft >= 0) {
-			final int target = i * SimulationEnv.SIZE + goLeft;
+			final int target = i * SimulationEnv.GRID_SIZE + goLeft;
 
 			switch (maze[i][goLeft].getCellType()) {
 				case EMPTY:
-					R[k][target] = 0;
+					rValues[k][target] = 0;
 					break;
 				case GOAL:
-					R[k][target] = REWARD;
+					rValues[k][target] = REWARD;
 					break;
 				default:
-					R[k][target] = PENALTY;
+					rValues[k][target] = PENALTY;
 					break;
 			}
 		}
@@ -237,18 +238,18 @@ final class QLearning extends Intelligence {
 	 */
 	private void tryMoveRight(final int i, final int j, final int k) {
 		final int goRight = j + 1;
-		if (goRight < SimulationEnv.SIZE) {
-			final int target = i * SimulationEnv.SIZE + goRight;
+		if (goRight < SimulationEnv.GRID_SIZE) {
+			final int target = i * SimulationEnv.GRID_SIZE + goRight;
 
 			switch (maze[i][goRight].getCellType()) {
 				case EMPTY:
-					R[k][target] = 0;
+					rValues[k][target] = 0;
 					break;
 				case GOAL:
-					R[k][target] = REWARD;
+					rValues[k][target] = REWARD;
 					break;
 				default:
-					R[k][target] = PENALTY;
+					rValues[k][target] = PENALTY;
 					break;
 			}
 		}
@@ -297,20 +298,38 @@ final class QLearning extends Intelligence {
 	private void tryMoveUp(final int i, final int j, final int k) {
 		final int goUp = i - 1;
 		if (goUp >= 0) {
-			final int target = goUp * SimulationEnv.SIZE + j;
+			final int target = goUp * SimulationEnv.GRID_SIZE + j;
 
 			switch (maze[goUp][j].getCellType()) {
 				case EMPTY:
-					R[k][target] = 0;
+					rValues[k][target] = 0;
 					break;
 				case GOAL:
-					R[k][target] = REWARD;
+					rValues[k][target] = REWARD;
 					break;
 				default:
-					R[k][target] = PENALTY;
+					rValues[k][target] = PENALTY;
 					break;
 			}
 		}
+	}
+
+	@Override
+	void train() {
+		init();
+		calculateQ();
+	}
+
+	@Override
+	public void updateEpsilon() {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void update(int[] states, int action, double score, int[] nextState) {
+		// TODO Auto-generated method stub
+
 	}
 
 }

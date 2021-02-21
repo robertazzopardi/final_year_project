@@ -12,7 +12,7 @@ import robots.RobotController;
 public class SimulationEnv extends EnvController {
     public static final String CONFIG_FILE = "resources/defaultConfig.txt";
 
-    public static final int SIZE = 10;
+    public static final int GRID_SIZE = 6;
 
     private final MyGridCell[][] grid;
 
@@ -21,21 +21,26 @@ public class SimulationEnv extends EnvController {
 
         grid = getGrid();
 
-        for (int i = 0; i < grid.length; i++) {
-            for (int j = 0; j < grid.length; j++) {
-                if (i == 0 || j == 0 || i == SIZE - 1 || j == SIZE - 1) {
-                    grid[j][i].setCellType(OccupancyType.OBSTACLE);
-                }
-            }
-        }
+        addBoundaries();
 
-        new RobotController(this, Intelligence.QLEAR_STRING);
+        // new RobotController(this, Intelligence.QLEAR_STRING);
+        new RobotController(this, Intelligence.DQN_STRING);
 
         // new GridPrinter(this).start();
     }
 
+    private void addBoundaries() {
+        for (int x = 0; x < grid.length; x++) {
+            for (int y = 0; y < grid.length; y++) {
+                if (x == 0 || y == 0 || x == GRID_SIZE - 1 || y == GRID_SIZE - 1) {
+                    grid[x][y].setCellType(OccupancyType.OBSTACLE);
+                }
+            }
+        }
+    }
+
     public static void main(final String[] args) {
-        new SimulationEnv(CONFIG_FILE, SIZE, SIZE);
+        new SimulationEnv(CONFIG_FILE, GRID_SIZE, GRID_SIZE);
     }
 
     public void printGrid(final Logger inLogger) {

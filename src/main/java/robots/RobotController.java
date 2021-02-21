@@ -1,7 +1,5 @@
 package robots;
 
-import java.util.logging.Logger;
-
 import comp329robosim.SimulatedRobot;
 import intelligence.Intelligence;
 import intelligence.NoAIException;
@@ -10,8 +8,6 @@ import simulation.SimulationEnv;
 public class RobotController {
 
 	private final Hunter[] hunters = new Hunter[4];
-
-	private static final Logger logger = Logger.getLogger(RobotController.class.getName());
 
 	private Prey prey;
 
@@ -36,15 +32,35 @@ public class RobotController {
 
 		for (int i = 0; i < hunters.length; i++) {
 			final SimulatedRobot simulatedRobot = env.getAndSetHunter(i);
-			// hunters[i] = new Hunter(simulatedRobot, 1000, env, this, new
-			// QLearning(env.getGrid()));
+
 			try {
-				hunters[i] = new Hunter(simulatedRobot, 1000, env, this,
-						Intelligence.getIntelligence(this.learningMethod, env));
+				do {
+					hunters[i] = new Hunter(simulatedRobot, 1000, env, this,
+							Intelligence.getIntelligence(this.learningMethod, env));
+				} while (isSamePosition(i));
 			} catch (NoAIException e) {
 				e.printStackTrace();
 			}
 		}
+
+		for (Hunter hunter : hunters) {
+			hunter.setOthers(hunters);
+		}
+	}
+
+	private boolean isSamePosition(int i) {
+		if (hunters[i].getGridPosX() == prey.getGridPosX() && hunters[i].getGridPosY() == prey.getGridPosY()) {
+			return true;
+		}
+
+		for (int j = 0; j < i; j++) {
+			if (hunters[i].getGridPosX() == hunters[j].getGridPosX()
+					&& hunters[i].getGridPosY() == hunters[j].getGridPosY()) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	public void restartRobots() {
@@ -53,7 +69,14 @@ public class RobotController {
 
 		for (int i = 0; i < 4; i++) {
 			final SimulatedRobot simulatedHunter = env.getAndSetHunter(i);
-			hunters[i] = new Hunter(simulatedHunter, 1000, env, this, hunters[i].getLearning());
+
+			do {
+				hunters[i] = new Hunter(simulatedHunter, 1000, env, this, hunters[i].getLearning());
+			} while (isSamePosition(i));
+		}
+
+		for (Hunter hunter : hunters) {
+			hunter.setOthers(hunters);
 		}
 
 		startRobots();
@@ -61,11 +84,7 @@ public class RobotController {
 
 	public void resumeHunters() {
 		for (Hunter hunter : hunters) {
-			if (hunter.isPaused()) {
-				final String rlog = "resuming hunter: " + Hunter.getHunterCount();
-				logger.info(rlog);
-				hunter.resumeRobot();
-			}
+			hunter.resumeRobot();
 		}
 	}
 

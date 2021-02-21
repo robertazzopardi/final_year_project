@@ -1,5 +1,6 @@
 package robots;
 
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import comp329robosim.OccupancyType;
@@ -27,9 +28,21 @@ final class Hunter extends RobotRunner {
 
 	private final int number;
 
-	private boolean paused = false;
+	private volatile boolean paused = false;
 
 	private final Object pauseLock = new Object();
+
+	private final Hunter[] otherHunters = new Hunter[3];
+
+	public void setOthers(final Hunter[] hunters) {
+		int index = 0;
+		for (int i = 0; i < hunters.length; i++) {
+			// logger.info(Boolean.toString(hunters[i].equals(this)));
+			if (!hunters[i].equals(this)) {
+				otherHunters[index++] = hunters[i];
+			}
+		}
+	}
 
 	public Hunter(final SimulatedRobot r, final int d, final SimulationEnv env, final RobotController controller,
 			final Intelligence learning) {
@@ -199,12 +212,8 @@ final class Hunter extends RobotRunner {
 		}
 	}
 
-	@Override
-	public void run() {
+	private void deepLearningRunning() {
 		while (!exit) {
-			// train
-			learning.train();
-
 			final int x = getGridPosX();
 			final int y = getGridPosY();
 			final int a = getHeading();
@@ -230,29 +239,114 @@ final class Hunter extends RobotRunner {
 			}
 
 			// compare the current state to the next state produced from qlearning
-			final int currState = getCurentState(x, y);
+			// final int nextState = learning.getAction(currState);
+			final int[] states = new int[4];
+			states[0] = getCurentState(x, y);
+			states[1] = otherHunters[0].getCurentState(otherHunters[0].getGridPosX(), otherHunters[0].getGridPosY());
+			states[2] = otherHunters[1].getCurentState(otherHunters[1].getGridPosX(), otherHunters[1].getGridPosY());
+			states[3] = otherHunters[2].getCurentState(otherHunters[2].getGridPosX(), otherHunters[2].getGridPosY());
 
-			// final int nextState = learning.getPolicyFromState(currState);
-			final int nextState = learning.predict(currState);
+			final int direction = learning.getActionFromStates(states);
 
-			if (currState + 1 == nextState) {
-				// right
-				moveRight(x, y, a);
-			} else if (currState - 1 == nextState) {
-				// left
-				moveLeft(x, y, a);
-			} else if (currState + 10 == nextState) {
-				// up
-				moveDown(x, y, a);
-			} else if (currState - 10 == nextState) {
-				// down
-				moveUp(x, y, a);
+			learning.updateEpsilon();
+
+			switch (direction) {
+				case 1:
+					// right
+					moveRight(x, y, a);
+					break;
+				case 2:
+					// down
+					moveDown(x, y, a);
+					break;
+				case 3:
+					// left
+					moveLeft(x, y, a);
+					break;
+				case 4:
+					// up
+					moveUp(x, y, a);
+					break;
+				default:
+					break;
 			}
+
+			final double score = isAdjacentToPrey(getGridPosX(), getGridPosY()) ? 100 : -1;
+
+			if (score == 100) {
+				logger.log(Level.OFF, "Good Score");
+			}
+
+			// compare the current state to the next state produced from qlearning
+			// final int nextState = learning.getAction(currState);
+			final int[] newStates = new int[4];
+			states[0] = getCurentState(x, y);
+			states[1] = otherHunters[0].getCurentState(otherHunters[0].getGridPosX(), otherHunters[0].getGridPosY());
+			states[2] = otherHunters[1].getCurentState(otherHunters[1].getGridPosX(), otherHunters[1].getGridPosY());
+			states[3] = otherHunters[2].getCurentState(otherHunters[2].getGridPosX(), otherHunters[2].getGridPosY());
+
+			learning.update(states, direction, score, newStates);
 		}
+	}
+
+	@Override
+	public void run() {
+		// qlearningRunning();
+		deepLearningRunning();
 
 		final String endLog = "Hunter " + number + " Stopped";
 		logger.info(endLog);
 	}
+
+	// private void qlearningRunning() {
+	// while (!exit) {
+	// // train
+	// // learning.train();
+
+	// final int x = getGridPosX();
+	// final int y = getGridPosY();
+	// final int a = getHeading();
+
+	// // check if in a goal state
+	// if (isAdjacentToPrey(x, y)) {
+	// // Do nothing while in goal state
+	// logger.info("in a goal state");
+	// env.updateGridHunter(x, y);
+	// pauseRobot();
+	// }
+
+	// // check if paused and should be waiting
+	// synchronized (pauseLock) {
+	// if (paused) {
+	// try {
+	// pauseLock.wait();
+	// } catch (final InterruptedException ex) {
+	// ex.printStackTrace();
+	// Thread.currentThread().interrupt();
+	// }
+	// }
+	// }
+
+	// // compare the current state to the next state produced from qlearning
+	// final int currState = getCurentState(x, y);
+
+	// final int nextState = learning.getActionFromState(currState);
+
+	// if (currState + 1 == nextState) {
+	// // right
+	// moveRight(x, y, a);
+	// } else if (currState - 1 == nextState) {
+	// // left
+	// moveLeft(x, y, a);
+	// } else if (currState + 10 == nextState) {
+	// // up
+	// moveDown(x, y, a);
+	// } else if (currState - 10 == nextState) {
+	// // down
+	// moveUp(x, y, a);
+	// }
+	// }
+	// }
 
 	@Override
 	public void stopRobot() {
