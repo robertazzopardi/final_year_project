@@ -28,7 +28,7 @@ final class DeepQLearning extends Intelligence {
 
 	// Just make sure the number of inputs of the next layer equals to the number of
 	// outputs in the previous layer.
-	private static final MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder().seed(12345)
+	private static final MultiLayerConfiguration CONFIGURATION = new NeuralNetConfiguration.Builder().seed(12345)
 			.weightInit(WeightInit.RELU).updater(new AdaGrad(0.5)).activation(Activation.RELU)
 			.optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)// .learningRate(0.05)
 			.l2(0.0001).list()
@@ -51,19 +51,13 @@ final class DeepQLearning extends Intelligence {
 			.backpropType(BackpropType.Standard).build();
 
 	DeepQLearning() {
-
-		this.network = new MultiLayerNetwork(conf);
+		this.network = new MultiLayerNetwork(CONFIGURATION);
 		this.network.init();
-
 	}
 
 	@Override
 	public void updateEpsilon() {
 		epsilon -= 0.001;
-	}
-
-	public MultiLayerNetwork getNetwork() {
-		return this.network;
 	}
 
 	@Override
@@ -95,10 +89,10 @@ final class DeepQLearning extends Intelligence {
 			return getRandomAction();
 		}
 
-		return getActionFromTheNetwork(states, network);
+		return getActionFromTheNetwork(states);
 	}
 
-	public int getActionFromTheNetwork(final int[] states, final MultiLayerNetwork network) {
+	public int getActionFromTheNetwork(final int[] states) {
 		final INDArray output = network.output(toINDArray(states), false);
 
 		/*
@@ -167,13 +161,17 @@ final class DeepQLearning extends Intelligence {
 		final String stateWithActDOWN = getStateWithActionString(gameStateString, 2);
 		final String stateWithActLEFT = getStateWithActionString(gameStateString, 3);
 
-		if (Q_TABLE.isEmpty()) {
-			// System.out.println("egg");
-			Q_TABLE.put(stateWithActUP, 0.0);
-			Q_TABLE.put(stateWithActRIGHT, 0.0);
-			Q_TABLE.put(stateWithActDOWN, 0.0);
-			Q_TABLE.put(stateWithActLEFT, 0.0);
-		}
+		// if (Q_TABLE.isEmpty()) {
+		// // System.out.println("egg");
+		// Q_TABLE.put(stateWithActUP, 0.0);
+		// Q_TABLE.put(stateWithActRIGHT, 0.0);
+		// Q_TABLE.put(stateWithActDOWN, 0.0);
+		// Q_TABLE.put(stateWithActLEFT, 0.0);
+		// }
+		Q_TABLE.putIfAbsent(stateWithActUP, 0.0);
+		Q_TABLE.putIfAbsent(stateWithActRIGHT, 0.0);
+		Q_TABLE.putIfAbsent(stateWithActDOWN, 0.0);
+		Q_TABLE.putIfAbsent(stateWithActLEFT, 0.0);
 
 		double score = Q_TABLE.get(stateWithActUP);
 

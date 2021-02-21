@@ -31,10 +31,9 @@ public class RobotController {
 		prey = new Prey(preyRobot, 1000, env, this);
 
 		for (int i = 0; i < hunters.length; i++) {
-			final SimulatedRobot simulatedRobot = env.getAndSetHunter(i);
-
 			try {
 				do {
+					final SimulatedRobot simulatedRobot = env.getAndSetHunter(i);
 					hunters[i] = new Hunter(simulatedRobot, 1000, env, this,
 							Intelligence.getIntelligence(this.learningMethod, env));
 				} while (isSamePosition(i));
@@ -68,9 +67,8 @@ public class RobotController {
 		prey = new Prey(preyRobot, 1000, env, this);
 
 		for (int i = 0; i < 4; i++) {
-			final SimulatedRobot simulatedHunter = env.getAndSetHunter(i);
-
 			do {
+				final SimulatedRobot simulatedHunter = env.getAndSetHunter(i);
 				hunters[i] = new Hunter(simulatedHunter, 1000, env, this, hunters[i].getLearning());
 			} while (isSamePosition(i));
 		}
@@ -101,5 +99,4 @@ public class RobotController {
 			hunter.stopRobot();
 		}
 	}
-
 }

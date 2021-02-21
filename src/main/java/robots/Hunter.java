@@ -1,11 +1,10 @@
 package robots;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import comp329robosim.OccupancyType;
 import comp329robosim.SimulatedRobot;
 import intelligence.Intelligence;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import simulation.SimulationEnv;
 
 /**
@@ -37,7 +36,6 @@ final class Hunter extends RobotRunner {
 	public void setOthers(final Hunter[] hunters) {
 		int index = 0;
 		for (int i = 0; i < hunters.length; i++) {
-			// logger.info(Boolean.toString(hunters[i].equals(this)));
 			if (!hunters[i].equals(this)) {
 				otherHunters[index++] = hunters[i];
 			}
@@ -47,7 +45,6 @@ final class Hunter extends RobotRunner {
 	public Hunter(final SimulatedRobot r, final int d, final SimulationEnv env, final RobotController controller,
 			final Intelligence learning) {
 		super(r, d, env, controller);
-
 		this.number = hunterCount++;
 
 		this.logger = Logger.getLogger("Hunter " + number);
@@ -55,12 +52,11 @@ final class Hunter extends RobotRunner {
 		env.updateGridHunter(getGridPosX(), getGridPosY());
 
 		this.learning = learning;
-
 	}
 
 	@Override
 	boolean canMove(final int x, final int y) {
-		return grid[y][x].getCellType() != OccupancyType.OBSTACLE;
+		return (grid[y][x].getCellType() != OccupancyType.OBSTACLE && grid[y][x].getCellType() != OccupancyType.HUNTER);
 	}
 
 	public Intelligence getLearning() {
@@ -68,9 +64,9 @@ final class Hunter extends RobotRunner {
 	}
 
 	private boolean isAdjacentToPrey(final int x, final int y) {
-		return grid[y][x - 1].getCellType() == OccupancyType.PREY || grid[y][x + 1].getCellType() == OccupancyType.PREY
+		return (grid[y][x - 1].getCellType() == OccupancyType.PREY || grid[y][x + 1].getCellType() == OccupancyType.PREY
 				|| grid[y - 1][x].getCellType() == OccupancyType.PREY
-				|| grid[y + 1][x].getCellType() == OccupancyType.PREY;
+				|| grid[y + 1][x].getCellType() == OccupancyType.PREY);
 	}
 
 	public boolean isPaused() {
@@ -212,17 +208,16 @@ final class Hunter extends RobotRunner {
 		}
 	}
 
+	// retain direction until it has travelled there
+	// add scan distance to states
+
 	private void deepLearningRunning() {
 		while (!exit) {
-			final int x = getGridPosX();
-			final int y = getGridPosY();
-			final int a = getHeading();
-
 			// check if in a goal state
-			if (isAdjacentToPrey(x, y)) {
+			if (isAdjacentToPrey(getGridPosX(), getGridPosY())) {
 				// Do nothing while in goal state
 				logger.info("in a goal state");
-				env.updateGridHunter(x, y);
+				env.updateGridHunter(getGridPosX(), getGridPosY());
 				pauseRobot();
 			}
 
@@ -240,36 +235,13 @@ final class Hunter extends RobotRunner {
 
 			// compare the current state to the next state produced from qlearning
 			// final int nextState = learning.getAction(currState);
-			final int[] states = new int[4];
-			states[0] = getCurentState(x, y);
-			states[1] = otherHunters[0].getCurentState(otherHunters[0].getGridPosX(), otherHunters[0].getGridPosY());
-			states[2] = otherHunters[1].getCurentState(otherHunters[1].getGridPosX(), otherHunters[1].getGridPosY());
-			states[3] = otherHunters[2].getCurentState(otherHunters[2].getGridPosX(), otherHunters[2].getGridPosY());
+			final int[] states = getStates();
 
 			final int direction = learning.getActionFromStates(states);
 
 			learning.updateEpsilon();
 
-			switch (direction) {
-				case 1:
-					// right
-					moveRight(x, y, a);
-					break;
-				case 2:
-					// down
-					moveDown(x, y, a);
-					break;
-				case 3:
-					// left
-					moveLeft(x, y, a);
-					break;
-				case 4:
-					// up
-					moveUp(x, y, a);
-					break;
-				default:
-					break;
-			}
+			moveInDirection(direction);
 
 			final double score = isAdjacentToPrey(getGridPosX(), getGridPosY()) ? 100 : -1;
 
@@ -277,16 +249,40 @@ final class Hunter extends RobotRunner {
 				logger.log(Level.OFF, "Good Score");
 			}
 
-			// compare the current state to the next state produced from qlearning
-			// final int nextState = learning.getAction(currState);
-			final int[] newStates = new int[4];
-			states[0] = getCurentState(x, y);
-			states[1] = otherHunters[0].getCurentState(otherHunters[0].getGridPosX(), otherHunters[0].getGridPosY());
-			states[2] = otherHunters[1].getCurentState(otherHunters[1].getGridPosX(), otherHunters[1].getGridPosY());
-			states[3] = otherHunters[2].getCurentState(otherHunters[2].getGridPosX(), otherHunters[2].getGridPosY());
-
-			learning.update(states, direction, score, newStates);
+			learning.update(states, direction, score, getStates());
 		}
+	}
+
+	private void moveInDirection(final int direction) {
+		switch (direction) {
+			case 1:
+				// right
+				moveRight(getGridPosX(), getGridPosY(), getHeading());
+				break;
+			case 2:
+				// down
+				moveDown(getGridPosX(), getGridPosY(), getHeading());
+				break;
+			case 3:
+				// left
+				moveLeft(getGridPosX(), getGridPosY(), getHeading());
+				break;
+			case 4:
+				// up
+				moveUp(getGridPosX(), getGridPosY(), getHeading());
+				break;
+			default:
+				break;
+		}
+	}
+
+	private int[] getStates() {
+		final int[] states = new int[4];
+		states[0] = getCurentState(getGridPosX(), getGridPosY());
+		states[1] = otherHunters[0].getCurentState(otherHunters[0].getGridPosX(), otherHunters[0].getGridPosY());
+		states[2] = otherHunters[1].getCurentState(otherHunters[1].getGridPosX(), otherHunters[1].getGridPosY());
+		states[3] = otherHunters[2].getCurentState(otherHunters[2].getGridPosX(), otherHunters[2].getGridPosY());
+		return states;
 	}
 
 	@Override
@@ -354,5 +350,4 @@ final class Hunter extends RobotRunner {
 		resumeRobot();
 		resetHunterCount();
 	}
-
 }

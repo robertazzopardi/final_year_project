@@ -1,3 +1,5 @@
+cd lib
+
 if [ ! -d "comp329robosim" ]; then
   # Control will enter here if $DIRECTORY exists.
   jar xf comp329robosim.jar
@@ -15,3 +17,5 @@ mvn install:install-file \
 -DartifactId=comp329robosim \
 -Dversion=1.0 \
 -Dpackaging=jar
+
+cd ..

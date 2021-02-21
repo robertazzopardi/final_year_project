@@ -12,7 +12,7 @@ import robots.RobotController;
 public class SimulationEnv extends EnvController {
     public static final String CONFIG_FILE = "resources/defaultConfig.txt";
 
-    public static final int GRID_SIZE = 6;
+    public static final int GRID_SIZE = 5;
 
     private final MyGridCell[][] grid;
 

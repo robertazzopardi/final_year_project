@@ -22,12 +22,12 @@ final class Prey extends RobotRunner {
 
 	private static final int[] NO_UP = new int[] { 1, 2, 3 };
 
+	int randomMove;
+
 	private int getRandomDirection(final int[] array) {
 		final int rnd = ThreadLocalRandom.current().nextInt(0, array.length);
 		return array[rnd];
 	}
-
-	int randomMove;
 
 	public Prey(final SimulatedRobot r, final int d, final SimulationEnv env, final RobotController controller) {
 		super(r, d, env, controller);
@@ -171,12 +171,10 @@ final class Prey extends RobotRunner {
 			if (!right && !left && !up && !down) {
 				// Do nothing while in goal state
 				logger.info("trapped");
-				// controller.getPrintGridThread().stopThread();
 
 				controller.stopRobots();
 
 				// Done with current epoch, now we can restart the simulation
-
 				try {
 					Thread.sleep(2000);
 				} catch (final InterruptedException e) {
@@ -184,7 +182,6 @@ final class Prey extends RobotRunner {
 				}
 
 				controller.restartRobots();
-
 			}
 
 			doAction(x, y, a, right, down, left, up);
@@ -288,5 +285,4 @@ final class Prey extends RobotRunner {
 			randomMove = getRandomDirection(ALL);
 		}
 	}
-
 }
