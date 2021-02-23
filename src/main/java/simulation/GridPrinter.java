@@ -7,31 +7,21 @@ public class GridPrinter extends Thread {
 
     private final SimulationEnv env;
 
-    private volatile boolean running = true;
-
     public GridPrinter(final SimulationEnv env) {
         this.env = env;
     }
 
     @Override
     public void run() {
-        while (running) {
+        while (true) {
             env.printGrid(LOGGER);
 
             try {
                 Thread.sleep(2000);
             } catch (final InterruptedException e) {
-                if (!running) {
-                    break;
-                }
                 Thread.currentThread().interrupt();
             }
         }
-    }
-
-    public void stopThread() {
-        running = false;
-        interrupt();
     }
 
 }

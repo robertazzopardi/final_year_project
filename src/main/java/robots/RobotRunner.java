@@ -13,8 +13,6 @@ import simulation.SimulationEnv;
  */
 abstract class RobotRunner extends RobotMonitor {
 
-	final RobotController controller;
-
 	final SimulationEnv env;
 
 	volatile boolean exit = false;
@@ -23,7 +21,7 @@ abstract class RobotRunner extends RobotMonitor {
 
 	Logger logger;
 
-	RobotRunner(final SimulatedRobot r, final int d, final SimulationEnv env, final RobotController controller) {
+	RobotRunner(final SimulatedRobot r, final int d, final SimulationEnv env) {
 		super(r, d);
 
 		monitorRobotStatus(false);
@@ -33,8 +31,6 @@ abstract class RobotRunner extends RobotMonitor {
 		this.env = env;
 
 		this.grid = env.getGrid();
-
-		this.controller = controller;
 	}
 
 	abstract boolean canMove(int x, int y);

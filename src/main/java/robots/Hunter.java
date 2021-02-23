@@ -2,8 +2,7 @@ package robots;
 
 import comp329robosim.OccupancyType;
 import comp329robosim.SimulatedRobot;
-import intelligence.Intelligence;
-import java.util.logging.Level;
+import intelligence.DeepQLearning;
 import java.util.logging.Logger;
 import simulation.SimulationEnv;
 
@@ -15,15 +14,11 @@ final class Hunter extends RobotRunner {
 
 	private static int hunterCount = 1;
 
-	public static int getHunterCount() {
-		return hunterCount - 1;
-	}
-
-	private static synchronized void resetHunterCount() {
+	private static void resetHunterCount() {
 		hunterCount = 1;
 	}
 
-	private final Intelligence learning;
+	private final DeepQLearning learning;
 
 	private final int number;
 
@@ -35,16 +30,17 @@ final class Hunter extends RobotRunner {
 
 	public void setOthers(final Hunter[] hunters) {
 		int index = 0;
-		for (int i = 0; i < hunters.length; i++) {
-			if (!hunters[i].equals(this)) {
-				otherHunters[index++] = hunters[i];
+
+		for (final Hunter hunter : hunters) {
+			if (!hunter.equals(this)) {
+				otherHunters[index++] = hunter;
 			}
 		}
 	}
 
-	public Hunter(final SimulatedRobot r, final int d, final SimulationEnv env, final RobotController controller,
-			final Intelligence learning) {
-		super(r, d, env, controller);
+	public Hunter(final SimulatedRobot r, final int d, final SimulationEnv env, final DeepQLearning learning) {
+		super(r, d, env);
+
 		this.number = hunterCount++;
 
 		this.logger = Logger.getLogger("Hunter " + number);
@@ -56,14 +52,16 @@ final class Hunter extends RobotRunner {
 
 	@Override
 	boolean canMove(final int x, final int y) {
-		return (grid[y][x].getCellType() != OccupancyType.OBSTACLE && grid[y][x].getCellType() != OccupancyType.HUNTER);
+		return grid[y][x].isEmpty();
 	}
 
-	public Intelligence getLearning() {
+	public DeepQLearning getLearning() {
 		return learning;
 	}
 
-	private boolean isAdjacentToPrey(final int x, final int y) {
+	public boolean isAdjacentToPrey() {
+		final int x = getGridPosX();
+		final int y = getGridPosY();
 		return (grid[y][x - 1].getCellType() == OccupancyType.PREY || grid[y][x + 1].getCellType() == OccupancyType.PREY
 				|| grid[y - 1][x].getCellType() == OccupancyType.PREY
 				|| grid[y + 1][x].getCellType() == OccupancyType.PREY);
@@ -71,130 +69,6 @@ final class Hunter extends RobotRunner {
 
 	public boolean isPaused() {
 		return paused;
-	}
-
-	@Override
-	void moveDown(final int x, final int y, final int a) {
-		switch (a) {
-			case 0:
-			case 360:
-			case -360:
-				if (canMove(x, y + 1)) {
-					env.updateGridEmpty(x, y);
-					env.updateGridHunter(x, y + 1);
-					travel(350);
-				}
-				break;
-			case 90:
-			case -270:
-				rotate(-90);
-				break;
-			case 180:
-			case -180:
-				rotate(180);
-				break;
-			case 270:
-			case -90:
-				rotate(90);
-				break;
-			default:
-				break;
-		}
-	}
-
-	@Override
-	void moveLeft(final int x, final int y, final int a) {
-		switch (a) {
-			case -360:
-				rotate(90);
-				break;
-			case 0:
-			case 360:
-				rotate(-90);
-				break;
-			case 90:
-			case -270:
-				rotate(180);
-				break;
-			case 180:
-			case -180:
-				rotate(90);
-				break;
-			case 270:
-			case -90:
-				if (canMove(x - 1, y)) {
-					env.updateGridEmpty(x, y);
-					env.updateGridHunter(x - 1, y);
-					travel(350);
-				}
-				break;
-			default:
-				break;
-		}
-	}
-
-	@Override
-	void moveRight(final int x, final int y, final int a) {
-		switch (a) {
-			case 360:
-				rotate(-90);
-				break;
-			case 0:
-			case -360:
-				rotate(90);
-				break;
-			case 90:
-			case -270:
-				if (canMove(x + 1, y)) {
-					env.updateGridEmpty(x, y);
-					env.updateGridHunter(x + 1, y);
-					travel(350);
-				}
-				break;
-			case 180:
-			case -180:
-				rotate(-90);
-				break;
-			case 270:
-				rotate(-180);
-				break;
-			case -90:
-				rotate(180);
-				break;
-			default:
-				break;
-		}
-	}
-
-	@Override
-	void moveUp(final int x, final int y, final int a) {
-		switch (a) {
-			case 360:
-				rotate(-180);
-				break;
-			case 0:
-			case -360:
-				rotate(180);
-				break;
-			case 90:
-			case -270:
-				rotate(90);
-				break;
-			case 180:
-			case -180:
-				if (canMove(x, y - 1)) {
-					env.updateGridEmpty(x, y);
-					env.updateGridHunter(x, y - 1);
-					travel(350);
-				}
-				break;
-			case 270:
-			case -90:
-				rotate(-90);
-				break;
-			default:
-				break;
-		}
 	}
 
 	private void pauseRobot() {
@@ -208,68 +82,76 @@ final class Hunter extends RobotRunner {
 		}
 	}
 
-	// retain direction until it has travelled there
-	// add scan distance to states
-
 	private void deepLearningRunning() {
 		while (!exit) {
 			// check if in a goal state
-			if (isAdjacentToPrey(getGridPosX(), getGridPosY())) {
+			if (isAdjacentToPrey()) {
 				// Do nothing while in goal state
-				logger.info("in a goal state");
+				// logger.info("in a goal state");
 				env.updateGridHunter(getGridPosX(), getGridPosY());
 				pauseRobot();
 			}
 
 			// check if paused and should be waiting
-			synchronized (pauseLock) {
-				if (paused) {
-					try {
-						pauseLock.wait();
-					} catch (final InterruptedException ex) {
-						ex.printStackTrace();
-						Thread.currentThread().interrupt();
-					}
-				}
-			}
+			// synchronized (pauseLock) {
+			// if (paused) {
+			// try {
+			// pauseLock.wait();
+			// } catch (final InterruptedException ex) {
+			// ex.printStackTrace();
+			// Thread.currentThread().interrupt();
+			// }
+			// }
+			// }
 
 			// compare the current state to the next state produced from qlearning
-			// final int nextState = learning.getAction(currState);
 			final int[] states = getStates();
 
-			final int direction = learning.getActionFromStates(states);
+			final Action direction = learning.getActionFromStates(states);
 
 			learning.updateEpsilon();
 
 			moveInDirection(direction);
 
-			final double score = isAdjacentToPrey(getGridPosX(), getGridPosY()) ? 100 : -1;
-
-			if (score == 100) {
-				logger.log(Level.OFF, "Good Score");
+			double score = isAdjacentToPrey() ? 100 : -0.1;
+			for (final Hunter hunter : otherHunters) {
+				if (hunter.isAdjacentToPrey()) {
+					score += 25;
+				}
 			}
 
-			learning.update(states, direction, score, getStates());
+			learning.train(states, direction, score, getStates());
 		}
 	}
 
-	private void moveInDirection(final int direction) {
+	private void moveInDirection(final Action direction) {
+		int gridPosX = getGridPosX();
+		int gridPosY = getGridPosY();
+		int heading = getHeading();
 		switch (direction) {
-			case 1:
+			case RIGHT:
 				// right
-				moveRight(getGridPosX(), getGridPosY(), getHeading());
+				moveRight(gridPosX, gridPosY, heading);
 				break;
-			case 2:
+			case DOWN:
 				// down
-				moveDown(getGridPosX(), getGridPosY(), getHeading());
+				moveDown(gridPosX, gridPosY, heading);
 				break;
-			case 3:
+			case LEFT:
 				// left
-				moveLeft(getGridPosX(), getGridPosY(), getHeading());
+				moveLeft(gridPosX, gridPosY, heading);
 				break;
-			case 4:
+			case UP:
 				// up
-				moveUp(getGridPosX(), getGridPosY(), getHeading());
+				moveUp(gridPosX, gridPosY, heading);
+				break;
+			case NOTHING:
+				// nothing
+				try {
+					Thread.sleep(2000);
+				} catch (final InterruptedException e) {
+					Thread.currentThread().interrupt();
+				}
 				break;
 			default:
 				break;
@@ -277,17 +159,21 @@ final class Hunter extends RobotRunner {
 	}
 
 	private int[] getStates() {
-		final int[] states = new int[4];
+		final int[] states = new int[Action.LENGTH];
+		// This robots current position
 		states[0] = getCurentState(getGridPosX(), getGridPosY());
+		// The other huntes positions
 		states[1] = otherHunters[0].getCurentState(otherHunters[0].getGridPosX(), otherHunters[0].getGridPosY());
 		states[2] = otherHunters[1].getCurentState(otherHunters[1].getGridPosX(), otherHunters[1].getGridPosY());
 		states[3] = otherHunters[2].getCurentState(otherHunters[2].getGridPosX(), otherHunters[2].getGridPosY());
+		// The scan distance on the sensor
+		states[4] = getUSenseRange();
+
 		return states;
 	}
 
 	@Override
 	public void run() {
-		// qlearningRunning();
 		deepLearningRunning();
 
 		final String endLog = "Hunter " + number + " Stopped";
@@ -349,5 +235,131 @@ final class Hunter extends RobotRunner {
 		super.stopRobot();
 		resumeRobot();
 		resetHunterCount();
+	}
+
+	@Override
+	void moveDown(final int x, final int y, final int a) {
+		switch (a) {
+			case 0:
+			case 360:
+			case -360:
+				if (canMove(x, y + 1)) {
+					env.updateGridEmpty(x, y);
+					env.updateGridHunter(x, y + 1);
+					travel(350);
+				}
+				break;
+			case 90:
+			case -270:
+				rotate(-90);
+				break;
+			case 180:
+			case -180:
+				rotate(180);
+				break;
+			case 270:
+			case -90:
+				rotate(90);
+				break;
+			default:
+				break;
+		}
+	}
+
+	@Override
+	void moveLeft(final int x, final int y, final int a) {
+		switch (a) {
+			// case -360:
+			// rotate(90);
+			// break;
+			case 0:
+			case 360:
+				rotate(-90);
+				break;
+			case 90:
+			case -270:
+				rotate(180);
+				break;
+			case 180:
+			case -180:
+			case -360:
+				rotate(90);
+				break;
+			case 270:
+			case -90:
+				if (canMove(x - 1, y)) {
+					env.updateGridEmpty(x, y);
+					env.updateGridHunter(x - 1, y);
+					travel(350);
+				}
+				break;
+			default:
+				break;
+		}
+	}
+
+	@Override
+	void moveRight(final int x, final int y, final int a) {
+		switch (a) {
+			// case 360:
+			// rotate(-90);
+			// break;
+			case 0:
+			case -360:
+				rotate(90);
+				break;
+			case 90:
+			case -270:
+				if (canMove(x + 1, y)) {
+					env.updateGridEmpty(x, y);
+					env.updateGridHunter(x + 1, y);
+					travel(350);
+				}
+				break;
+			case 180:
+			case -180:
+			case 360:
+				rotate(-90);
+				break;
+			case 270:
+				rotate(-180);
+				break;
+			case -90:
+				rotate(180);
+				break;
+			default:
+				break;
+		}
+	}
+
+	@Override
+	void moveUp(final int x, final int y, final int a) {
+		switch (a) {
+			case 360:
+				rotate(-180);
+				break;
+			case 0:
+			case -360:
+				rotate(180);
+				break;
+			case 90:
+			case -270:
+				rotate(90);
+				break;
+			case 180:
+			case -180:
+				if (canMove(x, y - 1)) {
+					env.updateGridEmpty(x, y);
+					env.updateGridHunter(x, y - 1);
+					travel(350);
+				}
+				break;
+			case 270:
+			case -90:
+				rotate(-90);
+				break;
+			default:
+				break;
+		}
 	}
 }

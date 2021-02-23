@@ -12,7 +12,7 @@ import simulation.SimulationEnv;
  * @author rob
  *
  */
-final class QLearning extends Intelligence {
+final class QLearning {
 	private static final double ALPHA = 0.1; // Learning rate
 	private static final int EPOCH = 1000;
 
@@ -80,13 +80,6 @@ final class QLearning extends Intelligence {
 	// return policyGotoState;
 	// }
 
-	@Override
-	public int getActionFromStates(int[] state) {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	@Override
 	public int getActionFromState(final int state) {
 		train();
 
@@ -146,9 +139,13 @@ final class QLearning extends Intelligence {
 	// Set Q values to R values
 	private void initializeQ() {
 		for (int i = 0; i < STATESCOUNT; i++) {
-			for (int j = 0; j < STATESCOUNT; j++) {
-				qValues[i][j] = rValues[i][j];
-			}
+			// for (int j = 0; j < STATESCOUNT; j++) {
+			// qValues[i][j] = rValues[i][j];
+			// }
+			int[] aMatrix = rValues[i];
+			int aLength = aMatrix.length;
+			qValues[i] = new double[aLength];
+			System.arraycopy(aMatrix, 0, qValues[i], 0, aLength);
 		}
 	}
 
@@ -314,22 +311,8 @@ final class QLearning extends Intelligence {
 		}
 	}
 
-	@Override
 	void train() {
 		init();
 		calculateQ();
 	}
-
-	@Override
-	public void updateEpsilon() {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void update(int[] states, int action, double score, int[] nextState) {
-		// TODO Auto-generated method stub
-
-	}
-
 }

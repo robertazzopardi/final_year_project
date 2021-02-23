@@ -24,13 +24,15 @@ final class Prey extends RobotRunner {
 
 	int randomMove;
 
+	private final RobotController controller;
+
 	private int getRandomDirection(final int[] array) {
 		final int rnd = ThreadLocalRandom.current().nextInt(0, array.length);
 		return array[rnd];
 	}
 
 	public Prey(final SimulatedRobot r, final int d, final SimulationEnv env, final RobotController controller) {
-		super(r, d, env, controller);
+		super(r, d, env);
 
 		logger = Logger.getLogger(Prey.class.getName());
 
@@ -38,7 +40,7 @@ final class Prey extends RobotRunner {
 
 		setPositionNew(getGridPosX(), getGridPosY());
 
-		logger.info(getGridPosX() + " " + getGridPosY());
+		this.controller = controller;
 	}
 
 	@Override
@@ -60,8 +62,8 @@ final class Prey extends RobotRunner {
 				break;
 			case 180:
 			case -180:
-				rotate(90);
-				break;
+				// rotate(90);
+				// break;
 			case 270:
 			case -90:
 				rotate(90);
@@ -74,19 +76,20 @@ final class Prey extends RobotRunner {
 	@Override
 	void moveLeft(final int x, final int y, final int a) {
 		switch (a) {
-			case -360:
-				rotate(90);
-				break;
+			// case -360:
+			// rotate(90);
+			// break;
 			case 0:
 			case 360:
 				rotate(-90);
 				break;
 			case 90:
 			case -270:
-				rotate(90);
-				break;
+				// rotate(90);
+				// break;
 			case 180:
 			case -180:
+			case -360:
 				rotate(90);
 				break;
 			case 270:
@@ -101,11 +104,12 @@ final class Prey extends RobotRunner {
 	@Override
 	void moveRight(final int x, final int y, final int a) {
 		switch (a) {
-			case 360:
-				rotate(-90);
-				break;
+			// case 360:
+			// rotate(-90);
+			// break;
 			case 0:
 			case -360:
+			case -90:
 				rotate(90);
 				break;
 			case 90:
@@ -114,14 +118,15 @@ final class Prey extends RobotRunner {
 				break;
 			case 180:
 			case -180:
-				rotate(-90);
-				break;
+				// rotate(-90);
+				// break;
 			case 270:
+			case 360:
 				rotate(-90);
 				break;
-			case -90:
-				rotate(90);
-				break;
+			// case -90:
+			// rotate(90);
+			// break;
 			default:
 				break;
 		}
@@ -130,13 +135,13 @@ final class Prey extends RobotRunner {
 	@Override
 	void moveUp(final int x, final int y, final int a) {
 		switch (a) {
-			case 360:
-				rotate(-90);
-				break;
+			// case 360:
+			// rotate(-90);
+			// break;
 			case 0:
 			case -360:
-				rotate(90);
-				break;
+				// rotate(90);
+				// break;
 			case 90:
 			case -270:
 				rotate(90);
@@ -147,6 +152,7 @@ final class Prey extends RobotRunner {
 				break;
 			case 270:
 			case -90:
+			case 360:
 				rotate(-90);
 				break;
 			default:
@@ -182,6 +188,10 @@ final class Prey extends RobotRunner {
 				}
 
 				controller.restartRobots();
+
+				env.updateTitle(env.getEpisode());
+
+				break;
 			}
 
 			doAction(x, y, a, right, down, left, up);

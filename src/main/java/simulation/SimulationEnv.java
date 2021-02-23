@@ -6,27 +6,34 @@ import java.util.logging.Logger;
 import comp329robosim.EnvController;
 import comp329robosim.MyGridCell;
 import comp329robosim.OccupancyType;
-import intelligence.Intelligence;
+
 import robots.RobotController;
 
 public class SimulationEnv extends EnvController {
-    public static final String CONFIG_FILE = "resources/defaultConfig.txt";
+    // public static final String CONFIG_FILE = "resources/defaultConfig.txt";
 
-    public static final int GRID_SIZE = 5;
+    public static final int GRID_SIZE = 6;
+
+    private int episode = 1;
 
     private final MyGridCell[][] grid;
 
     public SimulationEnv(final String confFileName, final int cols, final int rows) {
         super(confFileName, cols, rows);
 
+        updateTitle(getEpisode());
+
         grid = getGrid();
 
         addBoundaries();
 
-        // new RobotController(this, Intelligence.QLEAR_STRING);
-        new RobotController(this, Intelligence.DQN_STRING);
+        new RobotController(this);
 
         // new GridPrinter(this).start();
+    }
+
+    public int getEpisode() {
+        return episode++;
     }
 
     private void addBoundaries() {
@@ -40,7 +47,7 @@ public class SimulationEnv extends EnvController {
     }
 
     public static void main(final String[] args) {
-        new SimulationEnv(CONFIG_FILE, GRID_SIZE, GRID_SIZE);
+        new SimulationEnv("", GRID_SIZE, GRID_SIZE);
     }
 
     public void printGrid(final Logger inLogger) {

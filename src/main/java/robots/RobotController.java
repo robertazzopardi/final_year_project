@@ -1,11 +1,12 @@
 package robots;
 
 import comp329robosim.SimulatedRobot;
-import intelligence.Intelligence;
-import intelligence.NoAIException;
+import intelligence.DeepQLearning;
 import simulation.SimulationEnv;
 
 public class RobotController {
+
+	private static final int DELAY = 1000;
 
 	private final Hunter[] hunters = new Hunter[4];
 
@@ -13,12 +14,8 @@ public class RobotController {
 
 	private final SimulationEnv env;
 
-	private final String learningMethod;
-
-	public RobotController(final SimulationEnv env, final String learningMethod) {
+	public RobotController(final SimulationEnv env) {
 		this.env = env;
-
-		this.learningMethod = learningMethod;
 
 		initRobots();
 
@@ -28,26 +25,21 @@ public class RobotController {
 	private void initRobots() {
 		// initialise the robots from the environment
 		final SimulatedRobot preyRobot = env.getAndSetPrey();
-		prey = new Prey(preyRobot, 1000, env, this);
+		prey = new Prey(preyRobot, DELAY, env, this);
 
 		for (int i = 0; i < hunters.length; i++) {
-			try {
-				do {
-					final SimulatedRobot simulatedRobot = env.getAndSetHunter(i);
-					hunters[i] = new Hunter(simulatedRobot, 1000, env, this,
-							Intelligence.getIntelligence(this.learningMethod, env));
-				} while (isSamePosition(i));
-			} catch (NoAIException e) {
-				e.printStackTrace();
-			}
+			do {
+				final SimulatedRobot simulatedRobot = env.getAndSetHunter(i);
+				hunters[i] = new Hunter(simulatedRobot, DELAY, env, new DeepQLearning(5, Action.LENGTH));
+			} while (isSamePosition(i));
 		}
 
-		for (Hunter hunter : hunters) {
+		for (final Hunter hunter : hunters) {
 			hunter.setOthers(hunters);
 		}
 	}
 
-	private boolean isSamePosition(int i) {
+	private boolean isSamePosition(final int i) {
 		if (hunters[i].getGridPosX() == prey.getGridPosX() && hunters[i].getGridPosY() == prey.getGridPosY()) {
 			return true;
 		}
@@ -64,16 +56,16 @@ public class RobotController {
 
 	public void restartRobots() {
 		final SimulatedRobot preyRobot = env.getAndSetPrey();
-		prey = new Prey(preyRobot, 1000, env, this);
+		prey = new Prey(preyRobot, DELAY, env, this);
 
 		for (int i = 0; i < 4; i++) {
 			do {
 				final SimulatedRobot simulatedHunter = env.getAndSetHunter(i);
-				hunters[i] = new Hunter(simulatedHunter, 1000, env, this, hunters[i].getLearning());
+				hunters[i] = new Hunter(simulatedHunter, DELAY, env, hunters[i].getLearning());
 			} while (isSamePosition(i));
 		}
 
-		for (Hunter hunter : hunters) {
+		for (final Hunter hunter : hunters) {
 			hunter.setOthers(hunters);
 		}
 
@@ -81,7 +73,7 @@ public class RobotController {
 	}
 
 	public void resumeHunters() {
-		for (Hunter hunter : hunters) {
+		for (final Hunter hunter : hunters) {
 			hunter.resumeRobot();
 		}
 	}
