@@ -3,6 +3,8 @@ package robots;
 import comp329robosim.OccupancyType;
 import comp329robosim.SimulatedRobot;
 import intelligence.DeepQLearning;
+
+import java.util.Arrays;
 import java.util.logging.Logger;
 import simulation.SimulationEnv;
 
@@ -105,7 +107,8 @@ final class Hunter extends RobotRunner {
 			// }
 
 			// compare the current state to the next state produced from qlearning
-			final int[] states = getStates();
+			// final int[] states = getStates();
+			final float[] states = getStates();
 
 			final Action direction = learning.getActionFromStates(states);
 
@@ -120,7 +123,10 @@ final class Hunter extends RobotRunner {
 				}
 			}
 
-			learning.train(states, direction, score, getStates());
+			learning.update(states, direction, score, getStates());
+
+			// System.out.println(getRobotPos(getGridPosX()));
+			// System.out.println(direction);
 		}
 	}
 
@@ -147,29 +153,60 @@ final class Hunter extends RobotRunner {
 				break;
 			case NOTHING:
 				// nothing
-				try {
-					Thread.sleep(2000);
-				} catch (final InterruptedException e) {
-					Thread.currentThread().interrupt();
-				}
+				// try {
+				// Thread.sleep(2000);
+				// } catch (final InterruptedException e) {
+				// Thread.currentThread().interrupt();
+				// }
 				break;
 			default:
 				break;
 		}
 	}
 
-	private int[] getStates() {
-		final int[] states = new int[Action.LENGTH];
-		// This robots current position
-		states[0] = getCurentState(getGridPosX(), getGridPosY());
-		// The other huntes positions
-		states[1] = otherHunters[0].getCurentState(otherHunters[0].getGridPosX(), otherHunters[0].getGridPosY());
-		states[2] = otherHunters[1].getCurentState(otherHunters[1].getGridPosX(), otherHunters[1].getGridPosY());
-		states[3] = otherHunters[2].getCurentState(otherHunters[2].getGridPosX(), otherHunters[2].getGridPosY());
-		// The scan distance on the sensor
-		states[4] = getUSenseRange();
+	// private int[] getStates() {
+	// final int[] states = new int[Action.LENGTH];
+	// // This robots current position
+	// states[0] = getCurentState(getGridPosX(), getGridPosY());
+	// // The other huntes positions
+	// states[1] = otherHunters[0].getCurentState(otherHunters[0].getGridPosX(),
+	// otherHunters[0].getGridPosY());
+	// states[2] = otherHunters[1].getCurentState(otherHunters[1].getGridPosX(),
+	// otherHunters[1].getGridPosY());
+	// states[3] = otherHunters[2].getCurentState(otherHunters[2].getGridPosX(),
+	// otherHunters[2].getGridPosY());
+	// // The scan distance on the sensor
+	// states[4] = getUSenseRange();
+
+	// return states;
+	// }
+
+	private float[] getStates() {
+		final float[] states = new float[Action.LENGTH];
+
+		int gridMin = 1;
+		int gridMax = SimulationEnv.GRID_SIZE * SimulationEnv.GRID_SIZE;
+
+		states[0] = normalise(getCurentState(getGridPosX(), getGridPosY()), gridMin, gridMax);
+		states[1] = normalise(
+				otherHunters[0].getCurentState(otherHunters[0].getGridPosX(), otherHunters[0].getGridPosY()), gridMin,
+				gridMax);
+		states[2] = normalise(
+				otherHunters[1].getCurentState(otherHunters[1].getGridPosX(), otherHunters[1].getGridPosY()), gridMin,
+				gridMax);
+		states[3] = normalise(
+				otherHunters[2].getCurentState(otherHunters[2].getGridPosX(), otherHunters[2].getGridPosY()), gridMin,
+				gridMax);
+
+		int sensorScanMin = 0;
+		int sensorScanMax = 2550;
+		states[4] = normalise(getUSenseRange(), sensorScanMin, sensorScanMax);
 
 		return states;
+	}
+
+	private static float normalise(int x, int min, int max) {
+		return 2 * ((float) (x - min) / (max - min)) - 1;
 	}
 
 	@Override
@@ -246,20 +283,24 @@ final class Hunter extends RobotRunner {
 				if (canMove(x, y + 1)) {
 					env.updateGridEmpty(x, y);
 					env.updateGridHunter(x, y + 1);
-					travel(350);
+					// travel(350);
+					setPose(getX(), getY() + 350, getHeading());
 				}
 				break;
 			case 90:
 			case -270:
-				rotate(-90);
+				// rotate(-90);
+				setPose(getX(), getY(), getHeading() + -90);
 				break;
 			case 180:
 			case -180:
-				rotate(180);
+				// rotate(180);
+				setPose(getX(), getY(), getHeading() + 180);
 				break;
 			case 270:
 			case -90:
-				rotate(90);
+				// rotate(90);
+				setPose(getX(), getY(), getHeading() + 90);
 				break;
 			default:
 				break;
@@ -269,28 +310,29 @@ final class Hunter extends RobotRunner {
 	@Override
 	void moveLeft(final int x, final int y, final int a) {
 		switch (a) {
-			// case -360:
-			// rotate(90);
-			// break;
 			case 0:
 			case 360:
-				rotate(-90);
+				// rotate(-90);
+				setPose(getX(), getY(), getHeading() + -90);
 				break;
 			case 90:
 			case -270:
-				rotate(180);
+				// rotate(180);
+				setPose(getX(), getY(), getHeading() + -180);
 				break;
 			case 180:
 			case -180:
 			case -360:
-				rotate(90);
+				// rotate(90);
+				setPose(getX(), getY(), getHeading() + 90);
 				break;
 			case 270:
 			case -90:
 				if (canMove(x - 1, y)) {
 					env.updateGridEmpty(x, y);
 					env.updateGridHunter(x - 1, y);
-					travel(350);
+					// travel(350);
+					setPose(getX() - 350, getY(), getHeading());
 				}
 				break;
 			default:
@@ -301,31 +343,33 @@ final class Hunter extends RobotRunner {
 	@Override
 	void moveRight(final int x, final int y, final int a) {
 		switch (a) {
-			// case 360:
-			// rotate(-90);
-			// break;
 			case 0:
 			case -360:
-				rotate(90);
+				// rotate(90);
+				setPose(getX(), getY(), getHeading() + 90);
 				break;
 			case 90:
 			case -270:
 				if (canMove(x + 1, y)) {
 					env.updateGridEmpty(x, y);
 					env.updateGridHunter(x + 1, y);
-					travel(350);
+					// travel(350);
+					setPose(getX() + 350, getY(), getHeading());
 				}
 				break;
 			case 180:
 			case -180:
 			case 360:
-				rotate(-90);
+				// rotate(-90);
+				setPose(getX(), getY(), getHeading() + -90);
 				break;
 			case 270:
-				rotate(-180);
+				// rotate(-180);
+				setPose(getX(), getY(), getHeading() + -180);
 				break;
 			case -90:
-				rotate(180);
+				// rotate(180);
+				setPose(getX(), getY(), getHeading() + 180);
 				break;
 			default:
 				break;
@@ -336,27 +380,32 @@ final class Hunter extends RobotRunner {
 	void moveUp(final int x, final int y, final int a) {
 		switch (a) {
 			case 360:
-				rotate(-180);
+				// rotate(-180);
+				setPose(getX(), getY(), getHeading() + -180);
 				break;
 			case 0:
 			case -360:
-				rotate(180);
+				// rotate(180);
+				setPose(getX(), getY(), getHeading() + 180);
 				break;
 			case 90:
 			case -270:
-				rotate(90);
+				// rotate(90);
+				setPose(getX(), getY(), getHeading() + 90);
 				break;
 			case 180:
 			case -180:
 				if (canMove(x, y - 1)) {
 					env.updateGridEmpty(x, y);
 					env.updateGridHunter(x, y - 1);
-					travel(350);
+					// travel(350);
+					setPose(getX(), getY() - 350, getHeading());
 				}
 				break;
 			case 270:
 			case -90:
-				rotate(-90);
+				// rotate(-90);
+				setPose(getX(), getY(), getHeading() + -90);
 				break;
 			default:
 				break;

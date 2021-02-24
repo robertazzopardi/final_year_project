@@ -12,21 +12,22 @@ import simulation.SimulationEnv;
  *
  */
 final class Prey extends RobotRunner {
-	private static final int[] ALL = new int[] { 1, 2, 3, 4 };
+	private static final Action[] ALL = new Action[] { Action.RIGHT, Action.DOWN, Action.LEFT, Action.UP };
 
-	private static final int[] NO_DOWN = new int[] { 1, 3, 4 };
+	private static final Action[] NO_DOWN = new Action[] { Action.RIGHT, Action.LEFT, Action.UP };
 
-	private static final int[] NO_LEFT = new int[] { 1, 2, 4 };
+	private static final Action[] NO_LEFT = new Action[] { Action.RIGHT, Action.DOWN, Action.UP };
 
-	private static final int[] NO_RIGHT = new int[] { 2, 3, 4 };
+	private static final Action[] NO_RIGHT = new Action[] { Action.DOWN, Action.LEFT, Action.UP };
 
-	private static final int[] NO_UP = new int[] { 1, 2, 3 };
+	private static final Action[] NO_UP = new Action[] { Action.RIGHT, Action.DOWN, Action.LEFT };
 
-	int randomMove;
+	// int randomMove;
+	Action randomMove;
 
 	private final RobotController controller;
 
-	private int getRandomDirection(final int[] array) {
+	private Action getRandomDirection(final Action[] array) {
 		final int rnd = ThreadLocalRandom.current().nextInt(0, array.length);
 		return array[rnd];
 	}
@@ -54,19 +55,19 @@ final class Prey extends RobotRunner {
 			case 0:
 			case 360:
 			case -360:
-				travelAction(x, y, x, y + 1);
+				travelAction(x, y, x, y + 1, Action.DOWN);
 				break;
 			case 90:
 			case -270:
-				rotate(-90);
+				// rotate(-90);
+				setPose(getX(), getY(), getHeading() + -90);
 				break;
 			case 180:
 			case -180:
-				// rotate(90);
-				// break;
 			case 270:
 			case -90:
-				rotate(90);
+				// rotate(90);
+				setPose(getX(), getY(), getHeading() + 90);
 				break;
 			default:
 				break;
@@ -76,25 +77,22 @@ final class Prey extends RobotRunner {
 	@Override
 	void moveLeft(final int x, final int y, final int a) {
 		switch (a) {
-			// case -360:
-			// rotate(90);
-			// break;
 			case 0:
 			case 360:
-				rotate(-90);
+				// rotate(-90);
+				setPose(getX(), getY(), getHeading() + -90);
 				break;
 			case 90:
 			case -270:
-				// rotate(90);
-				// break;
+			case -360:
 			case 180:
 			case -180:
-			case -360:
-				rotate(90);
+				// rotate(90);
+				setPose(getX(), getY(), getHeading() + 90);
 				break;
 			case 270:
 			case -90:
-				travelAction(x, y, x - 1, y);
+				travelAction(x, y, x - 1, y, Action.LEFT);
 				break;
 			default:
 				break;
@@ -104,29 +102,23 @@ final class Prey extends RobotRunner {
 	@Override
 	void moveRight(final int x, final int y, final int a) {
 		switch (a) {
-			// case 360:
-			// rotate(-90);
-			// break;
 			case 0:
 			case -360:
 			case -90:
-				rotate(90);
+				// rotate(90);
+				setPose(getX(), getY(), getHeading() + 90);
 				break;
 			case 90:
 			case -270:
-				travelAction(x, y, x + 1, y);
+				travelAction(x, y, x + 1, y, Action.RIGHT);
 				break;
 			case 180:
 			case -180:
-				// rotate(-90);
-				// break;
 			case 270:
 			case 360:
-				rotate(-90);
+				// rotate(-90);
+				setPose(getX(), getY(), getHeading() + -90);
 				break;
-			// case -90:
-			// rotate(90);
-			// break;
 			default:
 				break;
 		}
@@ -135,25 +127,22 @@ final class Prey extends RobotRunner {
 	@Override
 	void moveUp(final int x, final int y, final int a) {
 		switch (a) {
-			// case 360:
-			// rotate(-90);
-			// break;
 			case 0:
 			case -360:
-				// rotate(90);
-				// break;
 			case 90:
 			case -270:
-				rotate(90);
+				// rotate(90);
+				setPose(getX(), getY(), getHeading() + 90);
 				break;
 			case 180:
 			case -180:
-				travelAction(x, y, x, y - 1);
+				travelAction(x, y, x, y - 1, Action.UP);
 				break;
 			case 270:
 			case -90:
 			case 360:
-				rotate(-90);
+				// rotate(-90);
+				setPose(getX(), getY(), getHeading() + -90);
 				break;
 			default:
 				break;
@@ -195,6 +184,8 @@ final class Prey extends RobotRunner {
 			}
 
 			doAction(x, y, a, right, down, left, up);
+
+			// System.out.println(randomMove);
 		}
 		logger.info("Prey Stopped");
 	}
@@ -203,7 +194,7 @@ final class Prey extends RobotRunner {
 			final boolean left, final boolean up) {
 		// Handle movement
 		switch (randomMove) {
-			case 1:
+			case RIGHT:
 				// right
 				if (right) {
 					moveRight(x, y, a);
@@ -211,7 +202,7 @@ final class Prey extends RobotRunner {
 					randomMove = getRandomDirection(NO_RIGHT);
 				}
 				break;
-			case 2:
+			case DOWN:
 				// down
 				if (down) {
 					moveDown(x, y, a);
@@ -219,7 +210,7 @@ final class Prey extends RobotRunner {
 					randomMove = getRandomDirection(NO_DOWN);
 				}
 				break;
-			case 3:
+			case LEFT:
 				// left
 				if (left) {
 					moveLeft(x, y, a);
@@ -227,7 +218,7 @@ final class Prey extends RobotRunner {
 					randomMove = getRandomDirection(NO_LEFT);
 				}
 				break;
-			case 4:
+			case UP:
 				// up
 				if (up) {
 					moveUp(x, y, a);
@@ -284,14 +275,31 @@ final class Prey extends RobotRunner {
 		}
 	}
 
-	private void travelAction(final int x, final int y, final int dx, final int dy) {
+	private void travelAction(final int x, final int y, final int dx, final int dy, final Action direction) {
 		if (canMove(dx, dy)) {
 			controller.resumeHunters();
 
 			setPositionOld(x, y);
 			setPositionNew(dx, dy);
 
-			travel(350);
+			// travel(350);
+
+			switch (direction) {
+				case UP:
+					setPose(getX(), getY() - 350, getHeading());
+					break;
+				case DOWN:
+					setPose(getX(), getY() + 350, getHeading());
+					break;
+				case LEFT:
+					setPose(getX() - 350, getY(), getHeading());
+					break;
+				case RIGHT:
+					setPose(getX() + 350, getY(), getHeading());
+					break;
+				default:
+					break;
+			}
 			randomMove = getRandomDirection(ALL);
 		}
 	}

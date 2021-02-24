@@ -61,11 +61,11 @@ public class DeepQLearning {
 		epsilon -= 0.001;
 	}
 
-	public Action getActionFromStates(final int[] states) {
+	public Action getActionFromStates(final float[] states) {
 		return epsilonGreedyAction(states, epsilon);
 	}
 
-	public Action epsilonGreedyAction(final int[] states, final double epsilon) {
+	public Action epsilonGreedyAction(final float[] states, final double epsilon) {
 		// https://www.geeksforgeeks.org/epsilon-greedy-algorithm-in-reinforcement-learning/
 		final double random = getRandomDouble();
 		if (random < epsilon) {
@@ -75,7 +75,7 @@ public class DeepQLearning {
 		return getActionFromTheNetwork(states);
 	}
 
-	public Action getActionFromTheNetwork(final int[] states) {
+	public Action getActionFromTheNetwork(final float[] states) {
 		final INDArray output = network.output(toINDArray(states), false);
 
 		// Values provided by the network. Based on them we chose the current best
@@ -89,8 +89,8 @@ public class DeepQLearning {
 		return Action.getActionByIndex(maxValueIndex);
 	}
 
-	private INDArray toINDArray(final int[] states) {
-		return Nd4j.create(new int[][] { states });
+	private INDArray toINDArray(final float[] states) {
+		return Nd4j.create(new float[][] { states });
 	}
 
 	private double getRandomDouble() {
@@ -109,7 +109,7 @@ public class DeepQLearning {
 
 	private final Map<String, Double> qTable = new HashMap<>();
 
-	public void train(final int[] states, final Action action, final double score, final int[] nextState) {
+	public void update(final float[] states, final Action action, final double score, final float[] nextState) {
 		// Get max q score for next state
 		final double maxQScore = getMaxQScore(nextState);
 
@@ -127,7 +127,7 @@ public class DeepQLearning {
 		network.fit(stateObservation, updatedOutput);
 	}
 
-	private double getMaxQScore(final int[] states) {
+	private double getMaxQScore(final float[] states) {
 		final String gameStateString = Arrays.toString(states);
 
 		final String stateWithActUP = getStateWithActionString(gameStateString, Action.UP);
