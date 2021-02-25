@@ -6,6 +6,7 @@ import comp329robosim.MyGridCell;
 import comp329robosim.RobotMonitor;
 import comp329robosim.SimulatedRobot;
 import simulation.SimulationEnv;
+import simulation.SimulationEnv.Mode;
 
 /**
  * @author rob
@@ -57,25 +58,147 @@ abstract class RobotRunner extends RobotMonitor {
 		return (int) ((((double) getY() / 350) * 2) - 1) / 2;
 	}
 
-	/**
-	 * handle moving down a row
-	 */
-	abstract void moveDown(int x, int y, int a);
+	// /**
+	// * handle moving down a row
+	// */
+	// abstract void moveDown(int x, int y, int a);
 
-	/**
-	 * handle moving left a column
-	 */
-	abstract void moveLeft(int x, int y, int a);
+	// /**
+	// * handle moving left a column
+	// */
+	// abstract void moveLeft(int x, int y, int a);
 
-	/**
-	 * handle moving right a column
-	 */
-	abstract void moveRight(int x, int y, int a);
+	// /**
+	// * handle moving right a column
+	// */
+	// abstract void moveRight(int x, int y, int a);
 
-	/**
-	 * handle moving up a row
-	 */
-	abstract void moveUp(int x, int y, int a);
+	// /**
+	// * handle moving up a row
+	// */
+	// abstract void moveUp(int x, int y, int a);
+
+	abstract void travelAction(final int x, final int y, final int dx, final int dy, final Action direction);
+
+	void moveDown(final int x, final int y, final int a) {
+		switch (a) {
+			case 0:
+			case 360:
+			case -360:
+				travelAction(x, y, x, y + 1, Action.DOWN);
+				break;
+			case 90:
+			case -270:
+				if (SimulationEnv.MODE == Mode.EVAL) {
+					rotate(-90);
+				} else {
+					setPose(getX(), getY(), getHeading() + -90);
+				}
+				break;
+			case 180:
+			case -180:
+			case 270:
+			case -90:
+				if (SimulationEnv.MODE == Mode.EVAL) {
+					rotate(90);
+				} else {
+					setPose(getX(), getY(), getHeading() + 90);
+				}
+				break;
+			default:
+				break;
+		}
+	}
+
+	void moveLeft(final int x, final int y, final int a) {
+		switch (a) {
+			case 0:
+			case 360:
+				if (SimulationEnv.MODE == Mode.EVAL) {
+					rotate(-90);
+				} else {
+					setPose(getX(), getY(), getHeading() + -90);
+				}
+				break;
+			case 90:
+			case -270:
+			case -360:
+			case 180:
+			case -180:
+				if (SimulationEnv.MODE == Mode.EVAL) {
+					rotate(90);
+				} else {
+					setPose(getX(), getY(), getHeading() + 90);
+				}
+				break;
+			case 270:
+			case -90:
+				travelAction(x, y, x - 1, y, Action.LEFT);
+				break;
+			default:
+				break;
+		}
+	}
+
+	void moveRight(final int x, final int y, final int a) {
+		switch (a) {
+			case 0:
+			case -360:
+			case -90:
+				if (SimulationEnv.MODE == Mode.EVAL) {
+					rotate(90);
+				} else {
+					setPose(getX(), getY(), getHeading() + 90);
+				}
+				break;
+			case 90:
+			case -270:
+				travelAction(x, y, x + 1, y, Action.RIGHT);
+				break;
+			case 180:
+			case -180:
+			case 270:
+			case 360:
+				if (SimulationEnv.MODE == Mode.EVAL) {
+					rotate(-90);
+				} else {
+					setPose(getX(), getY(), getHeading() + -90);
+				}
+				break;
+			default:
+				break;
+		}
+	}
+
+	void moveUp(final int x, final int y, final int a) {
+		switch (a) {
+			case 0:
+			case -360:
+			case 90:
+			case -270:
+				if (SimulationEnv.MODE == Mode.EVAL) {
+					rotate(90);
+				} else {
+					setPose(getX(), getY(), getHeading() + 90);
+				}
+				break;
+			case 180:
+			case -180:
+				travelAction(x, y, x, y - 1, Action.UP);
+				break;
+			case 270:
+			case -90:
+			case 360:
+				if (SimulationEnv.MODE == Mode.EVAL) {
+					rotate(-90);
+				} else {
+					setPose(getX(), getY(), getHeading() + -90);
+				}
+				break;
+			default:
+				break;
+		}
+	}
 
 	public void stopRobot() {
 		exit = true;

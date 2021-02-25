@@ -6,7 +6,9 @@ import intelligence.DeepQLearning;
 
 import java.util.Arrays;
 import java.util.logging.Logger;
+
 import simulation.SimulationEnv;
+import simulation.SimulationEnv.Mode;
 
 /**
  * @author rob
@@ -30,6 +32,8 @@ final class Hunter extends RobotRunner {
 
 	private final Hunter[] otherHunters = new Hunter[3];
 
+	private final Prey prey;
+
 	public void setOthers(final Hunter[] hunters) {
 		int index = 0;
 
@@ -40,7 +44,8 @@ final class Hunter extends RobotRunner {
 		}
 	}
 
-	public Hunter(final SimulatedRobot r, final int d, final SimulationEnv env, final DeepQLearning learning) {
+	public Hunter(final SimulatedRobot r, final int d, final SimulationEnv env, final DeepQLearning learning,
+			final Prey prey) {
 		super(r, d, env);
 
 		this.number = hunterCount++;
@@ -50,11 +55,13 @@ final class Hunter extends RobotRunner {
 		env.updateGridHunter(getGridPosX(), getGridPosY());
 
 		this.learning = learning;
+
+		this.prey = prey;
 	}
 
 	@Override
 	boolean canMove(final int x, final int y) {
-		return grid[y][x].isEmpty();
+		return grid[y][x].isEmpty() || grid[y][x].getCellType() == OccupancyType.GOAL;
 	}
 
 	public DeepQLearning getLearning() {
@@ -95,45 +102,51 @@ final class Hunter extends RobotRunner {
 			}
 
 			// check if paused and should be waiting
-			// synchronized (pauseLock) {
-			// if (paused) {
-			// try {
-			// pauseLock.wait();
-			// } catch (final InterruptedException ex) {
-			// ex.printStackTrace();
-			// Thread.currentThread().interrupt();
-			// }
-			// }
-			// }
+			synchronized (pauseLock) {
+				if (paused) {
+					try {
+						pauseLock.wait();
+					} catch (final InterruptedException ex) {
+						ex.printStackTrace();
+						Thread.currentThread().interrupt();
+					}
+				}
+			}
 
 			// compare the current state to the next state produced from qlearning
-			// final int[] states = getStates();
 			final float[] states = getStates();
 
 			final Action direction = learning.getActionFromStates(states);
 
+			// logger.info(direction.toString() + " " + number);
+
 			learning.updateEpsilon();
 
-			moveInDirection(direction);
+			doAction(direction);
 
-			double score = isAdjacentToPrey() ? 100 : -0.1;
-			for (final Hunter hunter : otherHunters) {
-				if (hunter.isAdjacentToPrey()) {
-					score += 25;
-				}
+			double score = 0;
+			// score = isAdjacentToPrey() ? 1 : 0;
+			// for (final Hunter hunter : otherHunters) {
+			// if (hunter.isAdjacentToPrey()) {
+			// score += 0.25;
+			// }
+			// }
+
+			if (isAdjacentToPrey()
+					&& Arrays.asList(otherHunters).stream().parallel().allMatch(Hunter::isAdjacentToPrey)) {
+				score = 0.1;
 			}
 
 			learning.update(states, direction, score, getStates());
 
 			// System.out.println(getRobotPos(getGridPosX()));
-			// System.out.println(direction);
 		}
 	}
 
-	private void moveInDirection(final Action direction) {
-		int gridPosX = getGridPosX();
-		int gridPosY = getGridPosY();
-		int heading = getHeading();
+	private void doAction(final Action direction) {
+		final int gridPosX = getGridPosX();
+		final int gridPosY = getGridPosY();
+		final int heading = getHeading();
 		switch (direction) {
 			case RIGHT:
 				// right
@@ -182,10 +195,10 @@ final class Hunter extends RobotRunner {
 	// }
 
 	private float[] getStates() {
-		final float[] states = new float[Action.LENGTH];
+		final float[] states = new float[5];
 
-		int gridMin = 1;
-		int gridMax = SimulationEnv.GRID_SIZE * SimulationEnv.GRID_SIZE;
+		final int gridMin = 1;
+		final int gridMax = SimulationEnv.GRID_SIZE * SimulationEnv.GRID_SIZE;
 
 		states[0] = normalise(getCurentState(getGridPosX(), getGridPosY()), gridMin, gridMax);
 		states[1] = normalise(
@@ -198,15 +211,18 @@ final class Hunter extends RobotRunner {
 				otherHunters[2].getCurentState(otherHunters[2].getGridPosX(), otherHunters[2].getGridPosY()), gridMin,
 				gridMax);
 
-		int sensorScanMin = 0;
-		int sensorScanMax = 2550;
+		final int sensorScanMin = 0;
+		final int sensorScanMax = 2550;
 		states[4] = normalise(getUSenseRange(), sensorScanMin, sensorScanMax);
+
+		// states[5] = normalise(prey.getCurentState(prey.getGridPosX(),
+		// prey.getGridPosY()), gridMin, gridMax);
 
 		return states;
 	}
 
-	private static float normalise(int x, int min, int max) {
-		return 2 * ((float) (x - min) / (max - min)) - 1;
+	private static float normalise(final int x, final int min, final int max) {
+		return (2 * ((float) (x - min) / (max - min))) - 1;
 	}
 
 	@Override
@@ -274,141 +290,159 @@ final class Hunter extends RobotRunner {
 		resetHunterCount();
 	}
 
+	// @Override
+	// void moveDown(final int x, final int y, final int a) {
+	// switch (a) {
+	// case 0:
+	// case 360:
+	// case -360:
+	// travelAction(x, y, x, y + 1, Action.DOWN);
+	// break;
+	// case 90:
+	// case -270:
+	// // rotate(-90);
+	// setPose(getX(), getY(), getHeading() + -90);
+	// break;
+	// case 180:
+	// case -180:
+	// // rotate(180);
+	// // setPose(getX(), getY(), getHeading() + 180);
+	// // break;
+	// case 270:
+	// case -90:
+	// // rotate(90);
+	// setPose(getX(), getY(), getHeading() + 90);
+	// break;
+	// default:
+	// break;
+	// }
+	// }
+
+	// @Override
+	// void moveLeft(final int x, final int y, final int a) {
+	// switch (a) {
+	// case 0:
+	// case 360:
+	// // rotate(-90);
+	// setPose(getX(), getY(), getHeading() + -90);
+	// break;
+	// case 90:
+	// case -270:
+	// // rotate(180);
+	// // setPose(getX(), getY(), getHeading() + -180);
+	// // break;
+	// case -360:
+	// case 180:
+	// case -180:
+	// // rotate(90);
+	// setPose(getX(), getY(), getHeading() + 90);
+	// break;
+	// case 270:
+	// case -90:
+	// // if (canMove(x - 1, y)) {
+	// // env.updateGridEmpty(x, y);
+	// // env.updateGridHunter(x - 1, y);
+	// // // travel(350);
+	// // setPose(getX() - 350, getY(), getHeading());
+	// // }
+	// travelAction(x, y, x - 1, y, Action.LEFT);
+	// break;
+	// default:
+	// break;
+	// }
+	// }
+
+	// @Override
+	// void moveRight(final int x, final int y, final int a) {
+	// switch (a) {
+	// case 0:
+	// case -360:
+	// case -90:
+	// // rotate(90);
+	// setPose(getX(), getY(), getHeading() + 90);
+	// break;
+	// case 90:
+	// case -270:
+	// // if (canMove(x + 1, y)) {
+	// // env.updateGridEmpty(x, y);
+	// // env.updateGridHunter(x + 1, y);
+	// // // travel(350);
+	// // setPose(getX() + 350, getY(), getHeading());
+	// // }
+	// travelAction(x, y, x + 1, y, Action.RIGHT);
+	// break;
+	// case 180:
+	// case -180:
+	// case 270:
+	// case 360:
+	// // rotate(-90);
+	// setPose(getX(), getY(), getHeading() + -90);
+	// break;
+	// // case 270:
+	// // // rotate(-180);
+	// // setPose(getX(), getY(), getHeading() + -180);
+	// // break;
+	// // case -90:
+	// // // rotate(180);
+	// // setPose(getX(), getY(), getHeading() + 180);
+	// // break;
+	// default:
+	// break;
+	// }
+	// }
+
+	// @Override
+	// void moveUp(final int x, final int y, final int a) {
+	// switch (a) {
+	// case 0:
+	// case -360:
+	// case 90:
+	// case -270:
+	// // rotate(90);
+	// setPose(getX(), getY(), getHeading() + 90);
+	// break;
+	// case 180:
+	// case -180:
+	// travelAction(x, y, x, y - 1, Action.UP);
+	// break;
+	// case 270:
+	// case -90:
+	// case 360:
+	// // rotate(-90);
+	// setPose(getX(), getY(), getHeading() + -90);
+	// break;
+	// default:
+	// break;
+	// }
+	// }
+
 	@Override
-	void moveDown(final int x, final int y, final int a) {
-		switch (a) {
-			case 0:
-			case 360:
-			case -360:
-				if (canMove(x, y + 1)) {
-					env.updateGridEmpty(x, y);
-					env.updateGridHunter(x, y + 1);
-					// travel(350);
-					setPose(getX(), getY() + 350, getHeading());
+	final void travelAction(final int x, final int y, final int dx, final int dy, final Action direction) {
+		if (canMove(dx, dy)) {
+			env.updateGridEmpty(x, y);
+			env.updateGridHunter(dx, dy);
+
+			if (SimulationEnv.MODE == Mode.EVAL) {
+				travel(350);
+			} else {
+				switch (direction) {
+					case UP:
+						setPose(getX(), getY() - 350, getHeading());
+						break;
+					case DOWN:
+						setPose(getX(), getY() + 350, getHeading());
+						break;
+					case LEFT:
+						setPose(getX() - 350, getY(), getHeading());
+						break;
+					case RIGHT:
+						setPose(getX() + 350, getY(), getHeading());
+						break;
+					default:
+						break;
 				}
-				break;
-			case 90:
-			case -270:
-				// rotate(-90);
-				setPose(getX(), getY(), getHeading() + -90);
-				break;
-			case 180:
-			case -180:
-				// rotate(180);
-				setPose(getX(), getY(), getHeading() + 180);
-				break;
-			case 270:
-			case -90:
-				// rotate(90);
-				setPose(getX(), getY(), getHeading() + 90);
-				break;
-			default:
-				break;
+			}
 		}
 	}
 
-	@Override
-	void moveLeft(final int x, final int y, final int a) {
-		switch (a) {
-			case 0:
-			case 360:
-				// rotate(-90);
-				setPose(getX(), getY(), getHeading() + -90);
-				break;
-			case 90:
-			case -270:
-				// rotate(180);
-				setPose(getX(), getY(), getHeading() + -180);
-				break;
-			case 180:
-			case -180:
-			case -360:
-				// rotate(90);
-				setPose(getX(), getY(), getHeading() + 90);
-				break;
-			case 270:
-			case -90:
-				if (canMove(x - 1, y)) {
-					env.updateGridEmpty(x, y);
-					env.updateGridHunter(x - 1, y);
-					// travel(350);
-					setPose(getX() - 350, getY(), getHeading());
-				}
-				break;
-			default:
-				break;
-		}
-	}
-
-	@Override
-	void moveRight(final int x, final int y, final int a) {
-		switch (a) {
-			case 0:
-			case -360:
-				// rotate(90);
-				setPose(getX(), getY(), getHeading() + 90);
-				break;
-			case 90:
-			case -270:
-				if (canMove(x + 1, y)) {
-					env.updateGridEmpty(x, y);
-					env.updateGridHunter(x + 1, y);
-					// travel(350);
-					setPose(getX() + 350, getY(), getHeading());
-				}
-				break;
-			case 180:
-			case -180:
-			case 360:
-				// rotate(-90);
-				setPose(getX(), getY(), getHeading() + -90);
-				break;
-			case 270:
-				// rotate(-180);
-				setPose(getX(), getY(), getHeading() + -180);
-				break;
-			case -90:
-				// rotate(180);
-				setPose(getX(), getY(), getHeading() + 180);
-				break;
-			default:
-				break;
-		}
-	}
-
-	@Override
-	void moveUp(final int x, final int y, final int a) {
-		switch (a) {
-			case 360:
-				// rotate(-180);
-				setPose(getX(), getY(), getHeading() + -180);
-				break;
-			case 0:
-			case -360:
-				// rotate(180);
-				setPose(getX(), getY(), getHeading() + 180);
-				break;
-			case 90:
-			case -270:
-				// rotate(90);
-				setPose(getX(), getY(), getHeading() + 90);
-				break;
-			case 180:
-			case -180:
-				if (canMove(x, y - 1)) {
-					env.updateGridEmpty(x, y);
-					env.updateGridHunter(x, y - 1);
-					// travel(350);
-					setPose(getX(), getY() - 350, getHeading());
-				}
-				break;
-			case 270:
-			case -90:
-				// rotate(-90);
-				setPose(getX(), getY(), getHeading() + -90);
-				break;
-			default:
-				break;
-		}
-	}
 }
