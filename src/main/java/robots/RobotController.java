@@ -33,7 +33,8 @@ public class RobotController {
 		for (int i = 0; i < hunters.length; i++) {
 			do {
 				final SimulatedRobot simulatedRobot = env.getAndSetHunter(i);
-				hunters[i] = new Hunter(simulatedRobot, DELAY, env, new DeepQLearning(5, Action.LENGTH), prey);
+				hunters[i] = new Hunter(simulatedRobot, DELAY, env,
+						new DeepQLearning(Hunter.STATE_COUNT, Action.LENGTH), prey);
 			} while (isSamePosition(i));
 		}
 

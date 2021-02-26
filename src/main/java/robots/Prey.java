@@ -169,7 +169,6 @@ final class Prey extends RobotRunner {
 				logger.info("trapped");
 
 				controller.stopRobots();
-
 				env.resetGrid();
 
 				// Done with current epoch, now we can restart the simulation
@@ -187,8 +186,6 @@ final class Prey extends RobotRunner {
 			}
 
 			doAction(x, y, a, right, down, left, up);
-
-			// System.out.println(randomMove);
 		}
 		logger.info("Prey Stopped");
 	}
