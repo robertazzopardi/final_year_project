@@ -1,5 +1,7 @@
 package robots;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.logging.Logger;
 
 import comp329robosim.OccupancyType;
@@ -68,21 +70,29 @@ final class Hunter extends RobotRunner {
 		return learning;
 	}
 
-	public boolean isAdjacentToPrey() {
-		final int x = getGridPosX();
-		final int y = getGridPosY();
-		return grid[y][x - 1].getCellType() == OccupancyType.PREY || grid[y][x + 1].getCellType() == OccupancyType.PREY
-				|| grid[y - 1][x].getCellType() == OccupancyType.PREY
-				|| grid[y + 1][x].getCellType() == OccupancyType.PREY;
-	}
+	// public boolean isAdjacentToPrey() {
+	// final int x = getGridPosX();
+	// final int y = getGridPosY();
+	// return grid[y][x - 1].getCellType() == OccupancyType.PREY || grid[y][x +
+	// 1].getCellType() == OccupancyType.PREY
+	// || grid[y - 1][x].getCellType() == OccupancyType.PREY
+	// || grid[y + 1][x].getCellType() == OccupancyType.PREY;
+	// }
 
-	public boolean isAdjacentToHunter() {
+	// public boolean isAdjacentToHunter() {
+	// final int x = getGridPosX();
+	// final int y = getGridPosY();
+	// return grid[y][x - 1].getCellType() == OccupancyType.HUNTER
+	// || grid[y][x + 1].getCellType() == OccupancyType.HUNTER
+	// || grid[y - 1][x].getCellType() == OccupancyType.HUNTER
+	// || grid[y + 1][x].getCellType() == OccupancyType.HUNTER;
+	// }
+
+	public boolean isAdjacentTo(final OccupancyType type) {
 		final int x = getGridPosX();
 		final int y = getGridPosY();
-		return grid[y][x - 1].getCellType() == OccupancyType.HUNTER
-				|| grid[y][x + 1].getCellType() == OccupancyType.HUNTER
-				|| grid[y - 1][x].getCellType() == OccupancyType.HUNTER
-				|| grid[y + 1][x].getCellType() == OccupancyType.HUNTER;
+		return grid[y][x - 1].getCellType() == type || grid[y][x + 1].getCellType() == type
+				|| grid[y - 1][x].getCellType() == type || grid[y + 1][x].getCellType() == type;
 	}
 
 	public boolean isPaused() {
@@ -106,7 +116,7 @@ final class Hunter extends RobotRunner {
 
 		while (!exit) {
 			// check if in a goal state
-			if (isAdjacentToPrey()) {
+			if (isAdjacentTo(OccupancyType.PREY)) {
 				// Do nothing while in goal state
 				// logger.info("in a goal state");
 				env.updateGridHunter(getGridPosX(), getGridPosY());
@@ -126,10 +136,8 @@ final class Hunter extends RobotRunner {
 			}
 
 			// compare the current state to the next state produced from qlearning
-			// final float[] states = getStates();
 			currState = getStates();
 
-			// final Action direction = learning.getActionFromStates(states);
 			direction = learning.getActionFromStates(currState);
 
 			learning.updateEpsilon();
@@ -149,33 +157,13 @@ final class Hunter extends RobotRunner {
 
 	private double getScore(final float[] currState, final float[] newState) {
 		double score = 0;
-		final boolean adjacentToPrey = isAdjacentToPrey();
-		final boolean adjacentToHunter = isAdjacentToHunter();
+		// final boolean adjacentToPrey = isAdjacentTo(OccupancyType.PREY);
+		// final boolean adjacentToHunter = isAdjacentTo(OccupancyType.HUNTER);
 
-		if (adjacentToPrey) {
-			score += 0.1;
-		} else {
-			score -= 0.5;
-		}
+		// long numberAdjacent = Arrays.asList(otherHunters).stream().filter().count();
 
-		if (adjacentToHunter) {
-			score -= 0.5;
-		}
-
-		// if (adjacentToPrey &&
-		// Arrays.asList(otherHunters).stream().parallel().allMatch(Hunter::isAdjacentToPrey))
-		// {
-		// score += 100;
-		// }
-
-		if (currState[0] == newState[0]) {
-			score -= 0.5;
-		} else {
-			score += 0.5;
-		}
-
-		// if (getUSenseRange() < 2550) {
-		// score += 0.05;
+		// if (numberAdjacent > 0) {
+		// System.out.println(numberAdjacent);
 		// }
 
 		return score;
@@ -203,34 +191,11 @@ final class Hunter extends RobotRunner {
 				moveUp(gridPosX, gridPosY, heading);
 				break;
 			case NOTHING:
-				// nothing
-				// try {
-				// Thread.sleep(2000);
-				// } catch (final InterruptedException e) {
-				// Thread.currentThread().interrupt();
-				// }
 				break;
 			default:
 				break;
 		}
 	}
-
-	// private int[] getStates() {
-	// final int[] states = new int[Action.LENGTH];
-	// // This robots current position
-	// states[0] = getCurentState(getGridPosX(), getGridPosY());
-	// // The other huntes positions
-	// states[1] = otherHunters[0].getCurentState(otherHunters[0].getGridPosX(),
-	// otherHunters[0].getGridPosY());
-	// states[2] = otherHunters[1].getCurentState(otherHunters[1].getGridPosX(),
-	// otherHunters[1].getGridPosY());
-	// states[3] = otherHunters[2].getCurentState(otherHunters[2].getGridPosX(),
-	// otherHunters[2].getGridPosY());
-	// // The scan distance on the sensor
-	// states[4] = getUSenseRange();
-
-	// return states;
-	// }
 
 	// public static final int STATE_COUNT = 6;
 	public static final int STATE_COUNT = 9;
@@ -278,188 +243,12 @@ final class Hunter extends RobotRunner {
 		logger.info(endLog);
 	}
 
-	// private void qlearningRunning() {
-	// while (!exit) {
-	// // train
-	// // learning.train();
-
-	// final int x = getGridPosX();
-	// final int y = getGridPosY();
-	// final int a = getHeading();
-
-	// // check if in a goal state
-	// if (isAdjacentToPrey(x, y)) {
-	// // Do nothing while in goal state
-	// logger.info("in a goal state");
-	// env.updateGridHunter(x, y);
-	// pauseRobot();
-	// }
-
-	// // check if paused and should be waiting
-	// synchronized (pauseLock) {
-	// if (paused) {
-	// try {
-	// pauseLock.wait();
-	// } catch (final InterruptedException ex) {
-	// ex.printStackTrace();
-	// Thread.currentThread().interrupt();
-	// }
-	// }
-	// }
-
-	// // compare the current state to the next state produced from qlearning
-	// final int currState = getCurentState(x, y);
-
-	// final int nextState = learning.getActionFromState(currState);
-
-	// if (currState + 1 == nextState) {
-	// // right
-	// moveRight(x, y, a);
-	// } else if (currState - 1 == nextState) {
-	// // left
-	// moveLeft(x, y, a);
-	// } else if (currState + 10 == nextState) {
-	// // up
-	// moveDown(x, y, a);
-	// } else if (currState - 10 == nextState) {
-	// // down
-	// moveUp(x, y, a);
-	// }
-	// }
-	// }
-
 	@Override
 	public void stopRobot() {
 		super.stopRobot();
 		resumeRobot();
 		resetHunterCount();
 	}
-
-	// @Override
-	// void moveDown(final int x, final int y, final int a) {
-	// switch (a) {
-	// case 0:
-	// case 360:
-	// case -360:
-	// travelAction(x, y, x, y + 1, Action.DOWN);
-	// break;
-	// case 90:
-	// case -270:
-	// // rotate(-90);
-	// setPose(getX(), getY(), getHeading() + -90);
-	// break;
-	// case 180:
-	// case -180:
-	// // rotate(180);
-	// // setPose(getX(), getY(), getHeading() + 180);
-	// // break;
-	// case 270:
-	// case -90:
-	// // rotate(90);
-	// setPose(getX(), getY(), getHeading() + 90);
-	// break;
-	// default:
-	// break;
-	// }
-	// }
-
-	// @Override
-	// void moveLeft(final int x, final int y, final int a) {
-	// switch (a) {
-	// case 0:
-	// case 360:
-	// // rotate(-90);
-	// setPose(getX(), getY(), getHeading() + -90);
-	// break;
-	// case 90:
-	// case -270:
-	// // rotate(180);
-	// // setPose(getX(), getY(), getHeading() + -180);
-	// // break;
-	// case -360:
-	// case 180:
-	// case -180:
-	// // rotate(90);
-	// setPose(getX(), getY(), getHeading() + 90);
-	// break;
-	// case 270:
-	// case -90:
-	// // if (canMove(x - 1, y)) {
-	// // env.updateGridEmpty(x, y);
-	// // env.updateGridHunter(x - 1, y);
-	// // // travel(350);
-	// // setPose(getX() - 350, getY(), getHeading());
-	// // }
-	// travelAction(x, y, x - 1, y, Action.LEFT);
-	// break;
-	// default:
-	// break;
-	// }
-	// }
-
-	// @Override
-	// void moveRight(final int x, final int y, final int a) {
-	// switch (a) {
-	// case 0:
-	// case -360:
-	// case -90:
-	// // rotate(90);
-	// setPose(getX(), getY(), getHeading() + 90);
-	// break;
-	// case 90:
-	// case -270:
-	// // if (canMove(x + 1, y)) {
-	// // env.updateGridEmpty(x, y);
-	// // env.updateGridHunter(x + 1, y);
-	// // // travel(350);
-	// // setPose(getX() + 350, getY(), getHeading());
-	// // }
-	// travelAction(x, y, x + 1, y, Action.RIGHT);
-	// break;
-	// case 180:
-	// case -180:
-	// case 270:
-	// case 360:
-	// // rotate(-90);
-	// setPose(getX(), getY(), getHeading() + -90);
-	// break;
-	// // case 270:
-	// // // rotate(-180);
-	// // setPose(getX(), getY(), getHeading() + -180);
-	// // break;
-	// // case -90:
-	// // // rotate(180);
-	// // setPose(getX(), getY(), getHeading() + 180);
-	// // break;
-	// default:
-	// break;
-	// }
-	// }
-
-	// @Override
-	// void moveUp(final int x, final int y, final int a) {
-	// switch (a) {
-	// case 0:
-	// case -360:
-	// case 90:
-	// case -270:
-	// // rotate(90);
-	// setPose(getX(), getY(), getHeading() + 90);
-	// break;
-	// case 180:
-	// case -180:
-	// travelAction(x, y, x, y - 1, Action.UP);
-	// break;
-	// case 270:
-	// case -90:
-	// case 360:
-	// // rotate(-90);
-	// setPose(getX(), getY(), getHeading() + -90);
-	// break;
-	// default:
-	// break;
-	// }
-	// }
 
 	@Override
 	final void travelAction(final int x, final int y, final int dx, final int dy, final Action direction) {

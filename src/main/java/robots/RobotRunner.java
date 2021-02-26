@@ -58,29 +58,9 @@ abstract class RobotRunner extends RobotMonitor {
 		return (int) ((((double) getY() / 350) * 2) - 1) / 2;
 	}
 
-	// /**
-	// * handle moving down a row
-	// */
-	// abstract void moveDown(int x, int y, int a);
-
-	// /**
-	// * handle moving left a column
-	// */
-	// abstract void moveLeft(int x, int y, int a);
-
-	// /**
-	// * handle moving right a column
-	// */
-	// abstract void moveRight(int x, int y, int a);
-
-	// /**
-	// * handle moving up a row
-	// */
-	// abstract void moveUp(int x, int y, int a);
-
 	abstract void travelAction(final int x, final int y, final int dx, final int dy, final Action direction);
 
-	void moveDown(final int x, final int y, final int a) {
+	final void moveDown(final int x, final int y, final int a) {
 		switch (a) {
 			case 0:
 			case 360:
@@ -110,7 +90,7 @@ abstract class RobotRunner extends RobotMonitor {
 		}
 	}
 
-	void moveLeft(final int x, final int y, final int a) {
+	final void moveLeft(final int x, final int y, final int a) {
 		switch (a) {
 			case 0:
 			case 360:
@@ -140,7 +120,7 @@ abstract class RobotRunner extends RobotMonitor {
 		}
 	}
 
-	void moveRight(final int x, final int y, final int a) {
+	final void moveRight(final int x, final int y, final int a) {
 		switch (a) {
 			case 0:
 			case -360:
@@ -170,7 +150,7 @@ abstract class RobotRunner extends RobotMonitor {
 		}
 	}
 
-	void moveUp(final int x, final int y, final int a) {
+	final void moveUp(final int x, final int y, final int a) {
 		switch (a) {
 			case 0:
 			case -360:

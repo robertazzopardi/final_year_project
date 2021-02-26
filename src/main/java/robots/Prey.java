@@ -24,8 +24,7 @@ final class Prey extends RobotRunner {
 
 	private static final Action[] NO_UP = new Action[] { Action.RIGHT, Action.DOWN, Action.LEFT };
 
-	// int randomMove;
-	Action randomMove;
+	private Action randomMove;
 
 	private final RobotController controller;
 
@@ -50,106 +49,6 @@ final class Prey extends RobotRunner {
 	boolean canMove(final int x, final int y) {
 		return grid[y][x].getCellType() != OccupancyType.OBSTACLE && grid[y][x].getCellType() != OccupancyType.HUNTER;
 	}
-
-	// @Override
-	// void moveDown(final int x, final int y, final int a) {
-	// switch (a) {
-	// case 0:
-	// case 360:
-	// case -360:
-	// travelAction(x, y, x, y + 1, Action.DOWN);
-	// break;
-	// case 90:
-	// case -270:
-	// // rotate(-90);
-	// setPose(getX(), getY(), getHeading() + -90);
-	// break;
-	// case 180:
-	// case -180:
-	// case 270:
-	// case -90:
-	// // rotate(90);
-	// setPose(getX(), getY(), getHeading() + 90);
-	// break;
-	// default:
-	// break;
-	// }
-	// }
-
-	// @Override
-	// void moveLeft(final int x, final int y, final int a) {
-	// switch (a) {
-	// case 0:
-	// case 360:
-	// // rotate(-90);
-	// setPose(getX(), getY(), getHeading() + -90);
-	// break;
-	// case 90:
-	// case -270:
-	// case -360:
-	// case 180:
-	// case -180:
-	// // rotate(90);
-	// setPose(getX(), getY(), getHeading() + 90);
-	// break;
-	// case 270:
-	// case -90:
-	// travelAction(x, y, x - 1, y, Action.LEFT);
-	// break;
-	// default:
-	// break;
-	// }
-	// }
-
-	// @Override
-	// void moveRight(final int x, final int y, final int a) {
-	// switch (a) {
-	// case 0:
-	// case -360:
-	// case -90:
-	// // rotate(90);
-	// setPose(getX(), getY(), getHeading() + 90);
-	// break;
-	// case 90:
-	// case -270:
-	// travelAction(x, y, x + 1, y, Action.RIGHT);
-	// break;
-	// case 180:
-	// case -180:
-	// case 270:
-	// case 360:
-	// // rotate(-90);
-	// setPose(getX(), getY(), getHeading() + -90);
-	// break;
-	// default:
-	// break;
-	// }
-	// }
-
-	// @Override
-	// void moveUp(final int x, final int y, final int a) {
-	// switch (a) {
-	// case 0:
-	// case -360:
-	// case 90:
-	// case -270:
-	// // rotate(90);
-	// setPose(getX(), getY(), getHeading() + 90);
-	// break;
-	// case 180:
-	// case -180:
-	// travelAction(x, y, x, y - 1, Action.UP);
-	// break;
-	// case 270:
-	// case -90:
-	// case 360:
-	// // rotate(-90);
-	// setPose(getX(), getY(), getHeading() + -90);
-	// break;
-	// default:
-	// break;
-	// }
-	// }
 
 	@Override
 	public void run() {

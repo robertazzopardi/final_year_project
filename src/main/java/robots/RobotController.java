@@ -19,9 +19,6 @@ public class RobotController {
 
 		initRobots();
 
-		// prey.setPose(prey.getRobotPos(prey.getGridPosX()),
-		// prey.getRobotPos(prey.getGridPosY()), 90);
-
 		startRobots();
 	}
 
@@ -30,11 +27,12 @@ public class RobotController {
 		final SimulatedRobot preyRobot = env.getAndSetPrey();
 		prey = new Prey(preyRobot, DELAY, env, this);
 
+		final DeepQLearning deepQLearning = new DeepQLearning(Hunter.STATE_COUNT, Action.LENGTH);
+
 		for (int i = 0; i < hunters.length; i++) {
 			do {
 				final SimulatedRobot simulatedRobot = env.getAndSetHunter(i);
-				hunters[i] = new Hunter(simulatedRobot, DELAY, env,
-						new DeepQLearning(Hunter.STATE_COUNT, Action.LENGTH), prey);
+				hunters[i] = new Hunter(simulatedRobot, DELAY, env, deepQLearning, prey);
 			} while (isSamePosition(i));
 		}
 
