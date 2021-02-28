@@ -12,11 +12,14 @@
     </properties>
 
     <dependencies>
+
         <dependency>
             <groupId>comp329robosim</groupId>
             <artifactId>comp329robosim</artifactId>
             <version>1.0</version>
         </dependency>
+
+        <!-- Deep Learning 4 Java Dependencies -->
 
         <dependency>
             <groupId>org.deeplearning4j</groupId>
@@ -36,6 +39,12 @@
             <version>${logback.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.deeplearning4j</groupId>
+            <artifactId>deeplearning4j-ui</artifactId>
+            <version>${dl4j-master.version}</version>
+        </dependency>
+
     </dependencies>
 
     <build>
@@ -47,6 +56,8 @@
                 <configuration>
                     <source>15</source>
                     <target>15</target>
+                    <!-- <source>8</source>
+                    <target>8</target> -->
                 </configuration>
             </plugin>
 

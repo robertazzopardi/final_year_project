@@ -1,12 +1,11 @@
 package robots;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.logging.Logger;
 
 import comp329robosim.OccupancyType;
 import comp329robosim.SimulatedRobot;
 import intelligence.DeepQLearning;
+
 import simulation.SimulationEnv;
 import simulation.SimulationEnv.Mode;
 
@@ -15,8 +14,6 @@ import simulation.SimulationEnv.Mode;
  *
  */
 final class Hunter extends RobotRunner {
-
-	private static final int CELL_DISTANCE = 350;
 
 	private static int hunterCount = 1;
 
@@ -70,30 +67,40 @@ final class Hunter extends RobotRunner {
 		return learning;
 	}
 
-	// public boolean isAdjacentToPrey() {
-	// final int x = getGridPosX();
-	// final int y = getGridPosY();
-	// return grid[y][x - 1].getCellType() == OccupancyType.PREY || grid[y][x +
-	// 1].getCellType() == OccupancyType.PREY
-	// || grid[y - 1][x].getCellType() == OccupancyType.PREY
-	// || grid[y + 1][x].getCellType() == OccupancyType.PREY;
-	// }
-
-	// public boolean isAdjacentToHunter() {
-	// final int x = getGridPosX();
-	// final int y = getGridPosY();
-	// return grid[y][x - 1].getCellType() == OccupancyType.HUNTER
-	// || grid[y][x + 1].getCellType() == OccupancyType.HUNTER
-	// || grid[y - 1][x].getCellType() == OccupancyType.HUNTER
-	// || grid[y + 1][x].getCellType() == OccupancyType.HUNTER;
-	// }
-
-	public boolean isAdjacentTo(final OccupancyType type) {
+	public boolean isAdjacentToPrey() {
 		final int x = getGridPosX();
 		final int y = getGridPosY();
-		return grid[y][x - 1].getCellType() == type || grid[y][x + 1].getCellType() == type
-				|| grid[y - 1][x].getCellType() == type || grid[y + 1][x].getCellType() == type;
+		return grid[y][x - 1].getCellType() == OccupancyType.PREY || grid[y][x + 1].getCellType() == OccupancyType.PREY
+				|| grid[y - 1][x].getCellType() == OccupancyType.PREY
+				|| grid[y + 1][x].getCellType() == OccupancyType.PREY;
 	}
+
+	public boolean isAdjacentToPrey(final int x, final int y) {
+		if (x == SimulationEnv.GRID_SIZE - 1 || y == SimulationEnv.GRID_SIZE - 1 || x == 0 || y == 0) {
+			return false;
+		}
+		return grid[y][x - 1].getCellType() == OccupancyType.PREY || grid[y][x + 1].getCellType() == OccupancyType.PREY
+				|| grid[y - 1][x].getCellType() == OccupancyType.PREY
+				|| grid[y + 1][x].getCellType() == OccupancyType.PREY;
+	}
+
+	public boolean isAdjacentToHunter() {
+		final int x = getGridPosX();
+		final int y = getGridPosY();
+		return grid[y][x - 1].getCellType() == OccupancyType.HUNTER
+				|| grid[y][x + 1].getCellType() == OccupancyType.HUNTER
+				|| grid[y - 1][x].getCellType() == OccupancyType.HUNTER
+				|| grid[y + 1][x].getCellType() == OccupancyType.HUNTER;
+	}
+
+	// public boolean isAdjacentTo(final OccupancyType type) {
+	// final int x = getGridPosX();
+	// final int y = getGridPosY();
+	// return grid[y][x - 1].getCellType() == type || grid[y][x + 1].getCellType()
+	// == type
+	// || grid[y - 1][x].getCellType() == type || grid[y + 1][x].getCellType() ==
+	// type;
+	// }
 
 	public boolean isPaused() {
 		return paused;
@@ -111,12 +118,14 @@ final class Hunter extends RobotRunner {
 	}
 
 	private void deepLearningRunning() {
-		float[] currState = null;
+		// float[] currState = null;
+		float[] currState = getStates();
+
 		Action direction = null;
 
 		while (!exit) {
 			// check if in a goal state
-			if (isAdjacentTo(OccupancyType.PREY)) {
+			if (isAdjacentToPrey()) {
 				// Do nothing while in goal state
 				// logger.info("in a goal state");
 				env.updateGridHunter(getGridPosX(), getGridPosY());
@@ -136,65 +145,179 @@ final class Hunter extends RobotRunner {
 			}
 
 			// compare the current state to the next state produced from qlearning
-			currState = getStates();
 
 			direction = learning.getActionFromStates(currState);
 
 			learning.updateEpsilon();
 
+			final double score = getScore(currState);
+
+			// doAction(direction);
 			doAction(direction);
 
 			final float[] newState = getStates();
 
-			final double score = getScore(currState, newState);
-
 			learning.update(currState, direction, score, newState);
+
+			currState = newState;
 
 		}
 
-		learning.update(currState, direction, 10, getStates());
-	}
+		final int pX = prey.getGridPosX();
+		final int pY = prey.getGridPosY();
 
-	private double getScore(final float[] currState, final float[] newState) {
-		double score = 0;
-		// final boolean adjacentToPrey = isAdjacentTo(OccupancyType.PREY);
-		// final boolean adjacentToHunter = isAdjacentTo(OccupancyType.HUNTER);
+		int captureReward = 0;
+		if (grid[pY + 1][pX].getCellType() == OccupancyType.HUNTER) {
+			captureReward += 50;
+		}
+		if (grid[pY - 1][pX].getCellType() == OccupancyType.HUNTER) {
+			captureReward += 50;
+		}
+		if (grid[pY][pX + 1].getCellType() == OccupancyType.HUNTER) {
+			captureReward += 50;
+		}
+		if (grid[pY][pX - 1].getCellType() == OccupancyType.HUNTER) {
+			captureReward += 50;
+		}
 
-		// long numberAdjacent = Arrays.asList(otherHunters).stream().filter().count();
+		if (grid[pY + 1][pX].getCellType() == OccupancyType.OBSTACLE) {
+			captureReward -= 50;
+		}
+		if (grid[pY - 1][pX].getCellType() == OccupancyType.OBSTACLE) {
+			captureReward -= 50;
+		}
+		if (grid[pY][pX + 1].getCellType() == OccupancyType.OBSTACLE) {
+			captureReward -= 50;
+		}
+		if (grid[pY][pX - 1].getCellType() == OccupancyType.OBSTACLE) {
+			captureReward -= 50;
+		}
 
-		// if (numberAdjacent > 0) {
-		// System.out.println(numberAdjacent);
-		// }
-
-		return score;
+		learning.update(currState, direction, captureReward, getStates());
 	}
 
 	private void doAction(final Action direction) {
-		final int gridPosX = getGridPosX();
-		final int gridPosY = getGridPosY();
-		final int heading = getHeading();
 		switch (direction) {
-			case RIGHT:
-				// right
-				moveRight(gridPosX, gridPosY, heading);
+			case TRAVEL:
+				final int degrees = getHeading() % 360;
+				switch (degrees) {
+					case 0:
+						down(getGridPosX(), getGridPosY());
+						break;
+
+					case 90:
+					case -270:
+						right(getGridPosX(), getGridPosY());
+						break;
+
+					case 180:
+					case -180:
+						up(getGridPosX(), getGridPosY());
+						break;
+
+					case 270:
+					case -90:
+						left(getGridPosX(), getGridPosY());
+						break;
+
+					default:
+						System.out.println(degrees);
+						break;
+				}
 				break;
-			case DOWN:
-				// down
-				moveDown(gridPosX, gridPosY, heading);
+
+			case LEFT_TURN:
+				// rotate(-90);
+				if (SimulationEnv.MODE == Mode.EVAL) {
+					rotate(-90);
+				} else {
+					setPose(getX(), getY(), getHeading() + -90);
+				}
 				break;
-			case LEFT:
-				// left
-				moveLeft(gridPosX, gridPosY, heading);
+
+			case RIGHT_TURN:
+				// rotate(90);
+				if (SimulationEnv.MODE == Mode.EVAL) {
+					rotate(90);
+				} else {
+					setPose(getX(), getY(), getHeading() + 90);
+				}
 				break;
-			case UP:
-				// up
-				moveUp(gridPosX, gridPosY, heading);
-				break;
+
 			case NOTHING:
 				break;
+
 			default:
 				break;
 		}
+
+	}
+
+	private void left(final int x, final int y) {
+		if (canMove(x - 1, y)) {
+			env.updateGridEmpty(x, y);
+			env.updateGridHunter(x - 1, y);
+
+			if (SimulationEnv.MODE == Mode.EVAL) {
+				travel(CELL_DISTANCE);
+			} else {
+				setPose(getX() - CELL_DISTANCE, getY(), getHeading());
+			}
+		}
+	}
+
+	private void up(final int x, final int y) {
+		if (canMove(x, y - 1)) {
+			env.updateGridEmpty(x, y);
+			env.updateGridHunter(x, y - 1);
+
+			if (SimulationEnv.MODE == Mode.EVAL) {
+				travel(CELL_DISTANCE);
+			} else {
+				setPose(getX(), getY() - CELL_DISTANCE, getHeading());
+			}
+		}
+	}
+
+	private void right(final int x, final int y) {
+		if (canMove(x + 1, y)) {
+			env.updateGridEmpty(x, y);
+			env.updateGridHunter(x + 1, y);
+
+			if (SimulationEnv.MODE == Mode.EVAL) {
+				travel(CELL_DISTANCE);
+			} else {
+				setPose(getX() + CELL_DISTANCE, getY(), getHeading());
+			}
+		}
+	}
+
+	private void down(final int x, final int y) {
+		if (canMove(x, y + 1)) {
+			env.updateGridEmpty(x, y);
+			env.updateGridHunter(x, y + 1);
+
+			if (SimulationEnv.MODE == Mode.EVAL) {
+				travel(CELL_DISTANCE);
+			} else {
+				setPose(getX(), getY() + CELL_DISTANCE, getHeading());
+			}
+		}
+	}
+
+	private double getScore(final float[] currState) {
+		double score = 0;
+
+		if (isAdjacentToPrey()) {
+			score = 10;
+		}
+
+		// if (currState[0] == newState[0]) {
+		// score = -1;
+		// }
+
+		// System.out.println(score);
+		return score;
 	}
 
 	// public static final int STATE_COUNT = 6;
@@ -250,33 +373,34 @@ final class Hunter extends RobotRunner {
 		resetHunterCount();
 	}
 
-	@Override
-	final void travelAction(final int x, final int y, final int dx, final int dy, final Action direction) {
-		if (canMove(dx, dy)) {
-			env.updateGridEmpty(x, y);
-			env.updateGridHunter(dx, dy);
+	// @Override
+	// final void travelAction(final int x, final int y, final int dx, final int dy,
+	// final int direction) {
+	// if (canMove(dx, dy)) {
+	// env.updateGridEmpty(x, y);
+	// env.updateGridHunter(dx, dy);
 
-			if (SimulationEnv.MODE == Mode.EVAL) {
-				travel(350);
-			} else {
-				switch (direction) {
-					case UP:
-						setPose(getX(), getY() - CELL_DISTANCE, getHeading());
-						break;
-					case DOWN:
-						setPose(getX(), getY() + CELL_DISTANCE, getHeading());
-						break;
-					case LEFT:
-						setPose(getX() - CELL_DISTANCE, getY(), getHeading());
-						break;
-					case RIGHT:
-						setPose(getX() + CELL_DISTANCE, getY(), getHeading());
-						break;
-					default:
-						break;
-				}
-			}
-		}
-	}
+	// if (SimulationEnv.MODE == Mode.EVAL) {
+	// travel(CELL_DISTANCE);
+	// } else {
+	// switch (direction) {
+	// case 1:
+	// setPose(getX(), getY() - CELL_DISTANCE, getHeading());
+	// break;
+	// case 2:
+	// setPose(getX(), getY() + CELL_DISTANCE, getHeading());
+	// break;
+	// case 3:
+	// setPose(getX() - CELL_DISTANCE, getY(), getHeading());
+	// break;
+	// case 4:
+	// setPose(getX() + CELL_DISTANCE, getY(), getHeading());
+	// break;
+	// default:
+	// break;
+	// }
+	// }
+	// }
+	// }
 
 }

@@ -5,7 +5,7 @@ import java.util.logging.Logger;
 
 import comp329robosim.OccupancyType;
 import comp329robosim.SimulatedRobot;
-
+import simulation.GridPrinter;
 import simulation.SimulationEnv;
 import simulation.SimulationEnv.Mode;
 
@@ -14,15 +14,20 @@ import simulation.SimulationEnv.Mode;
  *
  */
 final class Prey extends RobotRunner {
-	private static final Action[] ALL = new Action[] { Action.RIGHT, Action.DOWN, Action.LEFT, Action.UP };
+	private static final Action[] ALL = new Action[] { Action.RIGHT_TURN, Action.NOTHING, Action.LEFT_TURN,
+			Action.TRAVEL };
 
-	private static final Action[] NO_DOWN = new Action[] { Action.RIGHT, Action.LEFT, Action.UP };
+	// private static final Action[] NO_DOWN = new Action[] { Action.RIGHT,
+	// Action.LEFT, Action.UP };
 
-	private static final Action[] NO_LEFT = new Action[] { Action.RIGHT, Action.DOWN, Action.UP };
+	// private static final Action[] NO_LEFT = new Action[] { Action.RIGHT,
+	// Action.DOWN, Action.UP };
 
-	private static final Action[] NO_RIGHT = new Action[] { Action.DOWN, Action.LEFT, Action.UP };
+	// private static final Action[] NO_RIGHT = new Action[] { Action.DOWN,
+	// Action.LEFT, Action.UP };
 
-	private static final Action[] NO_UP = new Action[] { Action.RIGHT, Action.DOWN, Action.LEFT };
+	// private static final Action[] NO_UP = new Action[] { Action.RIGHT,
+	// Action.DOWN, Action.LEFT };
 
 	private Action randomMove;
 
@@ -47,7 +52,9 @@ final class Prey extends RobotRunner {
 
 	@Override
 	boolean canMove(final int x, final int y) {
-		return grid[y][x].getCellType() != OccupancyType.OBSTACLE && grid[y][x].getCellType() != OccupancyType.HUNTER;
+		// return grid[y][x].getCellType() != OccupancyType.OBSTACLE &&
+		// grid[y][x].getCellType() != OccupancyType.HUNTER;
+		return grid[y][x].getCellType() == OccupancyType.GOAL || grid[y][x].getCellType() == OccupancyType.EMPTY;
 	}
 
 	@Override
@@ -55,7 +62,7 @@ final class Prey extends RobotRunner {
 		while (!exit) {
 			final int x = getGridPosX();
 			final int y = getGridPosY();
-			final int a = getHeading();
+			// final int a = getHeading();
 
 			final boolean right = canMove(x + 1, y);
 			final boolean down = canMove(x, y + 1);
@@ -64,11 +71,13 @@ final class Prey extends RobotRunner {
 
 			// check if surrounded by the hunters
 			if (!right && !left && !up && !down) {
+
 				// Do nothing while in goal state
 				logger.info("trapped");
 
 				controller.stopRobots();
-				env.resetGrid();
+
+				GridPrinter.printGrid(grid);
 
 				// Done with current epoch, now we can restart the simulation
 				try {
@@ -77,6 +86,8 @@ final class Prey extends RobotRunner {
 					Thread.currentThread().interrupt();
 				}
 
+				env.resetGrid();
+
 				controller.restartRobots();
 
 				env.updateTitle(env.getEpisode());
@@ -84,51 +95,181 @@ final class Prey extends RobotRunner {
 				break;
 			}
 
-			doAction(x, y, a, right, down, left, up);
+			randomMove = Action.getRandomAction();
+
+			// doAction(x, y, a, right, down, left, up);
+
+			doAction(randomMove);
 		}
 		logger.info("Prey Stopped");
 	}
 
-	private void doAction(final int x, final int y, final int a, final boolean right, final boolean down,
-			final boolean left, final boolean up) {
-		// Handle movement
-		switch (randomMove) {
-			case RIGHT:
-				// right
-				if (right) {
-					moveRight(x, y, a);
-				} else {
-					randomMove = getRandomDirection(NO_RIGHT);
+	private void doAction(final Action direction) {
+		switch (direction) {
+			case TRAVEL:
+				final int degrees = getHeading() % 360;
+				switch (degrees) {
+					case 0:
+						down(getGridPosX(), getGridPosY());
+						break;
+
+					case 90:
+					case -270:
+						right(getGridPosX(), getGridPosY());
+						break;
+
+					case 180:
+					case -180:
+						up(getGridPosX(), getGridPosY());
+						break;
+
+					case 270:
+					case -90:
+						left(getGridPosX(), getGridPosY());
+						break;
+
+					default:
+						System.out.println(degrees);
+						break;
 				}
 				break;
-			case DOWN:
-				// down
-				if (down) {
-					moveDown(x, y, a);
+
+			case LEFT_TURN:
+				// rotate(-90);
+				if (SimulationEnv.MODE == Mode.EVAL) {
+					rotate(-90);
 				} else {
-					randomMove = getRandomDirection(NO_DOWN);
+					setPose(getX(), getY(), getHeading() + -90);
 				}
 				break;
-			case LEFT:
-				// left
-				if (left) {
-					moveLeft(x, y, a);
+
+			case RIGHT_TURN:
+				// rotate(90);
+				if (SimulationEnv.MODE == Mode.EVAL) {
+					rotate(90);
 				} else {
-					randomMove = getRandomDirection(NO_LEFT);
+					setPose(getX(), getY(), getHeading() + 90);
 				}
 				break;
-			case UP:
-				// up
-				if (up) {
-					moveUp(x, y, a);
-				} else {
-					randomMove = getRandomDirection(NO_UP);
-				}
+
+			case NOTHING:
 				break;
+
 			default:
 				break;
 		}
+
 	}
+
+	private void left(final int x, final int y) {
+		if (canMove(x - 1, y)) {
+			controller.resumeHunters();
+
+			setPositionOld(x, y);
+			setPositionNew(x - 1, y);
+
+			if (SimulationEnv.MODE == Mode.EVAL) {
+				travel(CELL_DISTANCE);
+			} else {
+				setPose(getX() - CELL_DISTANCE, getY(), getHeading());
+			}
+
+			randomMove = getRandomDirection(ALL);
+		}
+	}
+
+	private void up(final int x, final int y) {
+		if (canMove(x, y - 1)) {
+			controller.resumeHunters();
+
+			setPositionOld(x, y);
+			setPositionNew(x, y - 1);
+
+			if (SimulationEnv.MODE == Mode.EVAL) {
+				travel(CELL_DISTANCE);
+			} else {
+				setPose(getX(), getY() - CELL_DISTANCE, getHeading());
+			}
+
+			randomMove = getRandomDirection(ALL);
+		}
+	}
+
+	private void right(final int x, final int y) {
+		if (canMove(x + 1, y)) {
+			controller.resumeHunters();
+
+			setPositionOld(x, y);
+			setPositionNew(x + 1, y);
+
+			if (SimulationEnv.MODE == Mode.EVAL) {
+				travel(CELL_DISTANCE);
+			} else {
+				setPose(getX() + CELL_DISTANCE, getY(), getHeading());
+			}
+
+			randomMove = getRandomDirection(ALL);
+		}
+	}
+
+	private void down(final int x, final int y) {
+		if (canMove(x, y + 1)) {
+			controller.resumeHunters();
+
+			setPositionOld(x, y);
+			setPositionNew(x, y + 1);
+
+			if (SimulationEnv.MODE == Mode.EVAL) {
+				travel(CELL_DISTANCE);
+			} else {
+				setPose(getX(), getY() + CELL_DISTANCE, getHeading());
+			}
+
+			randomMove = getRandomDirection(ALL);
+		}
+	}
+
+	// private void doAction(final int x, final int y, final int a, final boolean
+	// right, final boolean down,
+	// final boolean left, final boolean up) {
+	// // Handle movement
+	// switch (randomMove) {
+	// case RIGHT_TURN:
+	// // right
+	// if (right) {
+	// moveRight(x, y, a);
+	// } else {
+	// randomMove = getRandomDirection(NO_RIGHT);
+	// }
+	// break;
+	// case DOWN:
+	// // down
+	// if (down) {
+	// moveDown(x, y, a);
+	// } else {
+	// randomMove = getRandomDirection(NO_DOWN);
+	// }
+	// break;
+	// case LEFT:
+	// // left
+	// if (left) {
+	// moveLeft(x, y, a);
+	// } else {
+	// randomMove = getRandomDirection(NO_LEFT);
+	// }
+	// break;
+	// case UP:
+	// // up
+	// if (up) {
+	// moveUp(x, y, a);
+	// } else {
+	// randomMove = getRandomDirection(NO_UP);
+	// }
+	// break;
+	// default:
+	// break;
+	// }
+	// }
 
 	private void setPositionNew(final int x, final int y) {
 		// set position
@@ -174,36 +315,37 @@ final class Prey extends RobotRunner {
 		}
 	}
 
-	@Override
-	final void travelAction(final int x, final int y, final int dx, final int dy, final Action direction) {
-		if (canMove(dx, dy)) {
-			controller.resumeHunters();
+	// @Override
+	// final void travelAction(final int x, final int y, final int dx, final int dy,
+	// final int direction) {
+	// if (canMove(dx, dy)) {
+	// controller.resumeHunters();
 
-			setPositionOld(x, y);
-			setPositionNew(dx, dy);
+	// setPositionOld(x, y);
+	// setPositionNew(dx, dy);
 
-			if (SimulationEnv.MODE == Mode.EVAL) {
-				travel(350);
-			} else {
-				switch (direction) {
-					case UP:
-						setPose(getX(), getY() - 350, getHeading());
-						break;
-					case DOWN:
-						setPose(getX(), getY() + 350, getHeading());
-						break;
-					case LEFT:
-						setPose(getX() - 350, getY(), getHeading());
-						break;
-					case RIGHT:
-						setPose(getX() + 350, getY(), getHeading());
-						break;
-					default:
-						break;
-				}
-			}
+	// if (SimulationEnv.MODE == Mode.EVAL) {
+	// travel(350);
+	// } else {
+	// switch (direction) {
+	// case 1:
+	// setPose(getX(), getY() - 350, getHeading());
+	// break;
+	// case 2:
+	// setPose(getX(), getY() + 350, getHeading());
+	// break;
+	// case 3:
+	// setPose(getX() - 350, getY(), getHeading());
+	// break;
+	// case 4:
+	// setPose(getX() + 350, getY(), getHeading());
+	// break;
+	// default:
+	// break;
+	// }
+	// }
 
-			randomMove = getRandomDirection(ALL);
-		}
-	}
+	// randomMove = getRandomDirection(ALL);
+	// }
+	// }
 }
