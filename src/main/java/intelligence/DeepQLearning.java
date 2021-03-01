@@ -3,12 +3,14 @@ package intelligence;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import org.deeplearning4j.core.storage.StatsStorage;
 import org.deeplearning4j.nn.api.OptimizationAlgorithm;
 import org.deeplearning4j.nn.conf.BackpropType;
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
+import org.deeplearning4j.nn.conf.WorkspaceMode;
 import org.deeplearning4j.nn.conf.layers.DenseLayer;
 import org.deeplearning4j.nn.conf.layers.OutputLayer;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
@@ -25,6 +27,9 @@ import org.nd4j.linalg.lossfunctions.LossFunctions;
 import robots.Action;
 
 public class DeepQLearning {
+
+	private static final Logger LOGGER = Logger.getLogger(DeepQLearning.class.getSimpleName());
+
 	private final MultiLayerNetwork network;
 
 	private double epsilon = 0.9;
@@ -35,8 +40,9 @@ public class DeepQLearning {
 		// Just make sure the number of inputs of the next layer equals to the number of
 		// outputs in the previous layer.
 		final MultiLayerConfiguration configuration = new NeuralNetConfiguration.Builder().seed(12345)
-				.weightInit(WeightInit.XAVIER).updater(new AdaGrad(0.5)).activation(Activation.RELU)
-				.optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT).l2(0.0006).list()
+				.trainingWorkspaceMode(WorkspaceMode.ENABLED).weightInit(WeightInit.XAVIER).updater(new AdaGrad(0.5))
+				.activation(Activation.RELU).optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
+				.l2(0.0006).list()
 				// First hidden layer
 				.layer(0,
 						new DenseLayer.Builder().nIn(numberOfInputs).nOut(neurons).weightInit(WeightInit.RELU)
@@ -134,7 +140,8 @@ public class DeepQLearning {
 
 	public void update(final float[] states, final Action action, final double score, final float[] nextState) {
 		if (score >= 100) {
-			System.out.println(score);
+			final String scoreStr = Double.toString(score);
+			LOGGER.info(scoreStr);
 		}
 		// Get max q score for next state
 		final double maxQScore = getMaxQScore(nextState);
@@ -143,7 +150,7 @@ public class DeepQLearning {
 		final double targetScore = score + (0.9 * maxQScore);
 
 		// Update the table with new score
-		qTable.put(getStateWithActionString(Arrays.toString(states), action), targetScore);
+		qTable.put(Arrays.toString(states) + '-' + action, targetScore);
 
 		// Update network
 		final INDArray stateObservation = toINDArray(states);
@@ -156,19 +163,10 @@ public class DeepQLearning {
 	private double getMaxQScore(final float[] states) {
 		final String gameStateString = Arrays.toString(states);
 
-		// final String stateWithActUP = getStateWithActionString(gameStateString,
-		// Action.UP);
-		// final String stateWithActRIGHT = getStateWithActionString(gameStateString,
-		// Action.RIGHT);
-		// final String stateWithActDOWN = getStateWithActionString(gameStateString,
-		// Action.DOWN);
-		// final String stateWithActLEFT = getStateWithActionString(gameStateString,
-		// Action.LEFT);
-
-		final String stateWithActTRAVEL = getStateWithActionString(gameStateString, Action.TRAVEL);
-		final String stateWithActRIGHT_TURN = getStateWithActionString(gameStateString, Action.RIGHT_TURN);
-		final String stateWithActNOTHING = getStateWithActionString(gameStateString, Action.NOTHING);
-		final String stateWithActLEFT_TURN = getStateWithActionString(gameStateString, Action.LEFT_TURN);
+		final String stateWithActTRAVEL = gameStateString + '-' + Action.TRAVEL;
+		final String stateWithActRIGHT_TURN = gameStateString + '-' + Action.RIGHT_TURN;
+		final String stateWithActNOTHING = gameStateString + '-' + Action.NOTHING;
+		final String stateWithActLEFT_TURN = gameStateString + '-' + Action.LEFT_TURN;
 
 		qTable.putIfAbsent(stateWithActTRAVEL, 0.0);
 		qTable.putIfAbsent(stateWithActRIGHT_TURN, 0.0);
@@ -194,40 +192,4 @@ public class DeepQLearning {
 
 		return score;
 	}
-
-	private String getStateWithActionString(final String stateString, final Action action) {
-		return stateString + '-' + action;
-	}
-
-	// private Map<String, Double> initQTable() {
-	// final HashMap<String, Double> qTable = new HashMap<>();
-	// // final List<String> inputs =
-	// // getInputs(GameStateHelper.getNumberOfPossibleStates());
-	// // final List<String> inputs =
-	// // getInputs(GameStateHelper.getNumberOfPossibleStates());
-
-	// // for (final String stateInput : inputs) {
-	// // qTable.put(getStateWithActionString(stateInput, 4), 0.0);
-	// // qTable.put(getStateWithActionString(stateInput, 1), 0.0);
-	// // qTable.put(getStateWithActionString(stateInput, 2), 0.0);
-	// // qTable.put(getStateWithActionString(stateInput, 3), 0.0);
-	// // }
-
-	// return qTable;
-	// }
-
-	// private List<String> getInputs(final int inputCount) {
-	// final List<String> inputs = new ArrayList<>();
-
-	// for (int i = 0; i < Math.pow(2, inputCount); i++) {
-	// String bin = Integer.toBinaryString(i);
-	// while (bin.length() < inputCount) {
-	// bin = "0" + bin;
-	// }
-
-	// inputs.add(String.copyValueOf(bin.toCharArray()));
-	// }
-
-	// return inputs;
-	// }
 }

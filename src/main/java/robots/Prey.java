@@ -315,37 +315,4 @@ final class Prey extends RobotRunner {
 		}
 	}
 
-	// @Override
-	// final void travelAction(final int x, final int y, final int dx, final int dy,
-	// final int direction) {
-	// if (canMove(dx, dy)) {
-	// controller.resumeHunters();
-
-	// setPositionOld(x, y);
-	// setPositionNew(dx, dy);
-
-	// if (SimulationEnv.MODE == Mode.EVAL) {
-	// travel(350);
-	// } else {
-	// switch (direction) {
-	// case 1:
-	// setPose(getX(), getY() - 350, getHeading());
-	// break;
-	// case 2:
-	// setPose(getX(), getY() + 350, getHeading());
-	// break;
-	// case 3:
-	// setPose(getX() - 350, getY(), getHeading());
-	// break;
-	// case 4:
-	// setPose(getX() + 350, getY(), getHeading());
-	// break;
-	// default:
-	// break;
-	// }
-	// }
-
-	// randomMove = getRandomDirection(ALL);
-	// }
-	// }
 }

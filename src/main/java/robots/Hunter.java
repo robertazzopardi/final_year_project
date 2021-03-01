@@ -150,7 +150,7 @@ final class Hunter extends RobotRunner {
 
 			learning.updateEpsilon();
 
-			final double score = getScore(currState);
+			final double score = getScore(direction, currState);
 
 			// doAction(direction);
 			doAction(direction);
@@ -305,17 +305,85 @@ final class Hunter extends RobotRunner {
 		}
 	}
 
-	private double getScore(final float[] currState) {
+	private double getScore(final Action direction, final float[] currState) {
 		double score = 0;
 
-		if (isAdjacentToPrey()) {
-			score = 10;
-		}
+		// if (isAdjacentToPrey()) {
+		// score = 10;
+		// }
 
 		// if (currState[0] == newState[0]) {
 		// score = -1;
 		// }
 
+		// TODO: FIll in these with the appropriate scores
+		switch (direction) {
+			case LEFT_TURN:
+			case RIGHT_TURN:
+
+				break;
+
+			case TRAVEL:
+				final int x = getGridPosX();
+				final int y = getGridPosY();
+				final int degrees = getHeading() % 360;
+
+				switch (degrees) {
+					case 0:
+						// down(getGridPosX(), getGridPosY());
+						if (isAdjacentToPrey(x, y + 1)) {
+							score = 1;
+						} else {
+							score = 0;
+						}
+						break;
+
+					case 90:
+					case -270:
+						// right(getGridPosX(), getGridPosY());
+						if (isAdjacentToPrey(x + 1, y)) {
+							score = 1;
+						} else {
+							score = 0;
+						}
+						break;
+
+					case 180:
+					case -180:
+						// up(getGridPosX(), getGridPosY());
+						if (isAdjacentToPrey(x, y - 1)) {
+							score = 1;
+						} else {
+							score = 0;
+						}
+						break;
+
+					case 270:
+					case -90:
+						// left(getGridPosX(), getGridPosY());
+						if (isAdjacentToPrey(x - 1, y)) {
+							score = 1;
+						} else {
+							score = 0;
+						}
+						break;
+
+					default:
+						break;
+				}
+				break;
+
+			case NOTHING:
+				if (isAdjacentToPrey()) {
+					score = 10;
+				} else {
+					score = -20;
+				}
+				break;
+
+			default:
+				break;
+		}
 		// System.out.println(score);
 		return score;
 	}
@@ -340,7 +408,7 @@ final class Hunter extends RobotRunner {
 				otherHunters[2].getCurentState(otherHunters[2].getGridPosX(), otherHunters[2].getGridPosY()), gridMin,
 				gridMax);
 
-		// Prey for now kind cheating
+		// TODO Prey for now kind of cheating
 		states[4] = normalise(prey.getCurentState(prey.getGridPosX(), prey.getGridPosY()), gridMin, gridMax);
 
 		// Range scanners
@@ -372,35 +440,5 @@ final class Hunter extends RobotRunner {
 		resumeRobot();
 		resetHunterCount();
 	}
-
-	// @Override
-	// final void travelAction(final int x, final int y, final int dx, final int dy,
-	// final int direction) {
-	// if (canMove(dx, dy)) {
-	// env.updateGridEmpty(x, y);
-	// env.updateGridHunter(dx, dy);
-
-	// if (SimulationEnv.MODE == Mode.EVAL) {
-	// travel(CELL_DISTANCE);
-	// } else {
-	// switch (direction) {
-	// case 1:
-	// setPose(getX(), getY() - CELL_DISTANCE, getHeading());
-	// break;
-	// case 2:
-	// setPose(getX(), getY() + CELL_DISTANCE, getHeading());
-	// break;
-	// case 3:
-	// setPose(getX() - CELL_DISTANCE, getY(), getHeading());
-	// break;
-	// case 4:
-	// setPose(getX() + CELL_DISTANCE, getY(), getHeading());
-	// break;
-	// default:
-	// break;
-	// }
-	// }
-	// }
-	// }
 
 }
