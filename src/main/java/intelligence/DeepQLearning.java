@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import org.deeplearning4j.core.storage.StatsStorage;
 import org.deeplearning4j.nn.api.OptimizationAlgorithm;
 import org.deeplearning4j.nn.conf.BackpropType;
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
@@ -15,9 +14,6 @@ import org.deeplearning4j.nn.conf.layers.DenseLayer;
 import org.deeplearning4j.nn.conf.layers.OutputLayer;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.nn.weights.WeightInit;
-import org.deeplearning4j.ui.api.UIServer;
-import org.deeplearning4j.ui.model.stats.StatsListener;
-import org.deeplearning4j.ui.model.storage.InMemoryStatsStorage;
 import org.nd4j.linalg.activations.Activation;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
@@ -33,6 +29,8 @@ public class DeepQLearning {
 	private final MultiLayerNetwork network;
 
 	private double epsilon = 0.9;
+
+	private final Map<String, Double> qTable = new HashMap<>();
 
 	public DeepQLearning(final int numberOfInputs, final int numberOfOutputs) {
 		final int neurons = numberOfInputs + 1;
@@ -65,25 +63,6 @@ public class DeepQLearning {
 		this.network = new MultiLayerNetwork(configuration);
 		this.network.init();
 
-		// // Initialize the user interface backend
-		// UIServer uiServer = UIServer.getInstance();
-
-		// // Configure where the network information (gradients, score vs. time etc) is
-		// to
-		// // be stored. Here: store in memory.
-		// StatsStorage statsStorage = new InMemoryStatsStorage(); // Alternative: new
-		// FileStatsStorage(File), for saving
-		// // and loading later
-
-		// // Attach the StatsStorage instance to the UI: this allows the contents of
-		// the
-		// // StatsStorage to be visualized
-		// uiServer.attach(statsStorage);
-
-		// // Then add the StatsListener to collect this information from the network,
-		// as
-		// // it trains
-		// this.network.setListeners(new StatsListener(statsStorage));
 	}
 
 	public void updateEpsilon() {
@@ -136,13 +115,12 @@ public class DeepQLearning {
 		return maxAt;
 	}
 
-	private final Map<String, Double> qTable = new HashMap<>();
-
 	public void update(final float[] states, final Action action, final double score, final float[] nextState) {
 		if (score >= 100) {
 			final String scoreStr = Double.toString(score);
 			LOGGER.info(scoreStr);
 		}
+
 		// Get max q score for next state
 		final double maxQScore = getMaxQScore(nextState);
 

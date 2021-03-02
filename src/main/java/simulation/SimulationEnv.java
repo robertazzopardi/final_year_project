@@ -56,27 +56,27 @@ public class SimulationEnv extends EnvController {
     }
 
     public void updateGridEmpty(final int x, final int y) {
-        // synchronized (grid[y][x]) {
-        grid[y][x].setEmpty();
-        // }
+        synchronized (grid[y][x]) {
+            grid[y][x].setEmpty();
+        }
     }
 
     public void updateGridGoal(final int x, final int y) {
-        // synchronized (grid[y][x]) {
-        grid[y][x].setCellType(OccupancyType.GOAL);
-        // }
+        synchronized (grid[y][x]) {
+            grid[y][x].setCellType(OccupancyType.GOAL);
+        }
     }
 
     public void updateGridHunter(final int x, final int y) {
-        // synchronized (grid[y][x]) {
-        grid[y][x].setCellType(OccupancyType.HUNTER);
-        // }
+        synchronized (grid[y][x]) {
+            grid[y][x].setCellType(OccupancyType.HUNTER);
+        }
     }
 
     public void updateGridPrey(final int x, final int y) {
-        // synchronized (grid[y][x]) {
-        grid[y][x].setCellType(OccupancyType.PREY);
-        // }
+        synchronized (grid[y][x]) {
+            grid[y][x].setCellType(OccupancyType.PREY);
+        }
     }
 
     public void resetGrid() {
@@ -87,7 +87,6 @@ public class SimulationEnv extends EnvController {
                     myGridCell.setEmpty();
                 }
             }
-
         }
     }
 }
