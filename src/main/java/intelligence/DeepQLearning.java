@@ -1,9 +1,10 @@
 package intelligence;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Logger;
 
 import org.deeplearning4j.nn.api.OptimizationAlgorithm;
 import org.deeplearning4j.nn.conf.BackpropType;
@@ -19,50 +20,65 @@ import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.learning.config.AdaGrad;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import robots.Action;
+import robots.RobotController;
+import simulation.SimulationEnv;
 
 public class DeepQLearning {
-
-	private static final Logger LOGGER = Logger.getLogger(DeepQLearning.class.getSimpleName());
+	private static final Logger LOGGER = LoggerFactory.getLogger(DeepQLearning.class);
+	// private static final Logger LOGGER =
+	// Logger.getLogger(DeepQLearning.class.getSimpleName());
 
 	private final MultiLayerNetwork network;
+
+	private static final int HIDDEN_NEURONS = RobotController.STATE_COUNT + 1;
 
 	private double epsilon = 0.9;
 
 	private final Map<String, Double> qTable = new HashMap<>();
 
-	public DeepQLearning(final int numberOfInputs, final int numberOfOutputs) {
-		final int neurons = numberOfInputs + 1;
+	private static final String FILE_NAME_PREFIX = SimulationEnv.OUTPUT_FOLDER + "network_";
 
-		// Just make sure the number of inputs of the next layer equals to the number of
-		// outputs in the previous layer.
-		final MultiLayerConfiguration configuration = new NeuralNetConfiguration.Builder().seed(12345)
-				.trainingWorkspaceMode(WorkspaceMode.ENABLED).weightInit(WeightInit.XAVIER).updater(new AdaGrad(0.5))
-				.activation(Activation.RELU).optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
-				.l2(0.0006).list()
-				// First hidden layer
-				.layer(0,
-						new DenseLayer.Builder().nIn(numberOfInputs).nOut(neurons).weightInit(WeightInit.RELU)
-								.activation(Activation.RELU).build())
-				// Second hidden layer
-				.layer(1,
-						new DenseLayer.Builder().nIn(neurons).nOut(neurons).weightInit(WeightInit.RELU)
-								.activation(Activation.RELU).build())
-				// Third hidden layer
-				.layer(2,
-						new DenseLayer.Builder().nIn(neurons).nOut(neurons).weightInit(WeightInit.RELU)
-								.activation(Activation.RELU).build())
-				// Output layer
-				.layer(3,
-						new OutputLayer.Builder().nIn(neurons).nOut(numberOfOutputs).weightInit(WeightInit.RELU)
-								.activation(Activation.SOFTMAX)
-								.lossFunction(LossFunctions.LossFunction.NEGATIVELOGLIKELIHOOD).build())
-				.backpropType(BackpropType.Standard).build();
+	// Just make sure the number of inputs of the next layer equals to the number of
+	// outputs in the previous layer.
+	private static final MultiLayerConfiguration configuration = new NeuralNetConfiguration.Builder().seed(12345)
+			.trainingWorkspaceMode(WorkspaceMode.ENABLED).weightInit(WeightInit.XAVIER).updater(new AdaGrad(0.5))
+			.activation(Activation.RELU).optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT).l2(0.0006)
+			.list()
+			// First hidden layer
+			.layer(0,
+					new DenseLayer.Builder().nIn(RobotController.STATE_COUNT).nOut(HIDDEN_NEURONS)
+							.weightInit(WeightInit.RELU).activation(Activation.RELU).build())
+			// Second hidden layer
+			.layer(1,
+					new DenseLayer.Builder().nIn(HIDDEN_NEURONS).nOut(HIDDEN_NEURONS).weightInit(WeightInit.RELU)
+							.activation(Activation.RELU).build())
+			// Third hidden layer
+			.layer(2,
+					new DenseLayer.Builder().nIn(HIDDEN_NEURONS).nOut(HIDDEN_NEURONS).weightInit(WeightInit.RELU)
+							.activation(Activation.RELU).build())
+			// Output layer
+			.layer(3,
+					new OutputLayer.Builder().nIn(HIDDEN_NEURONS).nOut(Action.LENGTH).weightInit(WeightInit.RELU)
+							.activation(Activation.SOFTMAX)
+							.lossFunction(LossFunctions.LossFunction.NEGATIVELOGLIKELIHOOD).build())
+			.backpropType(BackpropType.Standard).build();
 
+	public DeepQLearning() {
 		this.network = new MultiLayerNetwork(configuration);
 		this.network.init();
+	}
 
+	public DeepQLearning(final MultiLayerNetwork network) {
+		this.network = network;
+		this.network.init();
+	}
+
+	public MultiLayerNetwork getNetwork() {
+		return network;
 	}
 
 	public void updateEpsilon() {
@@ -169,5 +185,34 @@ public class DeepQLearning {
 		}
 
 		return score;
+	}
+
+	public static void saveNetwork(final MultiLayerNetwork network, final int number, final String episode) {
+		LOGGER.debug("Saving trained network");
+		try {
+			network.save(new File(FILE_NAME_PREFIX + number + "_" + episode + ".zip"));
+		} catch (final IOException e) {
+			LOGGER.error("Failed to save network: '{}'", e.getMessage(), e);
+		}
+	}
+
+	public static DeepQLearning loadNetwork(final int number) {
+		try {
+			return new DeepQLearning(MultiLayerNetwork.load(new File(FILE_NAME_PREFIX + number + ".zip"), true));
+		} catch (final IOException e) {
+			LOGGER.error("Failed to load network: '{}'", e.getMessage(), e);
+		}
+
+		return new DeepQLearning();
+	}
+
+	public static DeepQLearning loadNetwork(final File file) {
+		try {
+			return new DeepQLearning(MultiLayerNetwork.load(file, true));
+		} catch (final IOException e) {
+			LOGGER.error("Failed to load network: '{}'", e.getMessage(), e);
+		}
+
+		return new DeepQLearning();
 	}
 }

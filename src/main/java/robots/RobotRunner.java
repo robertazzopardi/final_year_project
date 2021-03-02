@@ -36,11 +36,6 @@ abstract class RobotRunner extends RobotMonitor {
 
 	abstract boolean canMove(int x, int y);
 
-	// final int getCurrentState(final int currX, final int currY) {
-	// System.out.println();
-	// return Integer.parseInt(Integer.toString(currY) + Integer.toString(currX));
-	// }
-
 	/**
 	 * get x position on the grid from the robots location
 	 *
@@ -65,6 +60,42 @@ abstract class RobotRunner extends RobotMonitor {
 
 	static final float normalise(final int x, final int min, final int max) {
 		return (2 * ((float) (x - min) / (max - min))) - 1;
+	}
+
+	abstract void left(final int x, final int y);
+
+	abstract void down(final int x, final int y);
+
+	abstract void right(final int x, final int y);
+
+	abstract void up(final int x, final int y);
+
+	final void travel() {
+		final int degrees = getHeading() % 360;
+		switch (degrees) {
+			case 0:
+				down(getGridPosX(), getGridPosY());
+				break;
+
+			case 90:
+			case -270:
+				right(getGridPosX(), getGridPosY());
+				break;
+
+			case 180:
+			case -180:
+				up(getGridPosX(), getGridPosY());
+				break;
+
+			case 270:
+			case -90:
+				left(getGridPosX(), getGridPosY());
+				break;
+
+			default:
+				System.out.println(degrees);
+				break;
+		}
 	}
 
 }

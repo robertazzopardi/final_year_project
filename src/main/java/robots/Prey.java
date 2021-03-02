@@ -1,49 +1,34 @@
 package robots;
 
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Logger;
 
 import comp329robosim.OccupancyType;
 import comp329robosim.SimulatedRobot;
-import simulation.GridPrinter;
+
+import simulation.Mode;
 import simulation.SimulationEnv;
-import simulation.SimulationEnv.Mode;
 
 /**
  * @author rob
  *
  */
 final class Prey extends RobotRunner {
-	private static final Action[] ALL = new Action[] { Action.RIGHT_TURN, Action.NOTHING, Action.LEFT_TURN,
-			Action.TRAVEL };
-
-	// private static final Action[] NO_DOWN = new Action[] { Action.RIGHT,
-	// Action.LEFT, Action.UP };
-
-	// private static final Action[] NO_LEFT = new Action[] { Action.RIGHT,
-	// Action.DOWN, Action.UP };
-
-	// private static final Action[] NO_RIGHT = new Action[] { Action.DOWN,
-	// Action.LEFT, Action.UP };
-
-	// private static final Action[] NO_UP = new Action[] { Action.RIGHT,
-	// Action.DOWN, Action.LEFT };
-
 	private Action randomMove;
 
 	private final RobotController controller;
 
-	private Action getRandomDirection(final Action[] array) {
-		final int rnd = ThreadLocalRandom.current().nextInt(0, array.length);
-		return array[rnd];
-	}
+	// private Action getRandomDirection(final Action[] array) {
+	// final int rnd = ThreadLocalRandom.current().nextInt(0, array.length);
+	// return array[rnd];
+	// }
 
 	public Prey(final SimulatedRobot r, final int d, final SimulationEnv env, final RobotController controller) {
 		super(r, d, env);
 
 		logger = Logger.getLogger(Prey.class.getName());
 
-		randomMove = getRandomDirection(ALL);
+		// randomMove = getRandomDirection(ALL);
+		randomMove = Action.getRandomAction();
 
 		setPositionNew(getGridPosX(), getGridPosY());
 
@@ -75,29 +60,12 @@ final class Prey extends RobotRunner {
 				// Do nothing while in goal state
 				logger.info("trapped");
 
-				controller.stopRobots();
-
-				GridPrinter.printGrid(grid);
-
-				// Done with current epoch, now we can restart the simulation
-				try {
-					Thread.sleep(2000);
-				} catch (final InterruptedException e) {
-					Thread.currentThread().interrupt();
-				}
-
-				env.resetGrid();
-
-				controller.restartRobots();
-
-				env.updateTitle(env.getEpisode());
+				controller.handleCapture();
 
 				break;
 			}
 
 			randomMove = Action.getRandomAction();
-
-			// doAction(x, y, a, right, down, left, up);
 
 			doAction(randomMove);
 		}
@@ -107,36 +75,11 @@ final class Prey extends RobotRunner {
 	private void doAction(final Action direction) {
 		switch (direction) {
 			case TRAVEL:
-				final int degrees = getHeading() % 360;
-				switch (degrees) {
-					case 0:
-						down(getGridPosX(), getGridPosY());
-						break;
-
-					case 90:
-					case -270:
-						right(getGridPosX(), getGridPosY());
-						break;
-
-					case 180:
-					case -180:
-						up(getGridPosX(), getGridPosY());
-						break;
-
-					case 270:
-					case -90:
-						left(getGridPosX(), getGridPosY());
-						break;
-
-					default:
-						System.out.println(degrees);
-						break;
-				}
+				travel();
 				break;
 
 			case LEFT_TURN:
-				// rotate(-90);
-				if (SimulationEnv.MODE == Mode.EVAL) {
+				if (env.getMode() == Mode.EVAL) {
 					rotate(-90);
 				} else {
 					setPose(getX(), getY(), getHeading() + -90);
@@ -144,8 +87,7 @@ final class Prey extends RobotRunner {
 				break;
 
 			case RIGHT_TURN:
-				// rotate(90);
-				if (SimulationEnv.MODE == Mode.EVAL) {
+				if (env.getMode() == Mode.EVAL) {
 					rotate(90);
 				} else {
 					setPose(getX(), getY(), getHeading() + 90);
@@ -161,115 +103,77 @@ final class Prey extends RobotRunner {
 
 	}
 
-	private void left(final int x, final int y) {
+	@Override
+	final void left(final int x, final int y) {
 		if (canMove(x - 1, y)) {
 			controller.resumeHunters();
 
 			setPositionOld(x, y);
 			setPositionNew(x - 1, y);
 
-			if (SimulationEnv.MODE == Mode.EVAL) {
+			if (env.getMode() == Mode.EVAL) {
 				travel(CELL_DISTANCE);
 			} else {
 				setPose(getX() - CELL_DISTANCE, getY(), getHeading());
 			}
 
-			randomMove = getRandomDirection(ALL);
+			randomMove = Action.getRandomAction();
 		}
 	}
 
-	private void up(final int x, final int y) {
+	@Override
+	final void up(final int x, final int y) {
 		if (canMove(x, y - 1)) {
 			controller.resumeHunters();
 
 			setPositionOld(x, y);
 			setPositionNew(x, y - 1);
 
-			if (SimulationEnv.MODE == Mode.EVAL) {
+			if (env.getMode() == Mode.EVAL) {
 				travel(CELL_DISTANCE);
 			} else {
 				setPose(getX(), getY() - CELL_DISTANCE, getHeading());
 			}
 
-			randomMove = getRandomDirection(ALL);
+			randomMove = Action.getRandomAction();
 		}
 	}
 
-	private void right(final int x, final int y) {
+	@Override
+	final void right(final int x, final int y) {
 		if (canMove(x + 1, y)) {
 			controller.resumeHunters();
 
 			setPositionOld(x, y);
 			setPositionNew(x + 1, y);
 
-			if (SimulationEnv.MODE == Mode.EVAL) {
+			if (env.getMode() == Mode.EVAL) {
 				travel(CELL_DISTANCE);
 			} else {
 				setPose(getX() + CELL_DISTANCE, getY(), getHeading());
 			}
 
-			randomMove = getRandomDirection(ALL);
+			randomMove = Action.getRandomAction();
 		}
 	}
 
-	private void down(final int x, final int y) {
+	@Override
+	final void down(final int x, final int y) {
 		if (canMove(x, y + 1)) {
 			controller.resumeHunters();
 
 			setPositionOld(x, y);
 			setPositionNew(x, y + 1);
 
-			if (SimulationEnv.MODE == Mode.EVAL) {
+			if (env.getMode() == Mode.EVAL) {
 				travel(CELL_DISTANCE);
 			} else {
 				setPose(getX(), getY() + CELL_DISTANCE, getHeading());
 			}
 
-			randomMove = getRandomDirection(ALL);
+			randomMove = Action.getRandomAction();
 		}
 	}
-
-	// private void doAction(final int x, final int y, final int a, final boolean
-	// right, final boolean down,
-	// final boolean left, final boolean up) {
-	// // Handle movement
-	// switch (randomMove) {
-	// case RIGHT_TURN:
-	// // right
-	// if (right) {
-	// moveRight(x, y, a);
-	// } else {
-	// randomMove = getRandomDirection(NO_RIGHT);
-	// }
-	// break;
-	// case DOWN:
-	// // down
-	// if (down) {
-	// moveDown(x, y, a);
-	// } else {
-	// randomMove = getRandomDirection(NO_DOWN);
-	// }
-	// break;
-	// case LEFT:
-	// // left
-	// if (left) {
-	// moveLeft(x, y, a);
-	// } else {
-	// randomMove = getRandomDirection(NO_LEFT);
-	// }
-	// break;
-	// case UP:
-	// // up
-	// if (up) {
-	// moveUp(x, y, a);
-	// } else {
-	// randomMove = getRandomDirection(NO_UP);
-	// }
-	// break;
-	// default:
-	// break;
-	// }
-	// }
 
 	private void setPositionNew(final int x, final int y) {
 		// set position

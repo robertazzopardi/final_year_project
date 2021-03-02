@@ -4,7 +4,6 @@ import java.util.Arrays;
 import java.util.concurrent.ThreadLocalRandom;
 
 public enum Action {
-    // RIGHT, DOWN, LEFT, UP, NOTHING;
     LEFT_TURN, RIGHT_TURN, TRAVEL, NOTHING;
 
     private static final Action[] ACTIONS = values();

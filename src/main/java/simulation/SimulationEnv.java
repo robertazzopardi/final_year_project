@@ -1,5 +1,7 @@
 package simulation;
 
+import java.io.File;
+
 import comp329robosim.EnvController;
 import comp329robosim.MyGridCell;
 import comp329robosim.OccupancyType;
@@ -9,23 +11,44 @@ import robots.RobotController;
 public class SimulationEnv extends EnvController {
     // public static final String CONFIG_FILE = "resources/defaultConfig.txt";
 
-    public enum Mode {
-        TRAIN, EVAL
-    }
+    public static final String OUTPUT_FOLDER = "./resources/";
 
-    public static final Mode MODE = Mode.TRAIN;
-    // public static final Mode MODE = Mode.EVAL;
+    public static final int EPISODES = 10;
+
+    private final Mode mode;
 
     public static final int GRID_SIZE = 6;
 
     private int episode = 1;
 
+    private final int trainedEpisodes;
+
+    public int getTrainedEpisodes() {
+        return trainedEpisodes;
+    }
+
     private MyGridCell[][] grid;
 
-    public SimulationEnv(final String confFileName, final int cols, final int rows) {
+    private final File[] files = new File(OUTPUT_FOLDER).listFiles((dir1, filename) -> filename.endsWith(".zip"));
+
+    public File[] getFiles() {
+        return files;
+    }
+
+    public SimulationEnv(final String confFileName, final int cols, final int rows, final Mode mode) {
         super(confFileName, cols, rows);
 
-        updateTitle(getEpisode());
+        this.mode = mode;
+
+        if (files.length == 0 || mode == Mode.TRAIN) {
+            updateTitle(episode);
+            this.trainedEpisodes = 0;
+        } else {
+            final String fileName = files[0].getName();
+            episode = Integer.parseInt(fileName.substring(fileName.lastIndexOf('_') + 1, fileName.indexOf(".zip")));
+            updateTitle(episode);
+            this.trainedEpisodes = episode;
+        }
 
         grid = getGrid();
 
@@ -37,8 +60,16 @@ public class SimulationEnv extends EnvController {
 
     }
 
+    public Mode getMode() {
+        return mode;
+    }
+
     public int getEpisode() {
-        return episode++;
+        return episode + 1;
+    }
+
+    public int incrementEpisode() {
+        return ++episode;
     }
 
     private void addBoundaries() {
@@ -49,10 +80,6 @@ public class SimulationEnv extends EnvController {
                 }
             }
         }
-    }
-
-    public static void main(final String[] args) {
-        new SimulationEnv("", GRID_SIZE, GRID_SIZE);
     }
 
     public void updateGridEmpty(final int x, final int y) {
