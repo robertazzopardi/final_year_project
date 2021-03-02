@@ -17,7 +17,7 @@ public class GridPrinter extends Thread {
     @Override
     public void run() {
         while (true) {
-            printGrid(LOGGER);
+            printGrid(grid);
 
             try {
                 Thread.sleep(2000);
@@ -27,13 +27,13 @@ public class GridPrinter extends Thread {
         }
     }
 
-    public void printGrid(final Logger inLogger) {
+    public static void printGrid(final MyGridCell[][] grid) {
         for (final MyGridCell[] myGridCells : grid) {
             final String row = Arrays.toString(myGridCells);
             // inLogger.info(row);
             System.out.println(row);
         }
-        inLogger.info("");
+        LOGGER.info("");
     }
 
 }

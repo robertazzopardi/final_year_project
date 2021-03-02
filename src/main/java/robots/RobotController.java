@@ -19,9 +19,6 @@ public class RobotController {
 
 		initRobots();
 
-		// prey.setPose(prey.getRobotPos(prey.getGridPosX()),
-		// prey.getRobotPos(prey.getGridPosY()), 90);
-
 		startRobots();
 	}
 

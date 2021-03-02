@@ -14,6 +14,7 @@ public class SimulationEnv extends EnvController {
     }
 
     public static final Mode MODE = Mode.TRAIN;
+    // public static final Mode MODE = Mode.EVAL;
 
     public static final int GRID_SIZE = 6;
 
@@ -33,6 +34,7 @@ public class SimulationEnv extends EnvController {
         new RobotController(this);
 
         // new GridPrinter(grid).start();
+
     }
 
     public int getEpisode() {
@@ -85,7 +87,6 @@ public class SimulationEnv extends EnvController {
                     myGridCell.setEmpty();
                 }
             }
-
         }
     }
 }
