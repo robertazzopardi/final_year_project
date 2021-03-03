@@ -22,7 +22,9 @@ abstract class RobotRunner extends RobotMonitor {
 
 	Logger logger;
 
-	RobotRunner(final SimulatedRobot r, final int d, final SimulationEnv env) {
+	final RobotController controller;
+
+	RobotRunner(final SimulatedRobot r, final int d, final SimulationEnv env, final RobotController controller) {
 		super(r, d);
 
 		monitorRobotStatus(false);
@@ -30,6 +32,8 @@ abstract class RobotRunner extends RobotMonitor {
 		setTravelSpeed(100);
 
 		this.env = env;
+
+		this.controller = controller;
 
 		this.grid = env.getGrid();
 	}

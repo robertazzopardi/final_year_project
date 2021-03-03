@@ -196,15 +196,16 @@ public class DeepQLearning {
 		}
 	}
 
-	public static DeepQLearning loadNetwork(final int number) {
-		try {
-			return new DeepQLearning(MultiLayerNetwork.load(new File(FILE_NAME_PREFIX + number + ".zip"), true));
-		} catch (final IOException e) {
-			LOGGER.error("Failed to load network: '{}'", e.getMessage(), e);
-		}
+	// public static DeepQLearning loadNetwork(final int number) {
+	// try {
+	// return new DeepQLearning(MultiLayerNetwork.load(new File(FILE_NAME_PREFIX +
+	// number + ".zip"), true));
+	// } catch (final IOException e) {
+	// LOGGER.error("Failed to load network: '{}'", e.getMessage(), e);
+	// }
 
-		return new DeepQLearning();
-	}
+	// return new DeepQLearning();
+	// }
 
 	public static DeepQLearning loadNetwork(final File file) {
 		try {

@@ -3,6 +3,8 @@ package robots;
 import java.io.IOException;
 import java.nio.file.Files;
 
+import comp329robosim.MyGridCell;
+import comp329robosim.OccupancyType;
 import comp329robosim.SimulatedRobot;
 
 import intelligence.DeepQLearning;
@@ -49,7 +51,7 @@ public class RobotController {
 				// }
 				switch (mode) {
 					case EVAL:
-						learning = DeepQLearning.loadNetwork(i);
+						learning = DeepQLearning.loadNetwork(env.getFiles()[i]);
 						break;
 
 					case TRAIN_ON:
@@ -69,7 +71,7 @@ public class RobotController {
 					default:
 						break;
 				}
-				hunters[i] = new Hunter(simulatedRobot, DELAY, env, learning, prey);
+				hunters[i] = new Hunter(simulatedRobot, DELAY, env, learning, this, prey);
 			} while (isSamePosition(i));
 		}
 
@@ -100,7 +102,7 @@ public class RobotController {
 		for (int i = 0; i < 4; i++) {
 			do {
 				final SimulatedRobot simulatedHunter = env.getAndSetHunter(i);
-				hunters[i] = new Hunter(simulatedHunter, DELAY, env, hunters[i].getLearning(), prey);
+				hunters[i] = new Hunter(simulatedHunter, DELAY, env, hunters[i].getLearning(), this, prey);
 			} while (isSamePosition(i));
 		}
 
@@ -175,6 +177,43 @@ public class RobotController {
 			restartRobots();
 		} else if (env.getMode() == Mode.TRAIN || env.getMode() == Mode.TRAIN_ON) {
 			saveNetworks();
+			System.exit(0);
 		}
+	}
+
+	public void addCaptureScore(final float[] currState, final Action direction, final Hunter hunter) {
+		final MyGridCell[][] grid = env.getGrid();
+
+		final int pX = prey.getGridPosX();
+		final int pY = prey.getGridPosY();
+
+		int captureReward = 0;
+		if (grid[pY + 1][pX].getCellType() == OccupancyType.HUNTER) {
+			captureReward += 50;
+		}
+		if (grid[pY - 1][pX].getCellType() == OccupancyType.HUNTER) {
+			captureReward += 50;
+		}
+		if (grid[pY][pX + 1].getCellType() == OccupancyType.HUNTER) {
+			captureReward += 50;
+		}
+		if (grid[pY][pX - 1].getCellType() == OccupancyType.HUNTER) {
+			captureReward += 50;
+		}
+
+		if (grid[pY + 1][pX].getCellType() == OccupancyType.OBSTACLE) {
+			captureReward -= 50;
+		}
+		if (grid[pY - 1][pX].getCellType() == OccupancyType.OBSTACLE) {
+			captureReward -= 50;
+		}
+		if (grid[pY][pX + 1].getCellType() == OccupancyType.OBSTACLE) {
+			captureReward -= 50;
+		}
+		if (grid[pY][pX - 1].getCellType() == OccupancyType.OBSTACLE) {
+			captureReward -= 50;
+		}
+
+		hunter.getLearning().update(currState, direction, captureReward, hunter.getStates());
 	}
 }

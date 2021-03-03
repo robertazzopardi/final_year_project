@@ -15,15 +15,8 @@ import simulation.SimulationEnv;
 final class Prey extends RobotRunner {
 	private Action randomMove;
 
-	private final RobotController controller;
-
-	// private Action getRandomDirection(final Action[] array) {
-	// final int rnd = ThreadLocalRandom.current().nextInt(0, array.length);
-	// return array[rnd];
-	// }
-
 	public Prey(final SimulatedRobot r, final int d, final SimulationEnv env, final RobotController controller) {
-		super(r, d, env);
+		super(r, d, env, controller);
 
 		logger = Logger.getLogger(Prey.class.getName());
 
@@ -32,7 +25,6 @@ final class Prey extends RobotRunner {
 
 		setPositionNew(getGridPosX(), getGridPosY());
 
-		this.controller = controller;
 	}
 
 	@Override
