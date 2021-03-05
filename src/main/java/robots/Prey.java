@@ -50,7 +50,7 @@ final class Prey extends RobotRunner {
 			if (!right && !left && !up && !down) {
 
 				// Do nothing while in goal state
-				logger.info("trapped");
+				// logger.info("trapped");
 
 				controller.handleCapture();
 
@@ -61,7 +61,7 @@ final class Prey extends RobotRunner {
 
 			doAction(randomMove);
 		}
-		logger.info("Prey Stopped");
+		// logger.info("Prey Stopped");
 	}
 
 	private void doAction(final Action direction) {

@@ -6,16 +6,13 @@ import java.nio.file.Files;
 import comp329robosim.MyGridCell;
 import comp329robosim.OccupancyType;
 import comp329robosim.SimulatedRobot;
-
 import intelligence.DeepQLearning;
-
-import simulation.GridPrinter;
 import simulation.Mode;
 import simulation.SimulationEnv;
 
 public class RobotController {
 	// public static final int STATE_COUNT = 8;
-	public static final int STATE_COUNT = 12;
+	public static final int STATE_COUNT = 10;
 
 	private static final int DELAY = 1000;
 
@@ -133,6 +130,48 @@ public class RobotController {
 		}
 	}
 
+	// public void saveNetwork() {
+	// // pick the network with the highest score
+	// final Optional<Hunter> maxHunter = Arrays.stream(hunters)
+	// .max(Comparator.comparing(v -> v.getLearning().getNetwork().score()));
+
+	// if (maxHunter.isPresent()) {
+	// final DeepQLearning dqn = maxHunter.get().getLearning();
+	// // System.out.println(Double.toString(dqn.getNetwork().score()));
+	// // for (Hunter hunter : hunters) {
+	// // if (!hunter.equals(h)) {
+	// // hunter.setLearning(new DeepQLearning(dqn));
+	// // }
+	// // }
+	// if (env.getMode() == Mode.TRAIN) {
+	// // DeepQLearning.saveNetwork(hunters[i].getLearning().getNetwork(), i,
+	// // Integer.toString(SimulationEnv.EPISODES));
+	// DeepQLearning.saveNetwork(dqn.getNetwork(), 0,
+	// Integer.toString(SimulationEnv.EPISODES));
+	// } else if (env.getMode() == Mode.TRAIN_ON) {
+	// if (env.getFiles().length != 0) {
+	// // final String fileName = env.getFiles()[i].getName();
+	// try {
+	// Files.delete(env.getFiles()[0].toPath());
+	// } catch (IOException e) {
+	// e.printStackTrace();
+	// }
+
+	// // DeepQLearning.saveNetwork(hunters[i].getLearning().getNetwork(), i,
+	// // Integer.toString(env.getEpisode() - 1));
+	// DeepQLearning.saveNetwork(dqn.getNetwork(), 0,
+	// Integer.toString(env.getEpisode() - 1));
+
+	// } else {
+	// // DeepQLearning.saveNetwork(hunters[i].getLearning().getNetwork(), i,
+	// // Integer.toString(SimulationEnv.EPISODES));
+	// DeepQLearning.saveNetwork(dqn.getNetwork(), 0,
+	// Integer.toString(SimulationEnv.EPISODES));
+	// }
+	// }
+	// }
+	// }
+
 	public void saveNetworks() {
 		for (int i = 0; i < hunters.length; i++) {
 			if (env.getMode() == Mode.TRAIN) {
@@ -161,9 +200,9 @@ public class RobotController {
 	public void handleCapture() {
 		stopRobots();
 
-		GridPrinter.printGrid(env.getGrid());
+		// GridPrinter.printGrid(env.getGrid());
 
-		// Done with current epoch, now we can restart the simulation
+		// Done with current episode, now we can restart the simulation
 		try {
 			Thread.sleep(2000);
 		} catch (final InterruptedException e) {
@@ -176,7 +215,9 @@ public class RobotController {
 			env.updateTitle(env.incrementEpisode());
 			restartRobots();
 		} else if (env.getMode() == Mode.TRAIN || env.getMode() == Mode.TRAIN_ON) {
+			// saveNetwork();
 			saveNetworks();
+			env.stopRunning();
 			System.exit(0);
 		}
 	}
@@ -187,33 +228,35 @@ public class RobotController {
 		final int pX = prey.getGridPosX();
 		final int pY = prey.getGridPosY();
 
-		int captureReward = 0;
+		int score = 0;
 		if (grid[pY + 1][pX].getCellType() == OccupancyType.HUNTER) {
-			captureReward += 50;
+			score += 0.25;
 		}
 		if (grid[pY - 1][pX].getCellType() == OccupancyType.HUNTER) {
-			captureReward += 50;
+			score += 0.25;
 		}
 		if (grid[pY][pX + 1].getCellType() == OccupancyType.HUNTER) {
-			captureReward += 50;
+			score += 0.25;
 		}
 		if (grid[pY][pX - 1].getCellType() == OccupancyType.HUNTER) {
-			captureReward += 50;
+			score += 0.25;
 		}
 
 		if (grid[pY + 1][pX].getCellType() == OccupancyType.OBSTACLE) {
-			captureReward -= 50;
+			score -= 0.25;
 		}
 		if (grid[pY - 1][pX].getCellType() == OccupancyType.OBSTACLE) {
-			captureReward -= 50;
+			score -= 0.25;
 		}
 		if (grid[pY][pX + 1].getCellType() == OccupancyType.OBSTACLE) {
-			captureReward -= 50;
+			score -= 0.25;
 		}
 		if (grid[pY][pX - 1].getCellType() == OccupancyType.OBSTACLE) {
-			captureReward -= 50;
+			score -= 0.25;
 		}
 
-		hunter.getLearning().update(currState, direction, captureReward, hunter.getStates());
+		hunter.getLearning().update(currState, direction, score, hunter.getStates());
+
+		// hunter.getLearning().update(currState, direction, 2, hunter.getStates());
 	}
 }

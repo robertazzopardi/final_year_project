@@ -11,9 +11,19 @@ import robots.RobotController;
 public class SimulationEnv extends EnvController {
     // public static final String CONFIG_FILE = "resources/defaultConfig.txt";
 
+    private Boolean isRunning = true;
+
+    public Boolean isRunning() {
+        return isRunning;
+    }
+
+    public void stopRunning() {
+        isRunning = false;
+    }
+
     public static final String OUTPUT_FOLDER = "./resources/";
 
-    public static final int EPISODES = 10;
+    public static final int EPISODES = 50;
 
     private final Mode mode;
 
