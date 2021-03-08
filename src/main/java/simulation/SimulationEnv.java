@@ -28,6 +28,9 @@ public class SimulationEnv extends EnvController {
     private final Mode mode;
 
     public static final int GRID_SIZE = 6;
+    // public static final int STATES_COUNT = (int) (Math.pow(GRID_SIZE, 2) -
+    // (GRID_SIZE * 4 - 4) - 4) * 5;
+    public static final int STATES_COUNT = (int) (Math.pow(GRID_SIZE, 2) - (GRID_SIZE * 4 - 4) - 4);
 
     private int episode = 1;
 
@@ -37,7 +40,7 @@ public class SimulationEnv extends EnvController {
         return trainedEpisodes;
     }
 
-    private MyGridCell[][] grid;
+    private final MyGridCell[][] grid;
 
     private final File[] files = new File(OUTPUT_FOLDER).listFiles((dir1, filename) -> filename.endsWith(".zip"));
 
@@ -117,8 +120,8 @@ public class SimulationEnv extends EnvController {
     }
 
     public void resetGrid() {
-        for (MyGridCell[] myGridCells : grid) {
-            for (MyGridCell myGridCell : myGridCells) {
+        for (final MyGridCell[] myGridCells : grid) {
+            for (final MyGridCell myGridCell : myGridCells) {
                 if (myGridCell.getCellType() == OccupancyType.HUNTER
                         || myGridCell.getCellType() == OccupancyType.PREY) {
                     myGridCell.setEmpty();

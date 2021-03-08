@@ -5,10 +5,12 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 import org.deeplearning4j.core.storage.StatsStorage;
 import org.deeplearning4j.nn.api.OptimizationAlgorithm;
 import org.deeplearning4j.nn.conf.BackpropType;
+import org.deeplearning4j.nn.conf.GradientNormalization;
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
 import org.deeplearning4j.nn.conf.WorkspaceMode;
@@ -35,63 +37,82 @@ public class DeepQLearning {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(DeepQLearning.class);
 	private static final String FILE_NAME_PREFIX = SimulationEnv.OUTPUT_FOLDER + "network_";
-	// private static final int HIDDEN_NEURONS = RobotController.STATE_COUNT + 1;
-	private static final int HIDDEN_NEURONS = 150;
+	private static final int HIDDEN_NEURONS = RobotController.STATE_COUNT * 2;
+	// private static final int HIDDEN_NEURONS = 150;
+
+	private static final Random RANDOM = new Random();
 
 	private final MultiLayerNetwork network;
-	private double epsilon = 0.9;
-	private final Map<String, Double> qTable;
+	private double epsilon = 0.1;
+	// private double epsilon = 0.1;
+
+	private static final Map<String, Double> qTable = new HashMap<>();
 
 	// 0.001
 	private static final double LEARNING_RATE = 0.001;
 
+	// private static final INDArray weightsArray = Nd4j.create(new double[] { .5,
+	// .5, .75, .5 });
+
 	// Just make sure the number of inputs of the next layer equals to the number of
 	// outputs in the previous layer.
 	private static final MultiLayerConfiguration configuration = new NeuralNetConfiguration.Builder().seed(12345)
-			.trainingWorkspaceMode(WorkspaceMode.ENABLED).weightInit(WeightInit.RELU).updater(new Adam(LEARNING_RATE))
-			.activation(Activation.RELU).optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT).l2(0.0001)
-			.list()
+			.trainingWorkspaceMode(WorkspaceMode.ENABLED)
+			.optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT).weightInit(WeightInit.XAVIER)
+			.gradientNormalization(GradientNormalization.ClipL2PerLayer)
+			//
+			.updater(new Adam(LEARNING_RATE))
+			// .updater(new Sgd(0.001))
+			// .updater(new AdaGrad(LEARNING_RATE))
+			.activation(Activation.RELU).l2(0.001).list()
 			// First hidden layer
 			.layer(0,
 					new DenseLayer.Builder().nIn(RobotController.STATE_COUNT).nOut(HIDDEN_NEURONS)
-							.weightInit(WeightInit.RELU).activation(Activation.RELU).build())
+							.weightInit(WeightInit.XAVIER).activation(Activation.RELU).build())
 			// Second hidden layer
 			.layer(1,
-					new DenseLayer.Builder().nIn(HIDDEN_NEURONS).nOut(HIDDEN_NEURONS).weightInit(WeightInit.RELU)
+					new DenseLayer.Builder().nIn(HIDDEN_NEURONS).nOut(HIDDEN_NEURONS).weightInit(WeightInit.XAVIER)
 							.activation(Activation.RELU).build())
 			// Third hidden layer
-			.layer(2,
-					new DenseLayer.Builder().nIn(HIDDEN_NEURONS).nOut(HIDDEN_NEURONS).weightInit(WeightInit.RELU)
-							.activation(Activation.RELU).build())
+			// .layer(2,
+			// new
+			// DenseLayer.Builder().nIn(HIDDEN_NEURONS).nOut(HIDDEN_NEURONS).weightInit(WeightInit.XAVIER)
+			// .activation(Activation.RELU).build())
 			// Output layer
-			.layer(3,
-					new OutputLayer.Builder().nIn(HIDDEN_NEURONS).nOut(Action.LENGTH).weightInit(WeightInit.RELU)
-							.activation(Activation.SOFTMAX).lossFunction(LossFunctions.LossFunction.MSE).build())
+			.layer(2, new OutputLayer.Builder(LossFunctions.LossFunction.MSE)
+					// new OutputLayer.Builder(new LossMCXENT(weightsArray))
+					.nIn(HIDDEN_NEURONS).nOut(Action.LENGTH).weightInit(WeightInit.XAVIER)
+					// .activation(Activation.IDENTITY)
+					.activation(Activation.SOFTMAX)
+
+					.weightInit(WeightInit.XAVIER).build())
 			.backpropType(BackpropType.Standard).build();
 
 	public DeepQLearning() {
-		qTable = new HashMap<>();
 		network = new MultiLayerNetwork(configuration);
 		network.init();
 
 		// Initialize the user interface backend
-		UIServer uiServer = UIServer.getInstance();
-		StatsStorage statsStorage = new InMemoryStatsStorage();
+		final UIServer uiServer = UIServer.getInstance();
+		final StatsStorage statsStorage = new InMemoryStatsStorage();
 		uiServer.attach(statsStorage);
 		network.setListeners(new StatsListener(statsStorage));
+
+		// network.setListeners(new ScoreIterationListener(1));
 	}
 
 	public DeepQLearning(final MultiLayerNetwork network) {
-		qTable = new HashMap<>();
 		this.network = network;
 		network.init();
-		// network.setListeners(new ScoreIterationListener(1));
 
 		// Initialize the user interface backend
-		UIServer uiServer = UIServer.getInstance();
-		StatsStorage statsStorage = new InMemoryStatsStorage();
+		final UIServer uiServer = UIServer.getInstance();
+		final StatsStorage statsStorage = new InMemoryStatsStorage();
 		uiServer.attach(statsStorage);
 		network.setListeners(new StatsListener(statsStorage));
+
+		// network.setListeners(new ScoreIterationListener(1));
+
 	}
 
 	// Copy Constructor
@@ -117,7 +138,9 @@ public class DeepQLearning {
 	public Action epsilonGreedyAction(final float[] states) {
 		// https://www.geeksforgeeks.org/epsilon-greedy-algorithm-in-reinforcement-learning/
 		final double random = getRandomDouble();
+
 		if (random < epsilon) {
+
 			return Action.getRandomAction();
 		}
 
@@ -125,10 +148,8 @@ public class DeepQLearning {
 	}
 
 	public Action getActionFromTheNetwork(final float[] states) {
-		final INDArray output = network.output(toINDArray(states), false);
 
-		// Values provided by the network. Based on them we chose the current best
-		// action.
+		final INDArray output = network.output(toINDArray(states), false);
 
 		final float[] outputValues = output.data().asFloat();
 
@@ -143,7 +164,8 @@ public class DeepQLearning {
 	}
 
 	private double getRandomDouble() {
-		return (Math.random() * ((double) 1 + 1 - (double) 0)) + (double) 0;
+		// return (Math.random() * ((double) 1 + 1 - (double) 0)) + (double) 0;
+		return RANDOM.nextDouble();
 	}
 
 	private int getMaxValueIndex(final float[] values) {
@@ -172,11 +194,13 @@ public class DeepQLearning {
 		final INDArray updatedOutput = output.putScalar(action.getActionIndex(), targetScore);
 
 		network.fit(stateObservation, updatedOutput);
+
 	}
 
 	private double getMaxQScore(final float[] states) {
 		final String gameStateString = Arrays.toString(states);
 
+		// System.out.println(gameStateString);
 		final String stateWithActTRAVEL = gameStateString + '-' + Action.TRAVEL;
 		final String stateWithActRIGHT_TURN = gameStateString + '-' + Action.RIGHT_TURN;
 		final String stateWithActNOTHING = gameStateString + '-' + Action.NOTHING;
@@ -187,27 +211,54 @@ public class DeepQLearning {
 		qTable.putIfAbsent(stateWithActNOTHING, 0.0);
 		qTable.putIfAbsent(stateWithActLEFT_TURN, 0.0);
 
-		double score = qTable.get(stateWithActTRAVEL);
+		double score = qTable.getOrDefault(stateWithActTRAVEL, 0.0);
 
-		final Double scoreRight = qTable.get(stateWithActRIGHT_TURN);
+		final Double scoreRight = qTable.getOrDefault(stateWithActRIGHT_TURN, 0.0);
 		if (scoreRight > score) {
 			score = scoreRight;
 		}
 
-		final Double scoreDown = qTable.get(stateWithActNOTHING);
+		final Double scoreDown = qTable.getOrDefault(stateWithActNOTHING, 0.0);
 		if (scoreDown > score) {
 			score = scoreDown;
 		}
 
-		final Double scoreLeft = qTable.get(stateWithActLEFT_TURN);
+		final Double scoreLeft = qTable.getOrDefault(stateWithActLEFT_TURN, 0.0);
 		if (scoreLeft > score) {
 			score = scoreLeft;
 		}
 
-		// LOGGER.info(Integer.toString(qTable.size()));
-
 		return score;
 	}
+
+	// private static Map<String, Double> initQTable() {
+	// final HashMap<String, Double> qTable = new HashMap<>();
+	// final List<String> inputs = getInputs();
+
+	// for (final String stateInput : inputs) {
+	// qTable.put(getStateWithActionString(stateInput, Action.MOVE_UP), 0.0);
+	// qTable.put(getStateWithActionString(stateInput, Action.MOVE_RIGHT), 0.0);
+	// qTable.put(getStateWithActionString(stateInput, Action.MOVE_DOWN), 0.0);
+	// qTable.put(getStateWithActionString(stateInput, Action.MOVE_LEFT), 0.0);
+	// }
+
+	// return qTable;
+	// }
+
+	// private static List<String> getInputs(final int inputCount) {
+	// final List<String> inputs = new ArrayList<>();
+
+	// for (int i = 0; i < Math.pow(2, inputCount); i++) {
+	// String bin = Integer.toBinaryString(i);
+	// while (bin.length() < inputCount) {
+	// bin = "0" + bin;
+	// }
+
+	// inputs.add(String.copyValueOf(bin.toCharArray()));
+	// }
+
+	// return inputs;
+	// }
 
 	public static void saveNetwork(final MultiLayerNetwork network, final int number, final String episode) {
 		LOGGER.debug("Saving trained network");

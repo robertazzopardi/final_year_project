@@ -12,7 +12,18 @@ import simulation.SimulationEnv;
  *
  */
 abstract class RobotRunner extends RobotMonitor {
+
 	static final int CELL_DISTANCE = 350;
+
+	static int moveCount = 0;
+
+	static synchronized void incrementMoves() {
+		moveCount++;
+	}
+
+	static void resetMoves() {
+		moveCount = 0;
+	}
 
 	final SimulationEnv env;
 
@@ -36,6 +47,7 @@ abstract class RobotRunner extends RobotMonitor {
 		this.controller = controller;
 
 		this.grid = env.getGrid();
+
 	}
 
 	abstract boolean canMove(int x, int y);
@@ -66,39 +78,30 @@ abstract class RobotRunner extends RobotMonitor {
 		return (2 * ((float) (x - min) / (max - min))) - 1;
 	}
 
-	abstract void left(final int x, final int y);
+	abstract void left();
 
-	abstract void down(final int x, final int y);
+	abstract void down();
 
-	abstract void right(final int x, final int y);
+	abstract void right();
 
-	abstract void up(final int x, final int y);
+	abstract void up();
 
-	final void travel() {
-		final int degrees = getHeading() % 360;
-		switch (degrees) {
-			case 0:
-				down(getGridPosX(), getGridPosY());
-				break;
-
-			case 90:
-			case -270:
-				right(getGridPosX(), getGridPosY());
-				break;
-
-			case 180:
-			case -180:
-				up(getGridPosX(), getGridPosY());
-				break;
-
-			case 270:
-			case -90:
-				left(getGridPosX(), getGridPosY());
-				break;
-
-			default:
-				System.out.println(degrees);
-				break;
+	final void forward() {
+		switch (Direction.fromDegree(getHeading())) {
+		case DOWN:
+			down();
+			break;
+		case RIGHT:
+			right();
+			break;
+		case UP:
+			up();
+			break;
+		case LEFT:
+			left();
+			break;
+		default:
+			break;
 		}
 	}
 

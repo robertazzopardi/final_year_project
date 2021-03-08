@@ -10,7 +10,7 @@ public class Main {
         while (Boolean.TRUE.equals(env.isRunning())) {
             try {
                 Thread.sleep(1000);
-            } catch (InterruptedException e) {
+            } catch (final InterruptedException e) {
                 e.printStackTrace();
                 Thread.currentThread().interrupt();
             }

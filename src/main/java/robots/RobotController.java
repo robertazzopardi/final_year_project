@@ -11,8 +11,12 @@ import simulation.Mode;
 import simulation.SimulationEnv;
 
 public class RobotController {
-	// public static final int STATE_COUNT = 8;
-	public static final int STATE_COUNT = 10;
+	public static final int STEP_COUNT = 30000;
+	public static final int STATE_COUNT = 14;
+	// public static final int STATE_COUNT = 24;
+
+	// public static final int STATE_COUNT = 10;
+	// public static final int STATE_COUNT = 4;
 
 	private static final int DELAY = 1000;
 
@@ -47,26 +51,26 @@ public class RobotController {
 				// learning = new DeepQLearning();
 				// }
 				switch (mode) {
-					case EVAL:
-						learning = DeepQLearning.loadNetwork(env.getFiles()[i]);
-						break;
+				case EVAL:
+					learning = DeepQLearning.loadNetwork(env.getFiles()[i]);
+					break;
 
-					case TRAIN_ON:
-						if (env.getFiles().length < 4) {
-							learning = new DeepQLearning();
-
-						} else {
-							learning = DeepQLearning.loadNetwork(env.getFiles()[i]);
-
-						}
-						break;
-
-					case TRAIN:
+				case TRAIN_ON:
+					if (env.getFiles().length < 4) {
 						learning = new DeepQLearning();
-						break;
 
-					default:
-						break;
+					} else {
+						learning = DeepQLearning.loadNetwork(env.getFiles()[i]);
+
+					}
+					break;
+
+				case TRAIN:
+					learning = new DeepQLearning();
+					break;
+
+				default:
+					break;
 				}
 				hunters[i] = new Hunter(simulatedRobot, DELAY, env, learning, this, prey);
 			} while (isSamePosition(i));
@@ -182,7 +186,7 @@ public class RobotController {
 					// final String fileName = env.getFiles()[i].getName();
 					try {
 						Files.delete(env.getFiles()[i].toPath());
-					} catch (IOException e) {
+					} catch (final IOException e) {
 						e.printStackTrace();
 					}
 
@@ -230,33 +234,33 @@ public class RobotController {
 
 		int score = 0;
 		if (grid[pY + 1][pX].getCellType() == OccupancyType.HUNTER) {
-			score += 0.25;
+			score += 1;
 		}
 		if (grid[pY - 1][pX].getCellType() == OccupancyType.HUNTER) {
-			score += 0.25;
+			score += 1;
 		}
 		if (grid[pY][pX + 1].getCellType() == OccupancyType.HUNTER) {
-			score += 0.25;
+			score += 1;
 		}
 		if (grid[pY][pX - 1].getCellType() == OccupancyType.HUNTER) {
-			score += 0.25;
+			score += 1;
 		}
 
 		if (grid[pY + 1][pX].getCellType() == OccupancyType.OBSTACLE) {
-			score -= 0.25;
+			score -= 1;
 		}
 		if (grid[pY - 1][pX].getCellType() == OccupancyType.OBSTACLE) {
-			score -= 0.25;
+			score -= 1;
 		}
 		if (grid[pY][pX + 1].getCellType() == OccupancyType.OBSTACLE) {
-			score -= 0.25;
+			score -= 1;
 		}
 		if (grid[pY][pX - 1].getCellType() == OccupancyType.OBSTACLE) {
-			score -= 0.25;
+			score -= 1;
 		}
 
 		hunter.getLearning().update(currState, direction, score, hunter.getStates());
 
-		// hunter.getLearning().update(currState, direction, 2, hunter.getStates());
+		// hunter.getLearning().update(currState, direction, 0.9, hunter.getStates());
 	}
 }
