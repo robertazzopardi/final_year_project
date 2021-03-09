@@ -16,7 +16,8 @@ final class QLearning {
 	private static final double ALPHA = 0.1; // Learning rate
 	private static final int EPOCH = 1000;
 
-	private static final double GAMMA = 0.9; // Eagerness - 0 looks in the near future, 1 looks in the distant future
+	private static final double GAMMA = 0.9; // Eagerness - 0 looks in the near future, 1 looks in
+												// the distant future
 
 	private static final int PENALTY = -100;
 

@@ -13,17 +13,11 @@ import simulation.SimulationEnv;
  */
 abstract class RobotRunner extends RobotMonitor {
 
+
+
 	static final int CELL_DISTANCE = 350;
 
 	static int moveCount = 0;
-
-	static synchronized void incrementMoves() {
-		moveCount++;
-	}
-
-	static void resetMoves() {
-		moveCount = 0;
-	}
 
 	final SimulationEnv env;
 
@@ -35,7 +29,8 @@ abstract class RobotRunner extends RobotMonitor {
 
 	final RobotController controller;
 
-	RobotRunner(final SimulatedRobot r, final int d, final SimulationEnv env, final RobotController controller) {
+	RobotRunner(final SimulatedRobot r, final int d, final SimulationEnv env,
+			final RobotController controller) {
 		super(r, d);
 
 		monitorRobotStatus(false);
@@ -47,7 +42,6 @@ abstract class RobotRunner extends RobotMonitor {
 		this.controller = controller;
 
 		this.grid = env.getGrid();
-
 	}
 
 	abstract boolean canMove(int x, int y);
@@ -58,7 +52,7 @@ abstract class RobotRunner extends RobotMonitor {
 	 * @return
 	 */
 	final int getGridPosX() {
-		return (int) ((((double) getX() / 350) * 2) - 1) / 2;
+		return (int) ((((double) getX() / CELL_DISTANCE) * 2) - 1) / 2;
 	}
 
 	/**
@@ -67,7 +61,7 @@ abstract class RobotRunner extends RobotMonitor {
 	 * @return
 	 */
 	final int getGridPosY() {
-		return (int) ((((double) getY() / 350) * 2) - 1) / 2;
+		return (int) ((((double) getY() / CELL_DISTANCE) * 2) - 1) / 2;
 	}
 
 	public void stopRobot() {
@@ -78,30 +72,38 @@ abstract class RobotRunner extends RobotMonitor {
 		return (2 * ((float) (x - min) / (max - min))) - 1;
 	}
 
-	abstract void left();
+	static synchronized void incrementMoves() {
+		moveCount++;
+	}
 
-	abstract void down();
+	static void resetMoves() {
+		moveCount = 0;
+	}
 
-	abstract void right();
+	abstract void left(final Direction left);
 
-	abstract void up();
+	abstract void down(final Direction down);
+
+	abstract void right(final Direction right);
+
+	abstract void up(final Direction up);
 
 	final void forward() {
 		switch (Direction.fromDegree(getHeading())) {
-		case DOWN:
-			down();
-			break;
-		case RIGHT:
-			right();
-			break;
-		case UP:
-			up();
-			break;
-		case LEFT:
-			left();
-			break;
-		default:
-			break;
+			case DOWN:
+				down(Direction.DOWN);
+				break;
+			case RIGHT:
+				right(Direction.RIGHT);
+				break;
+			case UP:
+				up(Direction.UP);
+				break;
+			case LEFT:
+				left(Direction.LEFT);
+				break;
+			default:
+				break;
 		}
 	}
 

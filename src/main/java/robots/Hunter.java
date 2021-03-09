@@ -1,19 +1,23 @@
 package robots;
 
 import java.util.Arrays;
+import java.util.Random;
 import java.util.logging.Logger;
-
 import comp329robosim.MyGridCell;
 import comp329robosim.OccupancyType;
 import comp329robosim.SimulatedRobot;
 import intelligence.DeepQLearning;
-import simulation.SimulationEnv;
 import simulation.Mode;
+import simulation.SimulationEnv;
 
 /**
  *
  */
 final class Hunter extends RobotRunner {
+
+	private static final double REWARD = .1;
+
+	private static final Random RANDOM = new Random();
 
 	private static int hunterCount = 1;
 
@@ -51,8 +55,8 @@ final class Hunter extends RobotRunner {
 		}
 	}
 
-	public Hunter(final SimulatedRobot r, final int d, final SimulationEnv env, final DeepQLearning learning,
-			final RobotController controller, final Prey prey) {
+	public Hunter(final SimulatedRobot r, final int d, final SimulationEnv env,
+			final DeepQLearning learning, final RobotController controller, final Prey prey) {
 		super(r, d, env, controller);
 
 		this.number = hunterCount++;
@@ -66,17 +70,10 @@ final class Hunter extends RobotRunner {
 		this.prey = prey;
 	}
 
-	// @Override
-	// boolean canMove(final int x, final int y) {
-	// return grid[y][x].isEmpty() || grid[y][x].getCellType() ==
-	// OccupancyType.GOAL;
-	// }
-
 	@Override
 	boolean canMove(final int x, final int y) {
-		// return grid[y][x].isEmpty() || grid[y][x].getCellType() ==
-		// OccupancyType.GOAL;
-		return grid[y][x].getCellType() != OccupancyType.OBSTACLE && grid[y][x].getCellType() != OccupancyType.HUNTER
+		return grid[y][x].getCellType() != OccupancyType.OBSTACLE
+				&& grid[y][x].getCellType() != OccupancyType.HUNTER
 				&& grid[y][x].getCellType() != OccupancyType.PREY;
 	}
 
@@ -84,14 +81,11 @@ final class Hunter extends RobotRunner {
 		return learning;
 	}
 
-	public void setLearning(final DeepQLearning learning) {
-		this.learning = learning;
-	}
-
 	public boolean isAdjacentToPrey() {
 		final int x = getGridPosX();
 		final int y = getGridPosY();
-		return grid[y][x - 1].getCellType() == OccupancyType.PREY || grid[y][x + 1].getCellType() == OccupancyType.PREY
+		return grid[y][x - 1].getCellType() == OccupancyType.PREY
+				|| grid[y][x + 1].getCellType() == OccupancyType.PREY
 				|| grid[y - 1][x].getCellType() == OccupancyType.PREY
 				|| grid[y + 1][x].getCellType() == OccupancyType.PREY;
 	}
@@ -115,10 +109,12 @@ final class Hunter extends RobotRunner {
 	}
 
 	public boolean isAdjacentToPrey(final int x, final int y) {
-		if (x == SimulationEnv.GRID_SIZE - 1 || y == SimulationEnv.GRID_SIZE - 1 || x == 0 || y == 0) {
+		if (x == SimulationEnv.GRID_SIZE - 1 || y == SimulationEnv.GRID_SIZE - 1 || x == 0
+				|| y == 0) {
 			return false;
 		}
-		return grid[y][x - 1].getCellType() == OccupancyType.PREY || grid[y][x + 1].getCellType() == OccupancyType.PREY
+		return grid[y][x - 1].getCellType() == OccupancyType.PREY
+				|| grid[y][x + 1].getCellType() == OccupancyType.PREY
 				|| grid[y - 1][x].getCellType() == OccupancyType.PREY
 				|| grid[y + 1][x].getCellType() == OccupancyType.PREY;
 	}
@@ -147,12 +143,13 @@ final class Hunter extends RobotRunner {
 		double score = 0;
 		final boolean gameMode = env.getMode() != Mode.EVAL;
 
-		final Hunter[] hunters = new Hunter[] { otherHunters[0], otherHunters[1], otherHunters[2], this };
+		final Hunter[] hunters =
+				new Hunter[] {otherHunters[0], otherHunters[1], otherHunters[2], this};
 
 		final int previousTurnCount = 0;
 
 		while (!exit) {
-			// double score = -.1;
+			// double score = -REWARD;
 
 			// // check if in a goal state
 			// if (isAdjacentToPrey()) {
@@ -186,15 +183,10 @@ final class Hunter extends RobotRunner {
 			final MyGridCell up = grid[y - 1][x];
 			final MyGridCell right = grid[y][x + 1];
 			final MyGridCell left = grid[y][x - 1];
-			logger.info(action.toString() + " " + up + " " + down + " " + left + " " + right);
+			// logger.info(action.toString() + " " + up + " " + down + " " + left + " " + right);
 
 			if (gameMode) {
 				learning.updateEpsilon();
-
-				// score = getScore(action);
-				// if (action == Action.TRAVEL) {
-				// score = canMoveScore();
-				// }
 
 				score = getScoreForAction(action);
 			}
@@ -233,104 +225,58 @@ final class Hunter extends RobotRunner {
 				// System.out.println(Arrays.stream(prey.getFreeAdjacentSquares()).map(mapper));
 
 				// logger.info(Double.toString(score));
-				learning.update(currState, action, score, newState);
 
+				learning.update(currState, action, score, newState);
 			}
 
 			currState = newState;
-
-			incrementMoves();
-
 		}
 
 		if (moveCount >= RobotController.STEP_COUNT) {
-			learning.update(currState, action, -.1, newState);
+			learning.update(currState, action, -REWARD, newState);
 		} else {
-			learning.update(currState, action, Arrays.stream(hunters).filter(Hunter::isAdjacentToPrey).count() / 10.0,
-					newState);
+			final double numberAdj =
+					Arrays.stream(hunters).filter(Hunter::isAdjacentToPrey).count() * REWARD;
+			final double adjObstacles = prey.getAdjacentObstacles() * REWARD;
+
+			learning.update(currState, action, numberAdj - adjObstacles, newState);
 		}
 
 		// controller.addCaptureScore(currState, action, this);
 	}
 
 	public double getScoreForAction(final Action action) {
-
 		double score = 0;
 		switch (action) {
-		case TRAVEL:
+			case TRAVEL:
 
-			score += addTravelScore();
-			score += canMoveScore();
+				score += addTravelScore();
+				score += canMoveScore();
 
-			break;
-		case NOTHING:
-			if (isAdjacentToPrey()) {
-				score += .1;
-			}
-			if (isAdjacentToHunter()) {
-				score -= .1;
-			}
-			break;
-		case LEFT_TURN:
-			// score += addTurnScore();
-			// score += canMoveScore();
-			// break;
-		case RIGHT_TURN:
-			score += addTurnScore();
-			score += canMoveScore();
-			break;
-		default:
-			break;
+				break;
+			case NOTHING:
+				if (isAdjacentToPrey()) {
+					score += REWARD;
+				}
+				if (isAdjacentToHunter()) {
+					score -= REWARD;
+				}
+				break;
+			case LEFT_TURN:
+			case RIGHT_TURN:
+				score -= REWARD;
+				score += addTurnScore();
+				score += canMoveScore();
+				break;
+			default:
+				break;
 		}
+
+		// score -= (moveCount / (double) RobotController.STEP_COUNT) * REWARD;
+		// System.out.println((moveCount / (double) RobotController.STEP_COUNT) * REWARD);
 
 		return score;
 	}
-
-	// private double getScore(final Action action) {
-	// // double score = -1;
-	// double score = -0.1;
-
-	// switch (action) {
-	// case LEFT_TURN:
-	// score = addTurnScore((getHeading() - 90) % 360);
-	// // score = -0.01;
-	// break;
-
-	// case RIGHT_TURN:
-	// score = addTurnScore((getHeading() + 90) % 360);
-	// // score = -0.01;
-
-	// break;
-
-	// case TRAVEL:
-	// score = addTravelScore();
-
-	// // if (isAdjacentToPrey()) {
-	// // score = -0.1;
-	// // }
-	// // score = 0.5;
-
-	// break;
-
-	// case NOTHING:
-	// if (!isAdjacentToPrey()) {
-	// score = -0.01;
-	// }
-
-	// if (isAdjacentToPrey()) {
-	// score = 1;
-	// }
-	// // score = -0.1;
-
-	// break;
-
-	// default:
-	// break;
-	// }
-
-	// // logger.info(Double.toString(score));
-	// return score;
-	// }
 
 	private double addTravelScore() {
 		final int x = getGridPosX();
@@ -338,68 +284,68 @@ final class Hunter extends RobotRunner {
 		double score = 0;
 
 		switch (Direction.fromDegree(getHeading())) {
-		case DOWN:
-			// if (getManhattenDistance(x, y + 1, px, py) >= oldDist) {
-			// score -= .1;
-			// }
+			case DOWN:
+				// if (getManhattenDistance(x, y + 1, px, py) >= oldDist) {
+				// score -= REWARD;
+				// }
 
-			if (!isAdjacentToPrey(x, y + 1)) {
-				score -= .1;
-			}
+				if (!isAdjacentToPrey(x, y + 1)) {
+					score -= REWARD;
+				}
 
-			if (!canMove(x, y + 1)) {
-				score -= .1;
-			}
+				// if (!canMove(x, y + 1)) {
+				// score -= REWARD;
+				// }
 
-			break;
+				break;
 
-		case RIGHT:
-			// if (getManhattenDistance(x + 1, y, px, py) >= oldDist) {
-			// score -= .1;
-			// }
+			case RIGHT:
+				// if (getManhattenDistance(x + 1, y, px, py) >= oldDist) {
+				// score -= REWARD;
+				// }
 
-			if (!isAdjacentToPrey(x + 1, y)) {
-				score -= .1;
-			}
+				if (!isAdjacentToPrey(x + 1, y)) {
+					score -= REWARD;
+				}
 
-			if (!canMove(x + 1, y)) {
-				score -= .1;
-			}
+				// if (!canMove(x + 1, y)) {
+				// score -= REWARD;
+				// }
 
-			break;
+				break;
 
-		case UP:
-			// if (getManhattenDistance(x, y - 1, px, py) >= oldDist) {
-			// score -= .1;
-			// }
+			case UP:
+				// if (getManhattenDistance(x, y - 1, px, py) >= oldDist) {
+				// score -= REWARD;
+				// }
 
-			if (!isAdjacentToPrey(x, y - 1)) {
-				score -= .1;
-			}
+				if (!isAdjacentToPrey(x, y - 1)) {
+					score -= REWARD;
+				}
 
-			if (canMove(x, y - 1)) {
-				score -= .1;
-			}
+				// if (canMove(x, y - 1)) {
+				// score -= REWARD;
+				// }
 
-			break;
+				break;
 
-		case LEFT:
-			// if (getManhattenDistance(x - 1, y, px, py) >= oldDist) {
-			// score -= .1;
-			// }
+			case LEFT:
+				// if (getManhattenDistance(x - 1, y, px, py) >= oldDist) {
+				// score -= REWARD;
+				// }
 
-			if (!isAdjacentToPrey(x - 1, y)) {
-				score -= .1;
-			}
+				if (!isAdjacentToPrey(x - 1, y)) {
+					score -= REWARD;
+				}
 
-			if (!canMove(x - 1, y)) {
-				score -= .1;
-			}
+				// if (!canMove(x - 1, y)) {
+				// score -= REWARD;
+				// }
 
-			break;
+				break;
 
-		default:
-			break;
+			default:
+				break;
 		}
 
 		return score;
@@ -411,40 +357,40 @@ final class Hunter extends RobotRunner {
 		double score = 0;
 
 		switch (Direction.fromDegree(getHeading())) {
-		case DOWN:
+			case DOWN:
 
-			if (!canMove(x, y + 1)) {
-				score = -.15;
-			}
+				if (!canMove(x, y + 1)) {
+					score = -REWARD;
+				}
 
-			break;
+				break;
 
-		case RIGHT:
+			case RIGHT:
 
-			if (!canMove(x + 1, y)) {
-				score = -.15;
-			}
+				if (!canMove(x + 1, y)) {
+					score = -REWARD;
+				}
 
-			break;
+				break;
 
-		case UP:
+			case UP:
 
-			if (canMove(x, y - 1)) {
-				score = -.15;
-			}
+				if (canMove(x, y - 1)) {
+					score = -REWARD;
+				}
 
-			break;
+				break;
 
-		case LEFT:
+			case LEFT:
 
-			if (!canMove(x - 1, y)) {
-				score = -.15;
-			}
+				if (!canMove(x - 1, y)) {
+					score = -REWARD;
+				}
 
-			break;
+				break;
 
-		default:
-			break;
+			default:
+				break;
 		}
 
 		return score;
@@ -459,32 +405,44 @@ final class Hunter extends RobotRunner {
 		double score = 0;
 
 		switch (Direction.fromDegree(getHeading())) {
-		case DOWN:
-			if (!isAdjacentToPrey(x, y + 1)) {
-				score = -.1;
-			}
-			break;
+			case DOWN:
+				if (!isAdjacentToPrey(x, y + 1)) {
+					score -= REWARD;
+				}
+				if (isAdjacentToPrey(x, y + 1)) {
+					score -= REWARD;
+				}
+				break;
 
-		case RIGHT:
-			if (!isAdjacentToPrey(x + 1, y)) {
-				score = -.1;
-			}
-			break;
+			case RIGHT:
+				if (!isAdjacentToPrey(x + 1, y)) {
+					score -= REWARD;
+				}
+				if (isAdjacentToPrey(x + 1, y)) {
+					score -= REWARD;
+				}
+				break;
 
-		case UP:
-			if (!isAdjacentToPrey(x, y - 1)) {
-				score = -.1;
-			}
-			break;
+			case UP:
+				if (!isAdjacentToPrey(x, y - 1)) {
+					score -= REWARD;
+				}
+				if (isAdjacentToPrey(x, y - 1)) {
+					score -= REWARD;
+				}
+				break;
 
-		case LEFT:
-			if (!isAdjacentToPrey(x - 1, y)) {
-				score = -.1;
-			}
-			break;
+			case LEFT:
+				if (!isAdjacentToPrey(x - 1, y)) {
+					score -= REWARD;
+				}
+				if (isAdjacentToPrey(x - 1, y)) {
+					score -= REWARD;
+				}
+				break;
 
-		default:
-			break;
+			default:
+				break;
 		}
 
 		return score;
@@ -492,67 +450,75 @@ final class Hunter extends RobotRunner {
 
 	private void doAction(final Action action) {
 		switch (action) {
-		case TRAVEL:
-			forward();
-			break;
+			case TRAVEL:
+				forward();
+				break;
 
-		case LEFT_TURN:
-			if (env.getMode() == Mode.EVAL) {
-				rotate(-90);
-			} else {
-				setPose(getX(), getY(), getHeading() + -90);
-			}
-			break;
+			case LEFT_TURN:
+				if (env.getMode() == Mode.EVAL) {
+					rotate(-90);
+				} else {
+					setPose(getX(), getY(), getHeading() - 90);
+				}
+				break;
 
-		case RIGHT_TURN:
-			if (env.getMode() == Mode.EVAL) {
-				rotate(90);
-			} else {
-				setPose(getX(), getY(), getHeading() + 90);
-			}
-			break;
+			case RIGHT_TURN:
+				if (env.getMode() == Mode.EVAL) {
+					rotate(90);
+				} else {
+					setPose(getX(), getY(), getHeading() + 90);
+				}
+				break;
 
-		case NOTHING:
-			break;
+			case NOTHING:
+				break;
 
-		default:
-			break;
+			default:
+				break;
 		}
-
+		incrementMoves();
 	}
 
-	private int getManhattenDistance(final int x1, final int y1, final int x2, final int y2) {
+	private static int getManhattenDistance(final int x1, final int y1, final int x2,
+			final int y2) {
 		final int i = Math.abs(x2 - x1) + Math.abs(y2 - y1);
 		return i == 0 ? SimulationEnv.GRID_SIZE + 1 : i;
 	}
 
-	private int getManhattenDistance(final int x2, final int y2, final Direction direction) {
-		// return Math.abs(x2 - getGridPosX()) + Math.abs(y2 - getGridPosY());
-		switch (direction) {
-		case UP:
-			return Math.abs(x2 - getGridPosX()) + Math.abs(y2 - 1 - getGridPosY());
-		case DOWN:
-			return Math.abs(x2 - getGridPosX()) + Math.abs(y2 + 1 - getGridPosY());
-		case LEFT:
-			return Math.abs(x2 - 1 - getGridPosX()) + Math.abs(y2 - getGridPosY());
-		case RIGHT:
-			return Math.abs(x2 + 1 - getGridPosX()) + Math.abs(y2 - getGridPosY());
-		default:
-			break;
-		}
-		return SimulationEnv.GRID_SIZE + 1;
-	}
+	// private int getManhattenDistance(final int x2, final int y2, final Direction
+	// direction) {
+	// // return Math.abs(x2 - getGridPosX()) + Math.abs(y2 - getGridPosY());
+	// switch (direction) {
+	// case UP:
+	// return Math.abs(x2 - getGridPosX()) + Math.abs(y2 - 1 - getGridPosY());
+	// case DOWN:
+	// return Math.abs(x2 - getGridPosX()) + Math.abs(y2 + 1 - getGridPosY());
+	// case LEFT:
+	// return Math.abs(x2 - 1 - getGridPosX()) + Math.abs(y2 - getGridPosY());
+	// case RIGHT:
+	// return Math.abs(x2 + 1 - getGridPosX()) + Math.abs(y2 - getGridPosY());
+	// default:
+	// break;
+	// }
+	// return SimulationEnv.GRID_SIZE + 1;
+	// }
 
-	private static float getNormalisedManhattenDistance(final int x1, final int y1, final int x2, final int y2) {
-		return normalise(Math.abs(x2 - x1) + Math.abs(y2 - y1), 1, SimulationEnv.GRID_SIZE);
+	private static float getNormalisedManhattenDistance(final int x1, final int y1, final int x2,
+			final int y2) {
+		return normalise(getManhattenDistance(x1, y1, x2, y2), 1, SimulationEnv.GRID_SIZE);
 	}
 
 	public float[] getStates() {
 		final float[] states = new float[RobotController.STATE_COUNT];
 
 		// normalised x and y positions
-		states[0] = normalise(getGridPosX(), MIN_GRID, MAX_GRID);
-		states[1] = normalise(getGridPosY(), MIN_GRID, MAX_GRID);
+		final int x = getGridPosX();
+		final int y = getGridPosY();
+		final int preyX = prey.getGridPosX();
+		final int preyY = prey.getGridPosY();
+
+		states[0] = normalise(x, MIN_GRID, MAX_GRID);
+		states[1] = normalise(y, MIN_GRID, MAX_GRID);
 
 		states[2] = normalise(otherHunters[0].getGridPosX(), MIN_GRID, MAX_GRID);
 		states[3] = normalise(otherHunters[0].getGridPosY(), MIN_GRID, MAX_GRID);
@@ -563,46 +529,71 @@ final class Hunter extends RobotRunner {
 		states[6] = normalise(otherHunters[2].getGridPosX(), MIN_GRID, MAX_GRID);
 		states[7] = normalise(otherHunters[2].getGridPosY(), MIN_GRID, MAX_GRID);
 
-		states[8] = normalise(prey.getGridPosX(), MIN_GRID, MAX_GRID);
-		states[9] = normalise(prey.getGridPosY(), MIN_GRID, MAX_GRID);
+		// prey adjacent x and y positions TODO: provided the preys location if known
+
+		// if (knowPreyLocation/canSeePrey)
+		// right
+
+		states[8] = normalise(preyX + 1, MIN_GRID, MAX_GRID);
+		states[9] = normalise(preyY, MIN_GRID, MAX_GRID);
+
+		// left
+		states[10] = normalise(preyX - 1, MIN_GRID, MAX_GRID);
+		states[11] = normalise(preyY, MIN_GRID, MAX_GRID);
+
+		// down
+		states[12] = normalise(preyX, MIN_GRID, MAX_GRID);
+		states[13] = normalise(preyY + 1, MIN_GRID, MAX_GRID);
+
+		// up
+		states[14] = normalise(preyX, MIN_GRID, MAX_GRID);
+		states[15] = normalise(preyY - 1, MIN_GRID, MAX_GRID);
 
 		// manhattan distances from the prey
-		// TODO: manhattan distance between all adjacent distances
-		states[10] = getNormalisedManhattenDistance(getGridPosX(), getGridPosY(), prey.getGridPosX(),
-				prey.getGridPosX());
-		states[11] = getNormalisedManhattenDistance(otherHunters[0].getGridPosX(), otherHunters[0].getGridPosY(),
-				prey.getGridPosX(), prey.getGridPosX());
-		states[12] = getNormalisedManhattenDistance(otherHunters[1].getGridPosX(), otherHunters[1].getGridPosY(),
-				prey.getGridPosX(), prey.getGridPosX());
-		states[13] = getNormalisedManhattenDistance(otherHunters[2].getGridPosX(), otherHunters[2].getGridPosY(),
-				prey.getGridPosX(), prey.getGridPosX());
+		states[16] = getNormalisedManhattenDistance(x, y, preyX + 1, preyY);
+		states[17] = getNormalisedManhattenDistance(x, y, preyX - 1, preyY);
+		states[18] = getNormalisedManhattenDistance(x, y, preyX, preyY + 1);
+		states[19] = getNormalisedManhattenDistance(x, y, preyX, preyY - 1);
 
-		// headings
-		// states[14] = normalise(getUSenseRange(), -360, 360);
-		// states[15] = normalise(getUSenseRange(), -360, 360);
+		// states[17] = getNormalisedManhattenDistance(otherHunters[0].getGridPosX(),
+		// otherHunters[0].getGridPosY(), preyX,
+		// prey.getGridPosY());
+		// states[18] = getNormalisedManhattenDistance(otherHunters[1].getGridPosX(),
+		// otherHunters[1].getGridPosY(), preyX,
+		// prey.getGridPosY());
+		// states[19] = getNormalisedManhattenDistance(otherHunters[2].getGridPosX(),
+		// otherHunters[2].getGridPosY(), preyX,
+		// prey.getGridPosY());
 
-		// states[16] = normalise(otherHunters[0].getUSenseRange(), -360, 360);
-		// states[17] = normalise(otherHunters[0].getUSenseRange(), -360, 360);
+		// System.out.println(Arrays.toString(states));
 
-		// states[18] = normalise(otherHunters[1].getUSenseRange(), -360, 360);
-		// states[19] = normalise(otherHunters[1].getUSenseRange(), -360, 360);
+		// System.out.println(Arrays.toString(RANDOM.doubles(states.length).sorted().toArray()));
 
-		// states[20] = normalise(otherHunters[2].getUSenseRange(), -360, 360);
-		// states[21] = normalise(otherHunters[2].getUSenseRange(), -360, 360);
+		shuffle(states);
 
-		// states[22] = normalise(prey.getUSenseRange(), -360, 360);
-		// states[23] = normalise(prey.getUSenseRange(), -360, 360);
-
-		// TODO: get the x and y of the prey
-		// 0 otherwise
-		// if a robot is adjacent to the prey get the co-ordinates
-		// if the prey is scanned get the co-ordinates
 		return states;
 	}
 
-	// private final float getNormSenseRange() {
-	// return normalise(getUSenseRange(), SENSOR_SCAN_MIN, SENSOR_SCAN_MAX);
-	// }
+	/**
+	 * Fisher–Yates shuffle Algorithm
+	 * https://www.geeksforgeeks.org/shuffle-a-given-array-using-fisher-yates-shuffle-algorithm/
+	 *
+	 * @param arr
+	 */
+	private static void shuffle(float[] arr) {
+		// Start from the last element and swap one by one. We don't
+		// need to run for the first element that's why i > 0
+		for (int i = arr.length - 1; i > 0; i--) {
+
+			// Pick a random index from 0 to i
+			int j = RANDOM.nextInt(i);
+
+			// Swap arr[i] with the element at random index
+			float temp = arr[i];
+			arr[i] = arr[j];
+			arr[j] = temp;
+		}
+	}
 
 	@Override
 	public void run() {
@@ -620,13 +611,13 @@ final class Hunter extends RobotRunner {
 	}
 
 	@Override
-	final void left() {
+	final void left(final Direction left) {
 		final int x = getGridPosX();
 		final int y = getGridPosY();
 
-		if (canMove(x - 1, y)) {
+		if (canMove(left.x(x), left.y(y))) {
 			env.updateGridEmpty(x, y);
-			env.updateGridHunter(x - 1, y);
+			env.updateGridHunter(left.x(x), left.y(y));
 
 			if (env.getMode() == Mode.EVAL) {
 				travel(CELL_DISTANCE);
@@ -637,13 +628,14 @@ final class Hunter extends RobotRunner {
 	}
 
 	@Override
-	final void up() {
+	final void up(final Direction up) {
 		final int x = getGridPosX();
 		final int y = getGridPosY();
 
-		if (canMove(x, y - 1)) {
+		// if (canMove(x, y - 1)) {
+		if (canMove(up.x(x), up.y(y))) {
 			env.updateGridEmpty(x, y);
-			env.updateGridHunter(x, y - 1);
+			env.updateGridHunter(up.x(x), up.y(y));
 
 			if (env.getMode() == Mode.EVAL) {
 				travel(CELL_DISTANCE);
@@ -654,13 +646,13 @@ final class Hunter extends RobotRunner {
 	}
 
 	@Override
-	final void right() {
+	final void right(final Direction right) {
 		final int x = getGridPosX();
 		final int y = getGridPosY();
 
-		if (canMove(x + 1, y)) {
+		if (canMove(right.x(x), right.y(y))) {
 			env.updateGridEmpty(x, y);
-			env.updateGridHunter(x + 1, y);
+			env.updateGridHunter(right.x(x), right.y(y));
 
 			if (env.getMode() == Mode.EVAL) {
 				travel(CELL_DISTANCE);
@@ -671,13 +663,13 @@ final class Hunter extends RobotRunner {
 	}
 
 	@Override
-	final void down() {
+	final void down(final Direction down) {
 		final int x = getGridPosX();
 		final int y = getGridPosY();
 
-		if (canMove(x, y + 1)) {
+		if (canMove(down.x(x), down.y(y))) {
 			env.updateGridEmpty(x, y);
-			env.updateGridHunter(x, y + 1);
+			env.updateGridHunter(down.x(x), down.y(y));
 
 			if (env.getMode() == Mode.EVAL) {
 				travel(CELL_DISTANCE);

@@ -2,23 +2,19 @@ package robots;
 
 import java.io.IOException;
 import java.nio.file.Files;
-
-import comp329robosim.MyGridCell;
-import comp329robosim.OccupancyType;
 import comp329robosim.SimulatedRobot;
 import intelligence.DeepQLearning;
 import simulation.Mode;
 import simulation.SimulationEnv;
 
 public class RobotController {
-	public static final int STEP_COUNT = 30000;
-	public static final int STATE_COUNT = 14;
-	// public static final int STATE_COUNT = 24;
-
-	// public static final int STATE_COUNT = 10;
-	// public static final int STATE_COUNT = 4;
+	public static final int STEP_COUNT = 5000;
+	// public static final int STATE_COUNT = 14;
+	public static final int STATE_COUNT = 20;
 
 	private static final int DELAY = 1000;
+
+	private int captures = 0;
 
 	private final Hunter[] hunters = new Hunter[4];
 
@@ -51,26 +47,26 @@ public class RobotController {
 				// learning = new DeepQLearning();
 				// }
 				switch (mode) {
-				case EVAL:
-					learning = DeepQLearning.loadNetwork(env.getFiles()[i]);
-					break;
+					case EVAL:
+						learning = DeepQLearning.loadNetwork(env.getFiles()[i], false);
+						break;
 
-				case TRAIN_ON:
-					if (env.getFiles().length < 4) {
+					case TRAIN_ON:
+						if (env.getFiles().length < 4) {
+							learning = new DeepQLearning();
+
+						} else {
+							learning = DeepQLearning.loadNetwork(env.getFiles()[i], true);
+
+						}
+						break;
+
+					case TRAIN:
 						learning = new DeepQLearning();
+						break;
 
-					} else {
-						learning = DeepQLearning.loadNetwork(env.getFiles()[i]);
-
-					}
-					break;
-
-				case TRAIN:
-					learning = new DeepQLearning();
-					break;
-
-				default:
-					break;
+					default:
+						break;
 				}
 				hunters[i] = new Hunter(simulatedRobot, DELAY, env, learning, this, prey);
 			} while (isSamePosition(i));
@@ -82,7 +78,8 @@ public class RobotController {
 	}
 
 	private boolean isSamePosition(final int i) {
-		if (hunters[i].getGridPosX() == prey.getGridPosX() && hunters[i].getGridPosY() == prey.getGridPosY()) {
+		if (hunters[i].getGridPosX() == prey.getGridPosX()
+				&& hunters[i].getGridPosY() == prey.getGridPosY()) {
 			return true;
 		}
 
@@ -103,7 +100,8 @@ public class RobotController {
 		for (int i = 0; i < 4; i++) {
 			do {
 				final SimulatedRobot simulatedHunter = env.getAndSetHunter(i);
-				hunters[i] = new Hunter(simulatedHunter, DELAY, env, hunters[i].getLearning(), this, prey);
+				hunters[i] = new Hunter(simulatedHunter, DELAY, env, hunters[i].getLearning(), this,
+						prey);
 			} while (isSamePosition(i));
 		}
 
@@ -201,7 +199,7 @@ public class RobotController {
 		}
 	}
 
-	public void handleCapture() {
+	public void handleCapture(final boolean capture) {
 		stopRobots();
 
 		// GridPrinter.printGrid(env.getGrid());
@@ -216,7 +214,9 @@ public class RobotController {
 		env.resetGrid();
 
 		if (env.getEpisode() <= SimulationEnv.EPISODES + env.getTrainedEpisodes()) {
-			env.updateTitle(env.incrementEpisode());
+			env.updateTitle(
+					env.incrementEpisode() + " Captures " + (capture ? ++captures : captures));
+			// TODO: add captures to the file name and retrieve
 			restartRobots();
 		} else if (env.getMode() == Mode.TRAIN || env.getMode() == Mode.TRAIN_ON) {
 			// saveNetwork();
@@ -226,41 +226,44 @@ public class RobotController {
 		}
 	}
 
-	public void addCaptureScore(final float[] currState, final Action direction, final Hunter hunter) {
-		final MyGridCell[][] grid = env.getGrid();
+	// public void addCaptureScore(final float[] currState, final Action direction,
+	// final Hunter hunter) {
+	// final MyGridCell[][] grid = env.getGrid();
 
-		final int pX = prey.getGridPosX();
-		final int pY = prey.getGridPosY();
+	// final int pX = prey.getGridPosX();
+	// final int pY = prey.getGridPosY();
 
-		int score = 0;
-		if (grid[pY + 1][pX].getCellType() == OccupancyType.HUNTER) {
-			score += 1;
-		}
-		if (grid[pY - 1][pX].getCellType() == OccupancyType.HUNTER) {
-			score += 1;
-		}
-		if (grid[pY][pX + 1].getCellType() == OccupancyType.HUNTER) {
-			score += 1;
-		}
-		if (grid[pY][pX - 1].getCellType() == OccupancyType.HUNTER) {
-			score += 1;
-		}
+	// int score = 0;
+	// if (grid[pY + 1][pX].getCellType() == OccupancyType.HUNTER) {
+	// score += .1;
+	// }
+	// if (grid[pY - 1][pX].getCellType() == OccupancyType.HUNTER) {
+	// score += .1;
+	// }
+	// if (grid[pY][pX + 1].getCellType() == OccupancyType.HUNTER) {
+	// score += .1;
+	// }
+	// if (grid[pY][pX - 1].getCellType() == OccupancyType.HUNTER) {
+	// score += .1;
+	// }
 
-		if (grid[pY + 1][pX].getCellType() == OccupancyType.OBSTACLE) {
-			score -= 1;
-		}
-		if (grid[pY - 1][pX].getCellType() == OccupancyType.OBSTACLE) {
-			score -= 1;
-		}
-		if (grid[pY][pX + 1].getCellType() == OccupancyType.OBSTACLE) {
-			score -= 1;
-		}
-		if (grid[pY][pX - 1].getCellType() == OccupancyType.OBSTACLE) {
-			score -= 1;
-		}
+	// if (grid[pY + 1][pX].getCellType() == OccupancyType.OBSTACLE) {
+	// score -= .1;
+	// }
+	// if (grid[pY - 1][pX].getCellType() == OccupancyType.OBSTACLE) {
+	// score -= .1;
+	// }
+	// if (grid[pY][pX + 1].getCellType() == OccupancyType.OBSTACLE) {
+	// score -= .1;
+	// }
+	// if (grid[pY][pX - 1].getCellType() == OccupancyType.OBSTACLE) {
+	// score -= .1;
+	// }
+	// System.out.println(score);
 
-		hunter.getLearning().update(currState, direction, score, hunter.getStates());
+	// hunter.getLearning().update(currState, direction, score, hunter.getStates());
 
-		// hunter.getLearning().update(currState, direction, 0.9, hunter.getStates());
-	}
+	// // hunter.getLearning().update(currState, direction, 0.9, hunter.getStates());
+
+	// }
 }

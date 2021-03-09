@@ -23,14 +23,15 @@ public class SimulationEnv extends EnvController {
 
     public static final String OUTPUT_FOLDER = "./resources/";
 
-    public static final int EPISODES = 50;
+    public static final int EPISODES = 20;
 
     private final Mode mode;
 
     public static final int GRID_SIZE = 6;
     // public static final int STATES_COUNT = (int) (Math.pow(GRID_SIZE, 2) -
     // (GRID_SIZE * 4 - 4) - 4) * 5;
-    public static final int STATES_COUNT = (int) (Math.pow(GRID_SIZE, 2) - (GRID_SIZE * 4 - 4) - 4);
+    // public static final int STATES_COUNT = (int) (Math.pow(GRID_SIZE, 2) - (GRID_SIZE * 4 - 4) -
+    // 4);
 
     private int episode = 1;
 
@@ -42,24 +43,27 @@ public class SimulationEnv extends EnvController {
 
     private final MyGridCell[][] grid;
 
-    private final File[] files = new File(OUTPUT_FOLDER).listFiles((dir1, filename) -> filename.endsWith(".zip"));
+    private final File[] files =
+            new File(OUTPUT_FOLDER).listFiles((dir1, filename) -> filename.endsWith(".zip"));
 
     public File[] getFiles() {
         return files;
     }
 
-    public SimulationEnv(final String confFileName, final int cols, final int rows, final Mode mode) {
+    public SimulationEnv(final String confFileName, final int cols, final int rows,
+            final Mode mode) {
         super(confFileName, cols, rows);
 
         this.mode = mode;
 
         if (files.length == 0 || mode == Mode.TRAIN) {
-            updateTitle(episode);
+            updateTitle(String.valueOf(episode));
             this.trainedEpisodes = 0;
         } else {
             final String fileName = files[0].getName();
-            episode = Integer.parseInt(fileName.substring(fileName.lastIndexOf('_') + 1, fileName.indexOf(".zip")));
-            updateTitle(episode);
+            episode = Integer.parseInt(
+                    fileName.substring(fileName.lastIndexOf('_') + 1, fileName.indexOf(".zip")));
+            updateTitle(String.valueOf(episode));
             this.trainedEpisodes = episode;
         }
 
