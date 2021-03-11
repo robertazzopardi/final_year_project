@@ -47,26 +47,26 @@ public class RobotController {
 				// learning = new DeepQLearning();
 				// }
 				switch (mode) {
-					case EVAL:
-						learning = DeepQLearning.loadNetwork(env.getFiles()[i], false);
-						break;
+				case EVAL:
+					learning = DeepQLearning.loadNetwork(env.getFiles()[i], false);
+					break;
 
-					case TRAIN_ON:
-						if (env.getFiles().length < 4) {
-							learning = new DeepQLearning();
-
-						} else {
-							learning = DeepQLearning.loadNetwork(env.getFiles()[i], true);
-
-						}
-						break;
-
-					case TRAIN:
+				case TRAIN_ON:
+					if (env.getFiles().length < 4) {
 						learning = new DeepQLearning();
-						break;
 
-					default:
-						break;
+					} else {
+						learning = DeepQLearning.loadNetwork(env.getFiles()[i], true);
+
+					}
+					break;
+
+				case TRAIN:
+					learning = new DeepQLearning();
+					break;
+
+				default:
+					break;
 				}
 				hunters[i] = new Hunter(simulatedRobot, DELAY, env, learning, this, prey);
 			} while (isSamePosition(i));
@@ -78,8 +78,7 @@ public class RobotController {
 	}
 
 	private boolean isSamePosition(final int i) {
-		if (hunters[i].getGridPosX() == prey.getGridPosX()
-				&& hunters[i].getGridPosY() == prey.getGridPosY()) {
+		if (hunters[i].getGridPosX() == prey.getGridPosX() && hunters[i].getGridPosY() == prey.getGridPosY()) {
 			return true;
 		}
 
@@ -100,8 +99,7 @@ public class RobotController {
 		for (int i = 0; i < 4; i++) {
 			do {
 				final SimulatedRobot simulatedHunter = env.getAndSetHunter(i);
-				hunters[i] = new Hunter(simulatedHunter, DELAY, env, hunters[i].getLearning(), this,
-						prey);
+				hunters[i] = new Hunter(simulatedHunter, DELAY, env, hunters[i].getLearning(), this, prey);
 			} while (isSamePosition(i));
 		}
 
@@ -214,8 +212,7 @@ public class RobotController {
 		env.resetGrid();
 
 		if (env.getEpisode() <= SimulationEnv.EPISODES + env.getTrainedEpisodes()) {
-			env.updateTitle(
-					env.incrementEpisode() + " Captures " + (capture ? ++captures : captures));
+			env.updateTitle(env.incrementEpisode() + " Captures " + (capture ? ++captures : captures));
 			// TODO: add captures to the file name and retrieve
 			restartRobots();
 		} else if (env.getMode() == Mode.TRAIN || env.getMode() == Mode.TRAIN_ON) {
@@ -263,7 +260,8 @@ public class RobotController {
 
 	// hunter.getLearning().update(currState, direction, score, hunter.getStates());
 
-	// // hunter.getLearning().update(currState, direction, 0.9, hunter.getStates());
+	// // hunter.getLearning().update(currState, direction, 0.9,
+	// hunter.getStates());
 
 	// }
 }

@@ -15,8 +15,7 @@ import simulation.SimulationEnv;
 final class Prey extends RobotRunner {
 	private Action randomMove;
 
-	public Prey(final SimulatedRobot r, final int d, final SimulationEnv env,
-			final RobotController controller) {
+	public Prey(final SimulatedRobot r, final int d, final SimulationEnv env, final RobotController controller) {
 		super(r, d, env, controller);
 
 		logger = Logger.getLogger(Prey.class.getName());
@@ -48,9 +47,8 @@ final class Prey extends RobotRunner {
 		final int x = getGridPosX();
 		final int y = getGridPosY();
 
-		OccupancyType[] adjacent =
-				new OccupancyType[] {grid[y + 1][x].getCellType(), grid[y - 1][x].getCellType(),
-						grid[y][x + 1].getCellType(), grid[y][x - 1].getCellType()};
+		OccupancyType[] adjacent = new OccupancyType[] { grid[y + 1][x].getCellType(), grid[y - 1][x].getCellType(),
+				grid[y][x + 1].getCellType(), grid[y][x - 1].getCellType() };
 		return (int) Arrays.stream(adjacent).filter(z -> z == OccupancyType.OBSTACLE).count();
 
 	}
@@ -59,10 +57,9 @@ final class Prey extends RobotRunner {
 		final int x = getGridPosX();
 		final int y = getGridPosY();
 
-		return new Direction[] {canMove(x, y + 1) ? Direction.DOWN : Direction.NONE,
-				canMove(x, y - 1) ? Direction.UP : Direction.NONE,
-				canMove(x + 1, y) ? Direction.RIGHT : Direction.NONE,
-				canMove(x - 1, y) ? Direction.LEFT : Direction.NONE,};
+		return new Direction[] { canMove(x, y + 1) ? Direction.DOWN : Direction.NONE,
+				canMove(x, y - 1) ? Direction.UP : Direction.NONE, canMove(x + 1, y) ? Direction.RIGHT : Direction.NONE,
+				canMove(x - 1, y) ? Direction.LEFT : Direction.NONE, };
 	}
 
 	// public Direction getFreeAdjacentSquares() {
@@ -84,8 +81,7 @@ final class Prey extends RobotRunner {
 	boolean canMove(final int x, final int y) {
 		// return grid[y][x].getCellType() != OccupancyType.OBSTACLE &&
 		// grid[y][x].getCellType() != OccupancyType.HUNTER;
-		return grid[y][x].getCellType() == OccupancyType.GOAL
-				|| grid[y][x].getCellType() == OccupancyType.EMPTY;
+		return grid[y][x].getCellType() == OccupancyType.GOAL || grid[y][x].getCellType() == OccupancyType.EMPTY;
 	}
 
 	@Override
@@ -114,10 +110,12 @@ final class Prey extends RobotRunner {
 			// }
 
 			if (isCaptured()) {
+				System.out.println(RobotController.STEP_COUNT - moveCount);
 				controller.handleCapture(true);
 				resetMoves();
 				// break;
-			} else if (moveCount > RobotController.STEP_COUNT) {
+				// } else if (moveCount > RobotController.STEP_COUNT) {
+			} else if (moveCount <= 0) {
 				controller.handleCapture(false);
 				resetMoves();
 				// break;
@@ -125,7 +123,7 @@ final class Prey extends RobotRunner {
 
 			randomMove = Action.getRandomAction();
 
-			// doAction(randomMove);
+			doAction(randomMove);
 
 		}
 		// logger.info("Prey Stopped");
@@ -133,33 +131,33 @@ final class Prey extends RobotRunner {
 
 	private void doAction(final Action direction) {
 		switch (direction) {
-			case TRAVEL:
-				forward();
-				break;
+		case TRAVEL:
+			forward();
+			break;
 
-			case LEFT_TURN:
-				if (env.getMode() == Mode.EVAL) {
-					rotate(-90);
-				} else {
-					setPose(getX(), getY(), getHeading() + -90);
-				}
-				break;
+		case LEFT_TURN:
+			if (env.getMode() == Mode.EVAL) {
+				rotate(-90);
+			} else {
+				setPose(getX(), getY(), getHeading() + -90);
+			}
+			break;
 
-			case RIGHT_TURN:
-				if (env.getMode() == Mode.EVAL) {
-					rotate(90);
-				} else {
-					setPose(getX(), getY(), getHeading() + 90);
-				}
-				break;
+		case RIGHT_TURN:
+			if (env.getMode() == Mode.EVAL) {
+				rotate(90);
+			} else {
+				setPose(getX(), getY(), getHeading() + 90);
+			}
+			break;
 
-			case NOTHING:
-				break;
+		case NOTHING:
+			break;
 
-			default:
-				break;
+		default:
+			break;
 		}
-		incrementMoves();
+		// incrementMoves();
 	}
 
 	@Override

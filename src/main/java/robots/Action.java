@@ -10,7 +10,7 @@ public enum Action {
 
     public static final int LENGTH = ACTIONS.length;
 
-    private static final Action[] TURN_ACTIONS = new Action[] {LEFT_TURN, RIGHT_TURN, NOTHING};
+    private static final Action[] TURN_ACTIONS = new Action[] { LEFT_TURN, RIGHT_TURN, NOTHING };
 
     public static Action getRandomAction() {
         return ACTIONS[ThreadLocalRandom.current().nextInt(LENGTH)];

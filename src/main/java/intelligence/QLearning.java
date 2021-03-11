@@ -192,15 +192,15 @@ final class QLearning {
 			final int target = goDown * SimulationEnv.GRID_SIZE + j;
 
 			switch (maze[goDown][j].getCellType()) {
-				case EMPTY:
-					rValues[k][target] = 0;
-					break;
-				case GOAL:
-					rValues[k][target] = REWARD;
-					break;
-				default:
-					rValues[k][target] = PENALTY;
-					break;
+			case EMPTY:
+				rValues[k][target] = 0;
+				break;
+			case GOAL:
+				rValues[k][target] = REWARD;
+				break;
+			default:
+				rValues[k][target] = PENALTY;
+				break;
 			}
 		}
 	}
@@ -216,15 +216,15 @@ final class QLearning {
 			final int target = i * SimulationEnv.GRID_SIZE + goLeft;
 
 			switch (maze[i][goLeft].getCellType()) {
-				case EMPTY:
-					rValues[k][target] = 0;
-					break;
-				case GOAL:
-					rValues[k][target] = REWARD;
-					break;
-				default:
-					rValues[k][target] = PENALTY;
-					break;
+			case EMPTY:
+				rValues[k][target] = 0;
+				break;
+			case GOAL:
+				rValues[k][target] = REWARD;
+				break;
+			default:
+				rValues[k][target] = PENALTY;
+				break;
 			}
 		}
 	}
@@ -240,15 +240,15 @@ final class QLearning {
 			final int target = i * SimulationEnv.GRID_SIZE + goRight;
 
 			switch (maze[i][goRight].getCellType()) {
-				case EMPTY:
-					rValues[k][target] = 0;
-					break;
-				case GOAL:
-					rValues[k][target] = REWARD;
-					break;
-				default:
-					rValues[k][target] = PENALTY;
-					break;
+			case EMPTY:
+				rValues[k][target] = 0;
+				break;
+			case GOAL:
+				rValues[k][target] = REWARD;
+				break;
+			default:
+				rValues[k][target] = PENALTY;
+				break;
 			}
 		}
 	}
@@ -299,15 +299,15 @@ final class QLearning {
 			final int target = goUp * SimulationEnv.GRID_SIZE + j;
 
 			switch (maze[goUp][j].getCellType()) {
-				case EMPTY:
-					rValues[k][target] = 0;
-					break;
-				case GOAL:
-					rValues[k][target] = REWARD;
-					break;
-				default:
-					rValues[k][target] = PENALTY;
-					break;
+			case EMPTY:
+				rValues[k][target] = 0;
+				break;
+			case GOAL:
+				rValues[k][target] = REWARD;
+				break;
+			default:
+				rValues[k][target] = PENALTY;
+				break;
 			}
 		}
 	}

@@ -13,11 +13,9 @@ import simulation.SimulationEnv;
  */
 abstract class RobotRunner extends RobotMonitor {
 
-
-
 	static final int CELL_DISTANCE = 350;
 
-	static int moveCount = 0;
+	static int moveCount = RobotController.STEP_COUNT;
 
 	final SimulationEnv env;
 
@@ -29,8 +27,7 @@ abstract class RobotRunner extends RobotMonitor {
 
 	final RobotController controller;
 
-	RobotRunner(final SimulatedRobot r, final int d, final SimulationEnv env,
-			final RobotController controller) {
+	RobotRunner(final SimulatedRobot r, final int d, final SimulationEnv env, final RobotController controller) {
 		super(r, d);
 
 		monitorRobotStatus(false);
@@ -73,11 +70,11 @@ abstract class RobotRunner extends RobotMonitor {
 	}
 
 	static synchronized void incrementMoves() {
-		moveCount++;
+		moveCount--;
 	}
 
 	static void resetMoves() {
-		moveCount = 0;
+		moveCount = RobotController.STEP_COUNT;
 	}
 
 	abstract void left(final Direction left);
@@ -90,20 +87,20 @@ abstract class RobotRunner extends RobotMonitor {
 
 	final void forward() {
 		switch (Direction.fromDegree(getHeading())) {
-			case DOWN:
-				down(Direction.DOWN);
-				break;
-			case RIGHT:
-				right(Direction.RIGHT);
-				break;
-			case UP:
-				up(Direction.UP);
-				break;
-			case LEFT:
-				left(Direction.LEFT);
-				break;
-			default:
-				break;
+		case DOWN:
+			down(Direction.DOWN);
+			break;
+		case RIGHT:
+			right(Direction.RIGHT);
+			break;
+		case UP:
+			up(Direction.UP);
+			break;
+		case LEFT:
+			left(Direction.LEFT);
+			break;
+		default:
+			break;
 		}
 	}
 
