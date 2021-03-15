@@ -23,18 +23,13 @@ public class SimulationEnv extends EnvController {
 
     public static final String OUTPUT_FOLDER = "./resources/";
 
-    public static final int EPISODES = 20;
+    public static final int EPISODES = 50;
 
     private final Mode mode;
 
     public static final int GRID_SIZE = 6;
-    // public static final int STATES_COUNT = (int) (Math.pow(GRID_SIZE, 2) -
-    // (GRID_SIZE * 4 - 4) - 4) * 5;
-    // public static final int STATES_COUNT = (int) (Math.pow(GRID_SIZE, 2) -
-    // (GRID_SIZE * 4 - 4) -
-    // 4);
 
-    private int episode = 1;
+    private int episode = 0;
 
     private final int trainedEpisodes;
 

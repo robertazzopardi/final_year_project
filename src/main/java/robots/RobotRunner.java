@@ -5,6 +5,7 @@ import java.util.logging.Logger;
 import comp329robosim.MyGridCell;
 import comp329robosim.RobotMonitor;
 import comp329robosim.SimulatedRobot;
+import simulation.Mode;
 import simulation.SimulationEnv;
 
 /**
@@ -67,6 +68,7 @@ abstract class RobotRunner extends RobotMonitor {
 
 	static final float normalise(final int x, final int min, final int max) {
 		return (2 * ((float) (x - min) / (max - min))) - 1;
+		// return (float) (x - min) / (max - min);
 	}
 
 	static synchronized void incrementMoves() {
@@ -99,6 +101,38 @@ abstract class RobotRunner extends RobotMonitor {
 		case LEFT:
 			left(Direction.LEFT);
 			break;
+		default:
+			break;
+		}
+	}
+
+	void doAction(final Action direction) {
+		switch (direction) {
+		case FORWARD:
+			forward();
+			break;
+
+		case LEFT:
+			if (env.getMode() == Mode.EVAL) {
+				rotate(-90);
+				forward();
+			} else {
+				setPose(getX(), getY(), getHeading() + -90);
+			}
+			break;
+
+		case RIGHT:
+			if (env.getMode() == Mode.EVAL) {
+				rotate(90);
+				forward();
+			} else {
+				setPose(getX(), getY(), getHeading() + 90);
+			}
+			break;
+
+		case NOTHING:
+			break;
+
 		default:
 			break;
 		}

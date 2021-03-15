@@ -48,21 +48,25 @@ public class RobotController {
 				// }
 				switch (mode) {
 				case EVAL:
-					learning = DeepQLearning.loadNetwork(env.getFiles()[i], false);
+					if (env.getFiles().length == 0) {
+						learning = new DeepQLearning(true);
+					} else {
+						learning = DeepQLearning.loadNetwork(env.getFiles()[i], false, true);
+					}
 					break;
 
 				case TRAIN_ON:
 					if (env.getFiles().length < 4) {
-						learning = new DeepQLearning();
+						learning = new DeepQLearning(false);
 
 					} else {
-						learning = DeepQLearning.loadNetwork(env.getFiles()[i], true);
+						learning = DeepQLearning.loadNetwork(env.getFiles()[i], true, false);
 
 					}
 					break;
 
 				case TRAIN:
-					learning = new DeepQLearning();
+					learning = new DeepQLearning(false);
 					break;
 
 				default:

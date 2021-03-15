@@ -22,14 +22,16 @@ import org.deeplearning4j.nn.weights.WeightInit;
 import org.deeplearning4j.ui.api.UIServer;
 import org.deeplearning4j.ui.model.stats.StatsListener;
 import org.deeplearning4j.ui.model.storage.InMemoryStatsStorage;
-
+import org.nd4j.common.primitives.Pair;
 import org.nd4j.linalg.activations.Activation;
+import org.nd4j.linalg.activations.IActivation;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.learning.config.AdaGrad;
 import org.nd4j.linalg.learning.config.Adam;
 import org.nd4j.linalg.learning.config.Nesterovs;
 import org.nd4j.linalg.learning.config.RmsProp;
+import org.nd4j.linalg.lossfunctions.ILossFunction;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,78 +67,71 @@ public class DeepQLearning {
 			// Optimization Algorithm
 			.optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
 			// Weight Initialisation function
-			.weightInit(WeightInit.RELU)
+			.weightInit(WeightInit.XAVIER)
 			// Gradient normalisation
 			.gradientNormalization(GradientNormalization.ClipL2PerLayer)
 			// Updater
-			// .updater(new Adam(LEARNING_RATE))
-			.updater(new AdaGrad(LEARNING_RATE))// optional epsilon
+			.updater(new Adam(LEARNING_RATE))
+			// .updater(new AdaGrad(LEARNING_RATE))// optional epsilon
 			// Activation Function
 			.activation(Activation.RELU)
 			// Regularization
+			// .l1(0.001)
 			.l2(0.001)
 			// Layers
 			.list()
 			// First hidden layer
 			.layer(0,
 					new DenseLayer.Builder().nIn(RobotController.STATE_COUNT).nOut(HIDDEN_NEURONS)
-							.weightInit(WeightInit.RELU).activation(Activation.RELU).build())
+							.weightInit(WeightInit.XAVIER).activation(Activation.RELU).build())
 			// Second hidden layer
 			.layer(1,
-					new DenseLayer.Builder().nIn(HIDDEN_NEURONS).nOut(HIDDEN_NEURONS).weightInit(WeightInit.RELU)
+					new DenseLayer.Builder().nIn(HIDDEN_NEURONS).nOut(HIDDEN_NEURONS).weightInit(WeightInit.XAVIER)
 							.activation(Activation.RELU).build())
-			// Third hidden layer
-			// .layer(2,
-			// new
-			// DenseLayer.Builder().nIn(HIDDEN_NEURONS).nOut(HIDDEN_NEURONS).weightInit(WeightInit.RELU)
-			// .activation(Activation.RELU).build())
 			// Output layer
 			.layer(2,
 					new OutputLayer.Builder(LossFunctions.LossFunction.MSE).nIn(HIDDEN_NEURONS).nOut(Action.LENGTH)
-							.weightInit(WeightInit.RELU).activation(Activation.IDENTITY)
+							.weightInit(WeightInit.XAVIER).activation(Activation.IDENTITY)
 							// .activation(Activation.SOFTMAX)
-							.weightInit(WeightInit.RELU).build())
+							.weightInit(WeightInit.XAVIER).build())
 			.backpropType(BackpropType.Standard).build();
 
-	public DeepQLearning() {
+	public DeepQLearning(boolean eval) {
 		network = new MultiLayerNetwork(configuration);
 		network.init();
 
-		// Initialize the user interface backend
-		final UIServer uiServer = UIServer.getInstance();
-		final StatsStorage statsStorage = new InMemoryStatsStorage();
-		uiServer.attach(statsStorage);
-		network.setListeners(new StatsListener(statsStorage));
+		if (!eval) {
+			// Initialize the user interface backend
+			final UIServer uiServer = UIServer.getInstance();
+			final StatsStorage statsStorage = new InMemoryStatsStorage();
+			uiServer.attach(statsStorage);
+			network.setListeners(new StatsListener(statsStorage));
 
-		// network.setListeners(new ScoreIterationListener(1));
+			// network.setListeners(new ScoreIterationListener(1));
 
-		// this will limit frequency of gc calls to 5000 milliseconds
-		Nd4j.getMemoryManager().setAutoGcWindow(5000);
+			// this will limit frequency of gc calls to 5000 milliseconds
+			Nd4j.getMemoryManager().setAutoGcWindow(5000);
+		}
+
 	}
 
-	public DeepQLearning(final MultiLayerNetwork network) {
+	public DeepQLearning(final MultiLayerNetwork network, boolean eval) {
 		this.network = network;
 		network.init();
 
-		// Initialize the user interface backend
-		final UIServer uiServer = UIServer.getInstance();
-		final StatsStorage statsStorage = new InMemoryStatsStorage();
-		uiServer.attach(statsStorage);
-		network.setListeners(new StatsListener(statsStorage));
+		if (!eval) {
+			// Initialize the user interface backend
+			final UIServer uiServer = UIServer.getInstance();
+			final StatsStorage statsStorage = new InMemoryStatsStorage();
+			uiServer.attach(statsStorage);
+			network.setListeners(new StatsListener(statsStorage));
 
-		// network.setListeners(new ScoreIterationListener(1));
+			// network.setListeners(new ScoreIterationListener(1));
 
-		// this will limit frequency of gc calls to 5000 milliseconds
-		Nd4j.getMemoryManager().setAutoGcWindow(5000);
+			// this will limit frequency of gc calls to 5000 milliseconds
+			Nd4j.getMemoryManager().setAutoGcWindow(5000);
+		}
 	}
-
-	// Copy Constructor
-	// public DeepQLearning(final DeepQLearning learning) {
-	// LOGGER.info("CopyConstructor");
-	// this.network = learning.network;
-	// this.epsilon = learning.epsilon;
-	// this.qTable = learning.qTable;
-	// }
 
 	public MultiLayerNetwork getNetwork() {
 		return network;
@@ -210,19 +205,19 @@ public class DeepQLearning {
 		final String gameStateString = Arrays.toString(states);
 
 		// System.out.println(gameStateString);
-		final String stateWithActTRAVEL = gameStateString + '-' + Action.TRAVEL;
-		final String stateWithActRIGHT_TURN = gameStateString + '-' + Action.RIGHT_TURN;
+		final String stateWithActFORWARD = gameStateString + '-' + Action.FORWARD;
+		final String stateWithActRIGHT = gameStateString + '-' + Action.RIGHT;
 		final String stateWithActNOTHING = gameStateString + '-' + Action.NOTHING;
-		final String stateWithActLEFT_TURN = gameStateString + '-' + Action.LEFT_TURN;
+		final String stateWithActLEFT = gameStateString + '-' + Action.LEFT;
 
-		qTable.putIfAbsent(stateWithActTRAVEL, 0.0);
-		qTable.putIfAbsent(stateWithActRIGHT_TURN, 0.0);
+		qTable.putIfAbsent(stateWithActFORWARD, 0.0);
+		qTable.putIfAbsent(stateWithActRIGHT, 0.0);
 		qTable.putIfAbsent(stateWithActNOTHING, 0.0);
-		qTable.putIfAbsent(stateWithActLEFT_TURN, 0.0);
+		qTable.putIfAbsent(stateWithActLEFT, 0.0);
 
-		double score = qTable.getOrDefault(stateWithActTRAVEL, 0.0);
+		double score = qTable.getOrDefault(stateWithActFORWARD, 0.0);
 
-		final Double scoreRight = qTable.getOrDefault(stateWithActRIGHT_TURN, 0.0);
+		final Double scoreRight = qTable.getOrDefault(stateWithActRIGHT, 0.0);
 		if (scoreRight > score) {
 			score = scoreRight;
 		}
@@ -232,7 +227,7 @@ public class DeepQLearning {
 			score = scoreDown;
 		}
 
-		final Double scoreLeft = qTable.getOrDefault(stateWithActLEFT_TURN, 0.0);
+		final Double scoreLeft = qTable.getOrDefault(stateWithActLEFT, 0.0);
 		if (scoreLeft > score) {
 			score = scoreLeft;
 		}
@@ -249,26 +244,15 @@ public class DeepQLearning {
 		}
 	}
 
-	// public static DeepQLearning loadNetwork(final int number) {
-	// try {
-	// return new DeepQLearning(MultiLayerNetwork.load(new File(FILE_NAME_PREFIX +
-	// number + ".zip"), true));
-	// } catch (final IOException e) {
-	// LOGGER.error("Failed to load network: '{}'", e.getMessage(), e);
-	// }
-
-	// return new DeepQLearning();
-	// }
-
-	public static DeepQLearning loadNetwork(final File file, final boolean needsTraining) {
+	public static DeepQLearning loadNetwork(final File file, final boolean needsTraining, boolean eval) {
 		try {
 			// return new DeepQLearning(MultiLayerNetwork.load(file, true));
-			return new DeepQLearning(MultiLayerNetwork.load(file, needsTraining));
+			return new DeepQLearning(MultiLayerNetwork.load(file, needsTraining), eval);
 		} catch (final IOException e) {
 			LOGGER.error("Failed to load network: '{}'", e.getMessage(), e);
 		}
 
 		LOGGER.info("Making new Network");
-		return new DeepQLearning();
+		return new DeepQLearning(eval);
 	}
 }

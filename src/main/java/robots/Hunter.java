@@ -203,15 +203,16 @@ final class Hunter extends RobotRunner {
 			final double adjObstacles = prey.getAdjacentObstacles() * REWARD;
 
 			final double ratio = (double) moveCount / RobotController.STEP_COUNT;
-			System.out.println(((numberAdj - adjObstacles) + ratio) + " " + prey.isCaptured());
+			// System.out.println(((numberAdj - adjObstacles) + ratio) + " " +
+			// prey.isCaptured());
 			learning.update(currState, action, (numberAdj - adjObstacles) + ratio, newState);
 		} else {
-			System.out.println("what");
 			final double numberAdj = (Arrays.stream(hunters).filter(Hunter::isAdjacentToPrey).count() * REWARD) + 1;
 			final double adjObstacles = prey.getAdjacentObstacles() * REWARD;
 
 			final double ratio = (double) moveCount / RobotController.STEP_COUNT;
-			System.out.println(((numberAdj - adjObstacles) + ratio) + " " + prey.isCaptured());
+			// System.out.println(((numberAdj - adjObstacles) + ratio) + " " +
+			// prey.isCaptured());
 			learning.update(currState, action, (numberAdj - adjObstacles) + ratio, newState);
 		}
 
@@ -220,32 +221,32 @@ final class Hunter extends RobotRunner {
 
 	public double getScoreForAction(final Action action) {
 		double score = 0;
-		switch (action) {
-		case TRAVEL:
+		// switch (action) {
+		// case TRAVEL:
 
-			score += addTravelScore();
-			score += canMoveScore();
+		// score += addTravelScore();
+		// score += canMoveScore();
 
-			break;
-		case NOTHING:
-			if (isAdjacentToPrey()) {
-				score += REWARD;
-			} else {
-				score -= REWARD;
-			}
-			if (isAdjacentToHunter()) {
-				score -= REWARD;
-			}
-			break;
-		case LEFT_TURN:
-		case RIGHT_TURN:
-			score -= REWARD * 5;
-			score += addTurnScore();
-			score += canMoveScore();
-			break;
-		default:
-			break;
-		}
+		// break;
+		// case NOTHING:
+		// if (isAdjacentToPrey()) {
+		// score += REWARD;
+		// } else {
+		// score -= REWARD;
+		// }
+		// if (isAdjacentToHunter()) {
+		// score -= REWARD;
+		// }
+		// break;
+		// case LEFT_TURN:
+		// case RIGHT_TURN:
+		// score -= REWARD * 5;
+		// score += addTurnScore();
+		// score += canMoveScore();
+		// break;
+		// default:
+		// break;
+		// }
 
 		// score -= (moveCount / (double) RobotController.STEP_COUNT) * REWARD;
 		// System.out.println((moveCount / (double) RobotController.STEP_COUNT) *
@@ -459,41 +460,50 @@ final class Hunter extends RobotRunner {
 		return score;
 	}
 
-	private void doAction(final Action action) {
-		switch (action) {
-		case TRAVEL:
-			forward();
+	@Override
+	void doAction(Action direction) {
+		super.doAction(direction);
+		if (direction == Action.FORWARD || direction == Action.LEFT || direction == Action.RIGHT) {
 			incrementMoves();
-
-			break;
-
-		case LEFT_TURN:
-			if (env.getMode() == Mode.EVAL) {
-				rotate(-90);
-			} else {
-				setPose(getX(), getY(), getHeading() - 90);
-			}
-			incrementMoves();
-
-			break;
-
-		case RIGHT_TURN:
-			if (env.getMode() == Mode.EVAL) {
-				rotate(90);
-			} else {
-				setPose(getX(), getY(), getHeading() + 90);
-			}
-			incrementMoves();
-
-			break;
-
-		case NOTHING:
-			break;
-
-		default:
-			break;
 		}
 	}
+
+	// private void doAction(final Action action) {
+	// switch (action) {
+	// case FORWARD:
+	// forward();
+	// incrementMoves();
+	// break;
+
+	// case LEFT:
+	// if (env.getMode() == Mode.EVAL) {
+	// rotate(-90);
+	// forward();
+	// } else {
+	// setPose(getX(), getY(), getHeading() + -90);
+	// }
+	// incrementMoves();
+
+	// break;
+
+	// case RIGHT:
+	// if (env.getMode() == Mode.EVAL) {
+	// rotate(90);
+	// forward();
+	// } else {
+	// setPose(getX(), getY(), getHeading() + 90);
+	// }
+	// incrementMoves();
+
+	// break;
+
+	// case NOTHING:
+	// break;
+
+	// default:
+	// break;
+	// }
+	// }
 
 	private static int getManhattenDistance(final int x1, final int y1, final int x2, final int y2) {
 		final int i = Math.abs(x2 - x1) + Math.abs(y2 - y1);

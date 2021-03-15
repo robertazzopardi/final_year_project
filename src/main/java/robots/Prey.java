@@ -23,7 +23,8 @@ final class Prey extends RobotRunner {
 		// randomMove = getRandomDirection(ALL);
 		randomMove = Action.getRandomAction();
 
-		setPositionNew(getGridPosX(), getGridPosY());
+		// set position
+		env.updateGridPrey(getGridPosX(), getGridPosY());
 	}
 
 	public boolean isCaptured() {
@@ -129,36 +130,37 @@ final class Prey extends RobotRunner {
 		// logger.info("Prey Stopped");
 	}
 
-	private void doAction(final Action direction) {
-		switch (direction) {
-		case TRAVEL:
-			forward();
-			break;
+	// private void doAction(final Action direction) {
+	// switch (direction) {
+	// case FORWARD:
+	// forward();
+	// break;
 
-		case LEFT_TURN:
-			if (env.getMode() == Mode.EVAL) {
-				rotate(-90);
-			} else {
-				setPose(getX(), getY(), getHeading() + -90);
-			}
-			break;
+	// case LEFT:
+	// if (env.getMode() == Mode.EVAL) {
+	// rotate(-90);
+	// forward();
+	// } else {
+	// setPose(getX(), getY(), getHeading() + -90);
+	// }
+	// break;
 
-		case RIGHT_TURN:
-			if (env.getMode() == Mode.EVAL) {
-				rotate(90);
-			} else {
-				setPose(getX(), getY(), getHeading() + 90);
-			}
-			break;
+	// case RIGHT:
+	// if (env.getMode() == Mode.EVAL) {
+	// rotate(90);
+	// forward();
+	// } else {
+	// setPose(getX(), getY(), getHeading() + 90);
+	// }
+	// break;
 
-		case NOTHING:
-			break;
+	// case NOTHING:
+	// break;
 
-		default:
-			break;
-		}
-		// incrementMoves();
-	}
+	// default:
+	// break;
+	// }
+	// }
 
 	@Override
 	final void left(final Direction left) {
@@ -168,8 +170,10 @@ final class Prey extends RobotRunner {
 		if (canMove(x - 1, y)) {
 			controller.resumeHunters();
 
-			setPositionOld(x, y);
-			setPositionNew(x - 1, y);
+			// set previous position
+			env.updateGridEmpty(x, y);
+			// set position
+			env.updateGridPrey(x - 1, y);
 
 			if (env.getMode() == Mode.EVAL) {
 				travel(CELL_DISTANCE);
@@ -177,7 +181,7 @@ final class Prey extends RobotRunner {
 				setPose(getX() - CELL_DISTANCE, getY(), getHeading());
 			}
 
-			randomMove = Action.getRandomAction();
+			// randomMove = Action.getRandomAction();
 		}
 	}
 
@@ -190,8 +194,10 @@ final class Prey extends RobotRunner {
 		if (canMove(up.x(x), up.y(y))) {
 			controller.resumeHunters();
 
-			setPositionOld(x, y);
-			setPositionNew(up.x(x), up.y(y));
+			// set previous position
+			env.updateGridEmpty(x, y);
+			// set position
+			env.updateGridPrey(up.x(x), up.y(y));
 
 			if (env.getMode() == Mode.EVAL) {
 				travel(CELL_DISTANCE);
@@ -199,7 +205,7 @@ final class Prey extends RobotRunner {
 				setPose(getX(), getY() - CELL_DISTANCE, getHeading());
 			}
 
-			randomMove = Action.getRandomAction();
+			// randomMove = Action.getRandomAction();
 		}
 	}
 
@@ -211,8 +217,10 @@ final class Prey extends RobotRunner {
 		if (canMove(x + 1, y)) {
 			controller.resumeHunters();
 
-			setPositionOld(x, y);
-			setPositionNew(x + 1, y);
+			// set previous position
+			env.updateGridEmpty(x, y);
+			// set position
+			env.updateGridPrey(x + 1, y);
 
 			if (env.getMode() == Mode.EVAL) {
 				travel(CELL_DISTANCE);
@@ -220,7 +228,7 @@ final class Prey extends RobotRunner {
 				setPose(getX() + CELL_DISTANCE, getY(), getHeading());
 			}
 
-			randomMove = Action.getRandomAction();
+			// randomMove = Action.getRandomAction();
 		}
 	}
 
@@ -232,8 +240,10 @@ final class Prey extends RobotRunner {
 		if (canMove(x, y + 1)) {
 			controller.resumeHunters();
 
-			setPositionOld(x, y);
-			setPositionNew(x, y + 1);
+			// set previous position
+			env.updateGridEmpty(x, y);
+			// set position
+			env.updateGridPrey(x, y + 1);
 
 			if (env.getMode() == Mode.EVAL) {
 				travel(CELL_DISTANCE);
@@ -241,52 +251,8 @@ final class Prey extends RobotRunner {
 				setPose(getX(), getY() + CELL_DISTANCE, getHeading());
 			}
 
-			randomMove = Action.getRandomAction();
+			// randomMove = Action.getRandomAction();
 		}
-	}
-
-	private void setPositionNew(final int x, final int y) {
-		// set position
-		env.updateGridPrey(x, y);
-
-		// if (grid[y][x + 1].getCellType() != OccupancyType.OBSTACLE
-		// && grid[y][x + 1].getCellType() != OccupancyType.HUNTER) {
-		// env.updateGridGoal(x + 1, y);
-		// }
-		// if (grid[y][x - 1].getCellType() != OccupancyType.OBSTACLE
-		// && grid[y][x - 1].getCellType() != OccupancyType.HUNTER) {
-		// env.updateGridGoal(x - 1, y);
-		// }
-		// if (grid[y + 1][x].getCellType() != OccupancyType.OBSTACLE
-		// && grid[y + 1][x].getCellType() != OccupancyType.HUNTER) {
-		// env.updateGridGoal(x, y + 1);
-		// }
-		// if (grid[y - 1][x].getCellType() != OccupancyType.OBSTACLE
-		// && grid[y - 1][x].getCellType() != OccupancyType.HUNTER) {
-		// env.updateGridGoal(x, y - 1);
-		// }
-	}
-
-	private void setPositionOld(final int x, final int y) {
-		// set previous position
-		env.updateGridEmpty(x, y);
-
-		// if (grid[y][x + 1].getCellType() != OccupancyType.OBSTACLE
-		// && grid[y][x + 1].getCellType() != OccupancyType.HUNTER) {
-		// env.updateGridEmpty(x + 1, y);
-		// }
-		// if (grid[y][x - 1].getCellType() != OccupancyType.OBSTACLE
-		// && grid[y][x - 1].getCellType() != OccupancyType.HUNTER) {
-		// env.updateGridEmpty(x - 1, y);
-		// }
-		// if (grid[y + 1][x].getCellType() != OccupancyType.OBSTACLE
-		// && grid[y + 1][x].getCellType() != OccupancyType.HUNTER) {
-		// env.updateGridEmpty(x, y + 1);
-		// }
-		// if (grid[y - 1][x].getCellType() != OccupancyType.OBSTACLE
-		// && grid[y - 1][x].getCellType() != OccupancyType.HUNTER) {
-		// env.updateGridEmpty(x, y - 1);
-		// }
 	}
 
 }

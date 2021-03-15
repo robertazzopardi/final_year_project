@@ -101,3 +101,5 @@ buildNumber.properties
 
 # Output networks
 *.zip
+
+*.log
