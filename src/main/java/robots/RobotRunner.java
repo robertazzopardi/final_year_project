@@ -67,8 +67,8 @@ abstract class RobotRunner extends RobotMonitor {
 	}
 
 	static final float normalise(final int x, final int min, final int max) {
-		return (2 * ((float) (x - min) / (max - min))) - 1;
-		// return (float) (x - min) / (max - min);
+		// return (2 * ((float) (x - min) / (max - min))) - 1;
+		return (float) (x - min) / (max - min);
 	}
 
 	static synchronized void incrementMoves() {
@@ -115,18 +115,58 @@ abstract class RobotRunner extends RobotMonitor {
 		case LEFT:
 			if (env.getMode() == Mode.EVAL) {
 				rotate(-90);
-				forward();
+				// forward();
 			} else {
-				setPose(getX(), getY(), getHeading() + -90);
+				setPose(getX(), getY(), getHeading() - 90);
+				// switch (Direction.fromDegree(getHeading())) {
+				// case DOWN:
+				// if (canMove(getGridPosX(), getGridPosY() + 1))
+				// setPose(getX(), getY() + CELL_DISTANCE, getHeading());
+				// break;
+				// case RIGHT:
+				// if (canMove(getGridPosX() + 1, getGridPosY()))
+				// setPose(getX() + CELL_DISTANCE, getY(), getHeading());
+				// break;
+				// case UP:
+				// if (canMove(getGridPosX(), getGridPosY() - 1))
+				// setPose(getX(), getY() - CELL_DISTANCE, getHeading());
+				// break;
+				// case LEFT:
+				// if (canMove(getGridPosX() - 1, getGridPosY()))
+				// setPose(getX() - CELL_DISTANCE, getY(), getHeading());
+				// break;
+				// default:
+				// break;
+				// }
 			}
 			break;
 
 		case RIGHT:
 			if (env.getMode() == Mode.EVAL) {
 				rotate(90);
-				forward();
+				// forward();
 			} else {
 				setPose(getX(), getY(), getHeading() + 90);
+				// switch (Direction.fromDegree(getHeading())) {
+				// case DOWN:
+				// if (canMove(getGridPosX(), getGridPosY() + 1))
+				// setPose(getX(), getY() + CELL_DISTANCE, getHeading());
+				// break;
+				// case RIGHT:
+				// if (canMove(getGridPosX() + 1, getGridPosY()))
+				// setPose(getX() + CELL_DISTANCE, getY(), getHeading());
+				// break;
+				// case UP:
+				// if (canMove(getGridPosX(), getGridPosY() - 1))
+				// setPose(getX(), getY() - CELL_DISTANCE, getHeading());
+				// break;
+				// case LEFT:
+				// if (canMove(getGridPosX() - 1, getGridPosY()))
+				// setPose(getX() - CELL_DISTANCE, getY(), getHeading());
+				// break;
+				// default:
+				// break;
+				// }
 			}
 			break;
 

@@ -9,8 +9,9 @@ import simulation.SimulationEnv;
 
 public class RobotController {
 	public static final int STEP_COUNT = 5000;
-	// public static final int STATE_COUNT = 14;
-	public static final int STATE_COUNT = 20;
+
+	// public static final int STATE_COUNT = 20;
+	public static final int STATE_COUNT = 11;
 
 	private static final int DELAY = 1000;
 

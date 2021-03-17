@@ -3,14 +3,12 @@ package simulation;
 import java.util.Arrays;
 import java.util.logging.Logger;
 
-import comp329robosim.MyGridCell;
-
-public class GridPrinter extends Thread {
+public class GridPrinter<T> extends Thread {
     private static final Logger LOGGER = Logger.getLogger(GridPrinter.class.getName());
 
-    private final MyGridCell[][] grid;
+    private final T[][] grid;
 
-    public GridPrinter(final MyGridCell[][] grid) {
+    public GridPrinter(final T[][] grid) {
         this.grid = grid;
     }
 
@@ -27,8 +25,8 @@ public class GridPrinter extends Thread {
         }
     }
 
-    public static void printGrid(final MyGridCell[][] grid) {
-        for (final MyGridCell[] myGridCells : grid) {
+    public static <T> void printGrid(final T[][] grid) {
+        for (final T[] myGridCells : grid) {
             final String row = Arrays.toString(myGridCells);
             // inLogger.info(row);
             System.out.println(row);
