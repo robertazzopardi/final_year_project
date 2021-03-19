@@ -112,7 +112,7 @@ final class Hunter extends RobotRunner {
 					|| grid[y][x + 1].getCellType() == OccupancyType.PREY
 					|| grid[y - 1][x].getCellType() == OccupancyType.PREY
 					|| grid[y + 1][x].getCellType() == OccupancyType.PREY;
-		} catch (ArrayIndexOutOfBoundsException ignored) {
+		} catch (final ArrayIndexOutOfBoundsException ignored) {
 			return false;
 		}
 	}
@@ -217,91 +217,90 @@ final class Hunter extends RobotRunner {
 	}
 
 	@Override
-	void doAction(Action direction) {
+	final void doAction(final Action direction) {
 		super.doAction(direction);
 		if (direction != Action.NOTHING) {
 			incrementMoves();
 		}
 	}
 
-	private static int getManhattenDistance(final int x1, final int y1, final int x2, final int y2) {
-		final int i = Math.abs(x2 - x1) + Math.abs(y2 - y1);
-		return i == 0 ? SimulationEnv.GRID_SIZE + 1 : i;
-	}
+	// private static int getManhattenDistance(final int x1, final int y1, final int
+	// x2, final int y2) {
+	// final int i = Math.abs(x2 - x1) + Math.abs(y2 - y1);
+	// return i == 0 ? SimulationEnv.GRID_SIZE + 1 : i;
+	// }
 
-	private static float getNormalisedManhattenDistance(final int x1, final int y1, final int x2, final int y2) {
-		return normalise(getManhattenDistance(x1, y1, x2, y2), 1, SimulationEnv.GRID_SIZE);
-	}
+	// private static float getNormalisedManhattenDistance(final int x1, final int
+	// y1, final int x2, final int y2) {
+	// return normalise(getManhattenDistance(x1, y1, x2, y2), 1,
+	// SimulationEnv.GRID_SIZE);
+	// }
 
-	public float[] getStates() {
-		final float[] states = new float[RobotController.STATE_COUNT];
+	// public float[] getStates() {
+	// final float[] states = new float[RobotController.STATE_COUNT];
 
-		// normalised x and y positions
-		final int x = getGridPosX();
-		final int y = getGridPosY();
-		final int preyX = prey.getGridPosX();
-		final int preyY = prey.getGridPosY();
+	// // normalised x and y positions
+	// final int x = getGridPosX();
+	// final int y = getGridPosY();
+	// final int preyX = prey.getGridPosX();
+	// final int preyY = prey.getGridPosY();
 
-		states[0] = normalise(x, MIN_GRID, MAX_GRID);
-		states[1] = normalise(y, MIN_GRID, MAX_GRID);
+	// states[0] = normalise(x, MIN_GRID, MAX_GRID);
+	// states[1] = normalise(y, MIN_GRID, MAX_GRID);
 
-		states[2] = normalise(otherHunters[0].getGridPosX(), MIN_GRID, MAX_GRID);
-		states[3] = normalise(otherHunters[0].getGridPosY(), MIN_GRID, MAX_GRID);
+	// states[2] = normalise(otherHunters[0].getGridPosX(), MIN_GRID, MAX_GRID);
+	// states[3] = normalise(otherHunters[0].getGridPosY(), MIN_GRID, MAX_GRID);
 
-		states[4] = normalise(otherHunters[1].getGridPosX(), MIN_GRID, MAX_GRID);
-		states[5] = normalise(otherHunters[1].getGridPosY(), MIN_GRID, MAX_GRID);
+	// states[4] = normalise(otherHunters[1].getGridPosX(), MIN_GRID, MAX_GRID);
+	// states[5] = normalise(otherHunters[1].getGridPosY(), MIN_GRID, MAX_GRID);
 
-		states[6] = normalise(otherHunters[2].getGridPosX(), MIN_GRID, MAX_GRID);
-		states[7] = normalise(otherHunters[2].getGridPosY(), MIN_GRID, MAX_GRID);
+	// states[6] = normalise(otherHunters[2].getGridPosX(), MIN_GRID, MAX_GRID);
+	// states[7] = normalise(otherHunters[2].getGridPosY(), MIN_GRID, MAX_GRID);
 
-		// prey adjacent x and y positions TODO: provided the preys location if known
+	// // prey adjacent x and y positions TODO: provided the preys location if known
 
-		// if (knowPreyLocation/canSeePrey)
+	// // if (knowPreyLocation/canSeePrey)
 
-		// right
-		states[8] = normalise(preyX + 1, MIN_GRID, MAX_GRID);
-		states[9] = normalise(preyY, MIN_GRID, MAX_GRID);
+	// // right
+	// states[8] = normalise(preyX + 1, MIN_GRID, MAX_GRID);
+	// states[9] = normalise(preyY, MIN_GRID, MAX_GRID);
 
-		// left
-		states[10] = normalise(preyX - 1, MIN_GRID, MAX_GRID);
-		states[11] = normalise(preyY, MIN_GRID, MAX_GRID);
+	// // left
+	// states[10] = normalise(preyX - 1, MIN_GRID, MAX_GRID);
+	// states[11] = normalise(preyY, MIN_GRID, MAX_GRID);
 
-		// down
-		states[12] = normalise(preyX, MIN_GRID, MAX_GRID);
-		states[13] = normalise(preyY + 1, MIN_GRID, MAX_GRID);
+	// // down
+	// states[12] = normalise(preyX, MIN_GRID, MAX_GRID);
+	// states[13] = normalise(preyY + 1, MIN_GRID, MAX_GRID);
 
-		// up
-		states[14] = normalise(preyX, MIN_GRID, MAX_GRID);
-		states[15] = normalise(preyY - 1, MIN_GRID, MAX_GRID);
+	// // up
+	// states[14] = normalise(preyX, MIN_GRID, MAX_GRID);
+	// states[15] = normalise(preyY - 1, MIN_GRID, MAX_GRID);
 
-		// manhattan distances from the adjacent prey spaces
-		states[16] = getNormalisedManhattenDistance(x, y, preyX + 1, preyY);
-		states[17] = getNormalisedManhattenDistance(x, y, preyX - 1, preyY);
-		states[18] = getNormalisedManhattenDistance(x, y, preyX, preyY + 1);
-		states[19] = getNormalisedManhattenDistance(x, y, preyX, preyY - 1);
+	// // manhattan distances from the adjacent prey spaces
+	// states[16] = getNormalisedManhattenDistance(x, y, preyX + 1, preyY);
+	// states[17] = getNormalisedManhattenDistance(x, y, preyX - 1, preyY);
+	// states[18] = getNormalisedManhattenDistance(x, y, preyX, preyY + 1);
+	// states[19] = getNormalisedManhattenDistance(x, y, preyX, preyY - 1);
 
-		// shuffle(states);
+	// // shuffle(states);
 
-		getGridState();
+	// getGridState();
 
-		return states;
-	}
+	// return states;
+	// }
 
 	private int[] getGridState() {
-		int x = getGridPosX();
-		int y = getGridPosY();
+		final int x = getGridPosX();
+		final int y = getGridPosY();
 
 		final Direction up = Direction.UP;
 		final Direction down = Direction.DOWN;
 		final Direction right = Direction.RIGHT;
 		final Direction left = Direction.LEFT;
 
-		// System.out.println(Arrays.toString(g));
-		// System.out.println(grid[up.y(y)][up.x(x)] + " " + grid[down.y(y)][down.x(x)]
-		// + " " + grid[left.y(y)][left.x(x)]
-		// + " " + grid[right.y(y)][right.x(x)]);
-
-		int[] is = new int[] {
+		final int[] is = new int[] {
+				// self attributes
 				// next to preys
 				isAdjacentToPrey() ? 1 : 0,
 				// next to hunter
@@ -310,22 +309,15 @@ final class Hunter extends RobotRunner {
 				isAdjacentToObstacle() ? 1 : 0,
 				// up
 				isAdjacentToPrey(up.x(x), up.y(y)) ? 1 : 0, isAdjacentToPrey(up.x(up.x(x)), up.y(up.y(y))) ? 1 : 0,
-				// isAdjacentToPrey(up.x(up.x(up.x(x))), up.y(up.y(up.y(y)))) ? 1 : 0,
 				// down
 				isAdjacentToPrey(down.x(x), down.y(y)) ? 1 : 0,
 				isAdjacentToPrey(down.x(down.x(x)), down.y(down.y(y))) ? 1 : 0,
-				// isAdjacentToPrey(down.x(down.x(down.x(x))), down.y(down.y(down.y(y)))) ? 1 :
-				// 0,
 				// left
 				isAdjacentToPrey(left.x(x), left.y(y)) ? 1 : 0,
 				isAdjacentToPrey(left.x(left.x(x)), left.y(left.y(y))) ? 1 : 0,
-				// isAdjacentToPrey(left.x(left.x(left.x(x))), left.y(left.y(left.y(y)))) ? 1 :
-				// 0,
 				// right
 				isAdjacentToPrey(right.x(x), right.y(y)) ? 1 : 0,
 				isAdjacentToPrey(right.x(right.x(x)), right.y(right.y(y))) ? 1 : 0,
-				// isAdjacentToPrey(right.x(right.x(right.x(x))), right.y(right.y(right.y(y))))
-				// ? 1 : 0
 
 		};
 
@@ -369,71 +361,76 @@ final class Hunter extends RobotRunner {
 		resetHunterCount();
 	}
 
+	// @Override
+	// final void left(final Direction left) {
+	// final int x = getGridPosX();
+	// final int y = getGridPosY();
+
+	// if (canMove(left.x(x), left.y(y))) {
+	// env.updateGridEmpty(x, y);
+	// updateGrid(left.x(x), left.y(y));
+
+	// if (env.getMode() == Mode.EVAL) {
+	// travel(CELL_DISTANCE);
+	// } else {
+	// setPose(getX() - CELL_DISTANCE, getY(), getHeading());
+	// }
+	// }
+	// }
+
+	// @Override
+	// final void up(final Direction up) {
+	// final int x = getGridPosX();
+	// final int y = getGridPosY();
+
+	// if (canMove(up.x(x), up.y(y))) {
+	// env.updateGridEmpty(x, y);
+	// updateGrid(up.x(x), up.y(y));
+
+	// if (env.getMode() == Mode.EVAL) {
+	// travel(CELL_DISTANCE);
+	// } else {
+	// setPose(getX(), getY() - CELL_DISTANCE, getHeading());
+	// }
+	// }
+	// }
+
+	// @Override
+	// final void right(final Direction right) {
+	// final int x = getGridPosX();
+	// final int y = getGridPosY();
+
+	// if (canMove(right.x(x), right.y(y))) {
+	// env.updateGridEmpty(x, y);
+	// updateGrid(right.x(x), right.y(y));
+
+	// if (env.getMode() == Mode.EVAL) {
+	// travel(CELL_DISTANCE);
+	// } else {
+	// setPose(getX() + CELL_DISTANCE, getY(), getHeading());
+	// }
+	// }
+	// }
+
+	// @Override
+	// final void down(final Direction down) {
+	// final int x = getGridPosX();
+	// final int y = getGridPosY();
+
+	// if (canMove(down.x(x), down.y(y))) {
+	// env.updateGridEmpty(x, y);
+	// updateGrid(down.x(x), down.y(y));
+
+	// if (env.getMode() == Mode.EVAL) {
+	// travel(CELL_DISTANCE);
+	// } else {
+	// setPose(getX(), getY() + CELL_DISTANCE, getHeading());
+	// }
+	// }
+	// }
+
 	@Override
-	final void left(final Direction left) {
-		final int x = getGridPosX();
-		final int y = getGridPosY();
-
-		if (canMove(left.x(x), left.y(y))) {
-			env.updateGridEmpty(x, y);
-			env.updateGridHunter(left.x(x), left.y(y));
-
-			if (env.getMode() == Mode.EVAL) {
-				travel(CELL_DISTANCE);
-			} else {
-				setPose(getX() - CELL_DISTANCE, getY(), getHeading());
-			}
-		}
-	}
-
-	@Override
-	final void up(final Direction up) {
-		final int x = getGridPosX();
-		final int y = getGridPosY();
-
-		if (canMove(up.x(x), up.y(y))) {
-			env.updateGridEmpty(x, y);
-			env.updateGridHunter(up.x(x), up.y(y));
-
-			if (env.getMode() == Mode.EVAL) {
-				travel(CELL_DISTANCE);
-			} else {
-				setPose(getX(), getY() - CELL_DISTANCE, getHeading());
-			}
-		}
-	}
-
-	@Override
-	final void right(final Direction right) {
-		final int x = getGridPosX();
-		final int y = getGridPosY();
-
-		if (canMove(right.x(x), right.y(y))) {
-			env.updateGridEmpty(x, y);
-			env.updateGridHunter(right.x(x), right.y(y));
-
-			if (env.getMode() == Mode.EVAL) {
-				travel(CELL_DISTANCE);
-			} else {
-				setPose(getX() + CELL_DISTANCE, getY(), getHeading());
-			}
-		}
-	}
-
-	@Override
-	final void down(final Direction down) {
-		final int x = getGridPosX();
-		final int y = getGridPosY();
-
-		if (canMove(down.x(x), down.y(y))) {
-			env.updateGridEmpty(x, y);
-			env.updateGridHunter(down.x(x), down.y(y));
-
-			if (env.getMode() == Mode.EVAL) {
-				travel(CELL_DISTANCE);
-			} else {
-				setPose(getX(), getY() + CELL_DISTANCE, getHeading());
-			}
-		}
+	final void updateGrid(final int x, final int y) {
+		env.updateGridHunter(x, y);
 	}
 }

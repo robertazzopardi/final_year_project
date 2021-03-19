@@ -11,13 +11,10 @@ import java.util.Random;
 import java.util.stream.Stream;
 
 import org.deeplearning4j.core.storage.StatsStorage;
-import org.deeplearning4j.datasets.iterator.FloatsDataSetIterator;
 import org.deeplearning4j.nn.api.OptimizationAlgorithm;
 import org.deeplearning4j.nn.conf.BackpropType;
-import org.deeplearning4j.nn.conf.GradientNormalization;
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
-import org.deeplearning4j.nn.conf.WorkspaceMode;
 import org.deeplearning4j.nn.conf.layers.DenseLayer;
 import org.deeplearning4j.nn.conf.layers.OutputLayer;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
@@ -25,20 +22,11 @@ import org.deeplearning4j.nn.weights.WeightInit;
 import org.deeplearning4j.ui.api.UIServer;
 import org.deeplearning4j.ui.model.stats.StatsListener;
 import org.deeplearning4j.ui.model.storage.InMemoryStatsStorage;
-import org.nd4j.common.primitives.Pair;
 import org.nd4j.linalg.activations.Activation;
-import org.nd4j.linalg.activations.IActivation;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.learning.config.AdaGrad;
-import org.nd4j.linalg.learning.config.Adam;
-import org.nd4j.linalg.learning.config.Nesterovs;
-import org.nd4j.linalg.learning.config.RmsProp;
-import org.nd4j.linalg.learning.config.Sgd;
-import org.nd4j.linalg.lossfunctions.ILossFunction;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
-import org.nd4j.linalg.schedule.ScheduleType;
-import org.nd4j.linalg.schedule.StepSchedule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,7 +49,7 @@ public class DeepQLearning {
 	private double epsilon = 0.9;
 
 	// private static final Map<String, Double> qTable = new HashMap<>();
-	private final Map<String, Double> qTable = initQTable();
+	private static final Map<String, Double> qTable = initQTable();
 
 	// 0.001
 	// private static final double LEARNING_RATE = 0.0006;
@@ -79,9 +67,9 @@ public class DeepQLearning {
 			//
 			.weightInit(WeightInit.XAVIER)
 			//
-			// .updater(new Adam(.001))
+			// .updater(new Adam(.0001))
 			// .updater(new Adam(new StepSchedule(ScheduleType.EPOCH, 0.0001, 0.1, 1)))
-			.updater(new AdaGrad(.0006))
+			.updater(new AdaGrad(.001))
 			// .updater(new Sgd(0.001))
 			//
 			.activation(Activation.LEAKYRELU)
@@ -178,10 +166,7 @@ public class DeepQLearning {
 
 	public Action getActionFromStates(final int[] states) {
 		// epsilon greedy action
-		final double random = RANDOM.nextDouble();
-
-		if (random < epsilon) {
-
+		if (RANDOM.nextDouble() < epsilon) {
 			return Action.getRandomAction();
 		}
 
@@ -222,7 +207,7 @@ public class DeepQLearning {
 		final double targetScore = score + (0.9 * maxQScore);
 
 		// Update the table with new score
-		qTable.put(Arrays.toString(states) + '-' + action, targetScore);
+		qTable.put(makeKey(Arrays.toString(states), action), targetScore);
 
 		// Update network
 		final INDArray stateObservation = toINDArray(states);
@@ -235,33 +220,23 @@ public class DeepQLearning {
 	private double getMaxQScore(final int[] states) {
 		final String gameStateString = Arrays.toString(states);
 
-		// System.out.println(gameStateString);
-		final String stateWithActFORWARD = gameStateString + '-' + Action.FORWARD;
-		final String stateWithActRIGHT = gameStateString + '-' + Action.RIGHT;
-		final String stateWithActNOTHING = gameStateString + '-' + Action.NOTHING;
-		final String stateWithActLEFT = gameStateString + '-' + Action.LEFT;
+		final String stateWithActFORWARD = makeKey(gameStateString, Action.FORWARD);
+		final String stateWithActRIGHT = makeKey(gameStateString, Action.RIGHT);
+		final String stateWithActNOTHING = makeKey(gameStateString, Action.NOTHING);
+		final String stateWithActLEFT = makeKey(gameStateString, Action.LEFT);
 
-		// qTable.putIfAbsent(stateWithActFORWARD, 0.0);
-		// qTable.putIfAbsent(stateWithActRIGHT, 0.0);
-		// qTable.putIfAbsent(stateWithActNOTHING, 0.0);
-		// qTable.putIfAbsent(stateWithActLEFT, 0.0);
-
-		// double score = qTable.getOrDefault(stateWithActFORWARD, 0.0);
 		double score = qTable.get(stateWithActFORWARD);
 
-		// final Double scoreRight = qTable.getOrDefault(stateWithActRIGHT, 0.0);
 		final Double scoreRight = qTable.get(stateWithActRIGHT);
 		if (scoreRight > score) {
 			score = scoreRight;
 		}
 
-		// final Double scoreDown = qTable.getOrDefault(stateWithActNOTHING, 0.0);
 		final Double scoreDown = qTable.get(stateWithActNOTHING);
 		if (scoreDown > score) {
 			score = scoreDown;
 		}
 
-		// final Double scoreLeft = qTable.getOrDefault(stateWithActLEFT, 0.0);
 		final Double scoreLeft = qTable.get(stateWithActLEFT);
 		if (scoreLeft > score) {
 			score = scoreLeft;
@@ -270,20 +245,18 @@ public class DeepQLearning {
 		return score;
 	}
 
+	private static String makeKey(String state, Action action) {
+		return state + "-" + action;
+	}
+
 	private static Map<String, Double> initQTable() {
 		final HashMap<String, Double> qTable = new HashMap<>();
 		final List<String> inputs = getInputs(RobotController.STATE_COUNT);
 
-		// Arrays.toString(states) + '-' + action
-		for (final String stateInput : inputs) {
-			// qTable.put(getStateWithActionString(stateInput, Action.FORWARD), 0.0);
-			// qTable.put(getStateWithActionString(stateInput, Action.LEFT), 0.0);
-			// qTable.put(getStateWithActionString(stateInput, Action.NOTHING), 0.0);
-			// qTable.put(getStateWithActionString(stateInput, Action.RIGHT), 0.0);
-			qTable.put(stateInput + '-' + Action.FORWARD, 0.0);
-			qTable.put(stateInput + '-' + Action.LEFT, 0.0);
-			qTable.put(stateInput + '-' + Action.NOTHING, 0.0);
-			qTable.put(stateInput + '-' + Action.RIGHT, 0.0);
+		for (final String state : inputs) {
+			for (Action action : Action.values()) {
+				qTable.put(makeKey(state, action), 0.0);
+			}
 		}
 
 		return qTable;
@@ -293,14 +266,12 @@ public class DeepQLearning {
 		final List<String> inputs = new ArrayList<>();
 
 		for (int i = 0; i < Math.pow(2, inputCount); i++) {
-			String bin = Integer.toBinaryString(i);
+			StringBuilder bin = new StringBuilder(Integer.toBinaryString(i));
 			while (bin.length() < inputCount) {
-				bin = "0" + bin;
+				bin.insert(0, "0");
 			}
-			// System.out.println(Arrays.toString(toBinaryArray(bin)));
 
-			// inputs.add(String.copyValueOf(bin.toCharArray()));
-			inputs.add(Arrays.toString(toBinaryArray(bin)));
+			inputs.add(Arrays.toString(toBinaryArray(bin.toString())));
 		}
 
 		return inputs;

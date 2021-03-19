@@ -79,13 +79,79 @@ abstract class RobotRunner extends RobotMonitor {
 		moveCount = RobotController.STEP_COUNT;
 	}
 
-	abstract void left(final Direction left);
+	// abstract void left(final Direction left);
 
-	abstract void down(final Direction down);
+	final void left(final Direction left) {
+		final int x = getGridPosX();
+		final int y = getGridPosY();
 
-	abstract void right(final Direction right);
+		if (canMove(left.x(x), left.y(y))) {
+			env.updateGridEmpty(x, y);
+			updateGrid(left.x(x), left.y(y));
 
-	abstract void up(final Direction up);
+			if (env.getMode() == Mode.EVAL) {
+				travel(CELL_DISTANCE);
+			} else {
+				setPose(getX() - CELL_DISTANCE, getY(), getHeading());
+			}
+		}
+	}
+
+	// abstract void down(final Direction down);
+
+	final void down(final Direction down) {
+		final int x = getGridPosX();
+		final int y = getGridPosY();
+
+		if (canMove(down.x(x), down.y(y))) {
+			env.updateGridEmpty(x, y);
+			updateGrid(down.x(x), down.y(y));
+
+			if (env.getMode() == Mode.EVAL) {
+				travel(CELL_DISTANCE);
+			} else {
+				setPose(getX(), getY() + CELL_DISTANCE, getHeading());
+			}
+		}
+	}
+
+	// abstract void right(final Direction right);
+
+	final void right(final Direction right) {
+		final int x = getGridPosX();
+		final int y = getGridPosY();
+
+		if (canMove(right.x(x), right.y(y))) {
+			env.updateGridEmpty(x, y);
+			updateGrid(right.x(x), right.y(y));
+
+			if (env.getMode() == Mode.EVAL) {
+				travel(CELL_DISTANCE);
+			} else {
+				setPose(getX() + CELL_DISTANCE, getY(), getHeading());
+			}
+		}
+	}
+
+	// abstract void up(final Direction up);
+
+	final void up(final Direction up) {
+		final int x = getGridPosX();
+		final int y = getGridPosY();
+
+		if (canMove(up.x(x), up.y(y))) {
+			env.updateGridEmpty(x, y);
+			updateGrid(up.x(x), up.y(y));
+
+			if (env.getMode() == Mode.EVAL) {
+				travel(CELL_DISTANCE);
+			} else {
+				setPose(getX(), getY() - CELL_DISTANCE, getHeading());
+			}
+		}
+	}
+
+	abstract void updateGrid(final int x, final int y);
 
 	final void forward() {
 		switch (Direction.fromDegree(getHeading())) {

@@ -124,7 +124,7 @@ final class Prey extends RobotRunner {
 
 			randomMove = Action.getRandomAction();
 
-			// doAction(randomMove);
+			doAction(randomMove);
 
 		}
 		// logger.info("Prey Stopped");
@@ -162,97 +162,76 @@ final class Prey extends RobotRunner {
 	// }
 	// }
 
-	@Override
-	final void left(final Direction left) {
-		final int x = getGridPosX();
-		final int y = getGridPosY();
+	// @Override
+	// final void left(final Direction left) {
+	// final int x = getGridPosX();
+	// final int y = getGridPosY();
 
-		if (canMove(x - 1, y)) {
-			controller.resumeHunters();
+	// if (canMove(left.x(x), left.y(y))) {
+	// env.updateGridEmpty(x, y);
+	// updateGrid(left.x(x), left.y(y));
 
-			// set previous position
-			env.updateGridEmpty(x, y);
-			// set position
-			env.updateGridPrey(x - 1, y);
+	// if (env.getMode() == Mode.EVAL) {
+	// travel(CELL_DISTANCE);
+	// } else {
+	// setPose(getX() - CELL_DISTANCE, getY(), getHeading());
+	// }
+	// }
+	// }
 
-			if (env.getMode() == Mode.EVAL) {
-				travel(CELL_DISTANCE);
-			} else {
-				setPose(getX() - CELL_DISTANCE, getY(), getHeading());
-			}
+	// @Override
+	// final void up(final Direction up) {
+	// final int x = getGridPosX();
+	// final int y = getGridPosY();
 
-			// randomMove = Action.getRandomAction();
-		}
-	}
+	// if (canMove(up.x(x), up.y(y))) {
+	// env.updateGridEmpty(x, y);
+	// updateGrid(up.x(x), up.y(y));
 
-	@Override
-	final void up(final Direction up) {
-		final int x = getGridPosX();
-		final int y = getGridPosY();
+	// if (env.getMode() == Mode.EVAL) {
+	// travel(CELL_DISTANCE);
+	// } else {
+	// setPose(getX(), getY() - CELL_DISTANCE, getHeading());
+	// }
+	// }
+	// }
 
-		// if (canMove(x, y - 1)) {
-		if (canMove(up.x(x), up.y(y))) {
-			controller.resumeHunters();
+	// @Override
+	// final void right(final Direction right) {
+	// final int x = getGridPosX();
+	// final int y = getGridPosY();
 
-			// set previous position
-			env.updateGridEmpty(x, y);
-			// set position
-			env.updateGridPrey(up.x(x), up.y(y));
+	// if (canMove(right.x(x), right.y(y))) {
+	// env.updateGridEmpty(x, y);
+	// updateGrid(right.x(x), right.y(y));
 
-			if (env.getMode() == Mode.EVAL) {
-				travel(CELL_DISTANCE);
-			} else {
-				setPose(getX(), getY() - CELL_DISTANCE, getHeading());
-			}
+	// if (env.getMode() == Mode.EVAL) {
+	// travel(CELL_DISTANCE);
+	// } else {
+	// setPose(getX() + CELL_DISTANCE, getY(), getHeading());
+	// }
+	// }
+	// }
 
-			// randomMove = Action.getRandomAction();
-		}
-	}
+	// @Override
+	// final void down(final Direction down) {
+	// final int x = getGridPosX();
+	// final int y = getGridPosY();
 
-	@Override
-	final void right(final Direction right) {
-		final int x = getGridPosX();
-		final int y = getGridPosY();
+	// if (canMove(down.x(x), down.y(y))) {
+	// env.updateGridEmpty(x, y);
+	// updateGrid(down.x(x), down.y(y));
 
-		if (canMove(x + 1, y)) {
-			controller.resumeHunters();
-
-			// set previous position
-			env.updateGridEmpty(x, y);
-			// set position
-			env.updateGridPrey(x + 1, y);
-
-			if (env.getMode() == Mode.EVAL) {
-				travel(CELL_DISTANCE);
-			} else {
-				setPose(getX() + CELL_DISTANCE, getY(), getHeading());
-			}
-
-			// randomMove = Action.getRandomAction();
-		}
-	}
+	// if (env.getMode() == Mode.EVAL) {
+	// travel(CELL_DISTANCE);
+	// } else {
+	// setPose(getX(), getY() + CELL_DISTANCE, getHeading());
+	// }
+	// }
+	// }
 
 	@Override
-	final void down(final Direction down) {
-		final int x = getGridPosX();
-		final int y = getGridPosY();
-
-		if (canMove(x, y + 1)) {
-			controller.resumeHunters();
-
-			// set previous position
-			env.updateGridEmpty(x, y);
-			// set position
-			env.updateGridPrey(x, y + 1);
-
-			if (env.getMode() == Mode.EVAL) {
-				travel(CELL_DISTANCE);
-			} else {
-				setPose(getX(), getY() + CELL_DISTANCE, getHeading());
-			}
-
-			// randomMove = Action.getRandomAction();
-		}
+	final void updateGrid(final int x, final int y) {
+		env.updateGridPrey(x, y);
 	}
-
 }
