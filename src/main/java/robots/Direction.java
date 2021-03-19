@@ -1,5 +1,7 @@
 package robots;
 
+import simulation.SimulationEnv;
+
 /**
  * Defines a possible direction
  */
@@ -27,7 +29,7 @@ public enum Direction {
         case -90:
             return LEFT;
         default:
-            return null;
+            return NONE;
         }
     }
 
@@ -48,7 +50,7 @@ public enum Direction {
         case RIGHT:
             return x + 1;
         default:
-            return -1;
+            return 0;
         }
     }
 
@@ -69,7 +71,49 @@ public enum Direction {
         case RIGHT:
             return y;
         default:
-            return -1;
+            return 0;
+        }
+    }
+
+    /**
+     * Get new x position
+     *
+     * @param x
+     * @return
+     */
+    public int px(final int x) {
+        switch (this) {
+        case UP:
+            return x;
+        case DOWN:
+            return x;
+        case LEFT:
+            return x - SimulationEnv.CELL_DISTANCE;
+        case RIGHT:
+            return x + SimulationEnv.CELL_DISTANCE;
+        default:
+            return 0;
+        }
+    }
+
+    /**
+     * Get new y position
+     *
+     * @param y
+     * @return
+     */
+    public int py(final int y) {
+        switch (this) {
+        case UP:
+            return y - SimulationEnv.CELL_DISTANCE;
+        case DOWN:
+            return y + SimulationEnv.CELL_DISTANCE;
+        case LEFT:
+            return y;
+        case RIGHT:
+            return y;
+        default:
+            return 0;
         }
     }
 }

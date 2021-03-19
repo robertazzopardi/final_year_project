@@ -14,8 +14,6 @@ import simulation.SimulationEnv;
  */
 abstract class RobotRunner extends RobotMonitor {
 
-	static final int CELL_DISTANCE = 350;
-
 	static int moveCount = RobotController.STEP_COUNT;
 
 	final SimulationEnv env;
@@ -50,7 +48,7 @@ abstract class RobotRunner extends RobotMonitor {
 	 * @return
 	 */
 	final int getGridPosX() {
-		return (int) ((((double) getX() / CELL_DISTANCE) * 2) - 1) / 2;
+		return (int) ((((double) getX() / SimulationEnv.CELL_DISTANCE) * 2) - 1) / 2;
 	}
 
 	/**
@@ -59,7 +57,7 @@ abstract class RobotRunner extends RobotMonitor {
 	 * @return
 	 */
 	final int getGridPosY() {
-		return (int) ((((double) getY() / CELL_DISTANCE) * 2) - 1) / 2;
+		return (int) ((((double) getY() / SimulationEnv.CELL_DISTANCE) * 2) - 1) / 2;
 	}
 
 	public void stopRobot() {
@@ -79,74 +77,94 @@ abstract class RobotRunner extends RobotMonitor {
 		moveCount = RobotController.STEP_COUNT;
 	}
 
-	// abstract void left(final Direction left);
+	// // abstract void left(final Direction left);
 
-	final void left(final Direction left) {
+	// final void left(final Direction left) {
+	// final int x = getGridPosX();
+	// final int y = getGridPosY();
+
+	// if (canMove(left.x(x), left.y(y))) {
+	// env.updateGridEmpty(x, y);
+	// updateGrid(left.x(x), left.y(y));
+
+	// if (env.getMode() == Mode.EVAL) {
+	// travel(SimulationEnv.CELL_DISTANCE);
+	// } else {
+	// // setPose(getX() - SimulationEnv.CELL_DISTANCE, getY(), getHeading());
+	// setPose(left.px(getX()), left.py(getY()), getHeading());
+	// }
+	// }
+	// }
+
+	// // abstract void down(final Direction down);
+
+	// final void down(final Direction down) {
+	// final int x = getGridPosX();
+	// final int y = getGridPosY();
+
+	// if (canMove(down.x(x), down.y(y))) {
+	// env.updateGridEmpty(x, y);
+	// updateGrid(down.x(x), down.y(y));
+
+	// if (env.getMode() == Mode.EVAL) {
+	// travel(SimulationEnv.CELL_DISTANCE);
+	// } else {
+	// // setPose(getX(), getY() + SimulationEnv.CELL_DISTANCE, getHeading());
+	// setPose(down.px(getX()), down.py(getY()), getHeading());
+	// }
+	// }
+	// }
+
+	// // abstract void right(final Direction right);
+
+	// final void right(final Direction right) {
+	// final int x = getGridPosX();
+	// final int y = getGridPosY();
+
+	// if (canMove(right.x(x), right.y(y))) {
+	// env.updateGridEmpty(x, y);
+	// updateGrid(right.x(x), right.y(y));
+
+	// if (env.getMode() == Mode.EVAL) {
+	// travel(SimulationEnv.CELL_DISTANCE);
+	// } else {
+	// // setPose(getX() + SimulationEnv.CELL_DISTANCE, getY(), getHeading());
+	// setPose(right.px(getX()), right.py(getY()), getHeading());
+	// }
+	// }
+	// }
+
+	// // abstract void up(final Direction up);
+
+	// final void up(final Direction up) {
+	// final int x = getGridPosX();
+	// final int y = getGridPosY();
+
+	// if (canMove(up.x(x), up.y(y))) {
+	// env.updateGridEmpty(x, y);
+	// updateGrid(up.x(x), up.y(y));
+
+	// if (env.getMode() == Mode.EVAL) {
+	// travel(SimulationEnv.CELL_DISTANCE);
+	// } else {
+	// // setPose(getX(), getY() - SimulationEnv.CELL_DISTANCE, getHeading());
+	// setPose(up.px(getX()), up.py(getY()), getHeading());
+	// }
+	// }
+	// }
+
+	final void moveDirection(final Direction direction) {
 		final int x = getGridPosX();
 		final int y = getGridPosY();
 
-		if (canMove(left.x(x), left.y(y))) {
+		if (canMove(direction.x(x), direction.y(y))) {
 			env.updateGridEmpty(x, y);
-			updateGrid(left.x(x), left.y(y));
+			updateGrid(direction.x(x), direction.y(y));
 
 			if (env.getMode() == Mode.EVAL) {
-				travel(CELL_DISTANCE);
+				travel(SimulationEnv.CELL_DISTANCE);
 			} else {
-				setPose(getX() - CELL_DISTANCE, getY(), getHeading());
-			}
-		}
-	}
-
-	// abstract void down(final Direction down);
-
-	final void down(final Direction down) {
-		final int x = getGridPosX();
-		final int y = getGridPosY();
-
-		if (canMove(down.x(x), down.y(y))) {
-			env.updateGridEmpty(x, y);
-			updateGrid(down.x(x), down.y(y));
-
-			if (env.getMode() == Mode.EVAL) {
-				travel(CELL_DISTANCE);
-			} else {
-				setPose(getX(), getY() + CELL_DISTANCE, getHeading());
-			}
-		}
-	}
-
-	// abstract void right(final Direction right);
-
-	final void right(final Direction right) {
-		final int x = getGridPosX();
-		final int y = getGridPosY();
-
-		if (canMove(right.x(x), right.y(y))) {
-			env.updateGridEmpty(x, y);
-			updateGrid(right.x(x), right.y(y));
-
-			if (env.getMode() == Mode.EVAL) {
-				travel(CELL_DISTANCE);
-			} else {
-				setPose(getX() + CELL_DISTANCE, getY(), getHeading());
-			}
-		}
-	}
-
-	// abstract void up(final Direction up);
-
-	final void up(final Direction up) {
-		final int x = getGridPosX();
-		final int y = getGridPosY();
-
-		if (canMove(up.x(x), up.y(y))) {
-			env.updateGridEmpty(x, y);
-			updateGrid(up.x(x), up.y(y));
-
-			if (env.getMode() == Mode.EVAL) {
-				travel(CELL_DISTANCE);
-			} else {
-				setPose(getX(), getY() - CELL_DISTANCE, getHeading());
+				setPose(direction.px(getX()), direction.py(getY()), getHeading());
 			}
 		}
 	}
@@ -156,16 +174,16 @@ abstract class RobotRunner extends RobotMonitor {
 	final void forward() {
 		switch (Direction.fromDegree(getHeading())) {
 		case DOWN:
-			down(Direction.DOWN);
+			moveDirection(Direction.DOWN);
 			break;
 		case RIGHT:
-			right(Direction.RIGHT);
+			moveDirection(Direction.RIGHT);
 			break;
 		case UP:
-			up(Direction.UP);
+			moveDirection(Direction.UP);
 			break;
 		case LEFT:
-			left(Direction.LEFT);
+			moveDirection(Direction.LEFT);
 			break;
 		default:
 			break;

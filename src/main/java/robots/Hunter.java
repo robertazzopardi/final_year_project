@@ -1,6 +1,5 @@
 package robots;
 
-import java.util.Arrays;
 import java.util.Random;
 import java.util.logging.Logger;
 import comp329robosim.OccupancyType;
@@ -133,8 +132,6 @@ final class Hunter extends RobotRunner {
 	}
 
 	private void deepLearningRunning() {
-		// float[] currState = getStates();
-		// float[] newState = null;
 		int[] currState = getGridState();
 		int[] newState = null;
 
@@ -144,7 +141,8 @@ final class Hunter extends RobotRunner {
 		double score = 0;
 		final boolean gameMode = env.getMode() != Mode.EVAL;
 
-		final Hunter[] hunters = new Hunter[] { otherHunters[0], otherHunters[1], otherHunters[2], this };
+		// final Hunter[] hunters = new Hunter[] { otherHunters[0], otherHunters[1],
+		// otherHunters[2], this };
 
 		while (!exit) {
 			score = -REWARD;
@@ -162,16 +160,9 @@ final class Hunter extends RobotRunner {
 
 			doAction(action);
 
-			// newState = getStates();
 			newState = getGridState();
 
 			if (gameMode) {
-				// long numAdj =
-				// Arrays.stream(hunters).filter(Hunter::isAdjacentToPrey).count();
-				// if (numAdj != 0) {
-				// // System.out.println(numAdj * REWARD);
-				// score += numAdj * REWARD;
-				// }
 				learning.update(currState, action, score, newState);
 			}
 
@@ -360,74 +351,6 @@ final class Hunter extends RobotRunner {
 		resumeRobot();
 		resetHunterCount();
 	}
-
-	// @Override
-	// final void left(final Direction left) {
-	// final int x = getGridPosX();
-	// final int y = getGridPosY();
-
-	// if (canMove(left.x(x), left.y(y))) {
-	// env.updateGridEmpty(x, y);
-	// updateGrid(left.x(x), left.y(y));
-
-	// if (env.getMode() == Mode.EVAL) {
-	// travel(CELL_DISTANCE);
-	// } else {
-	// setPose(getX() - CELL_DISTANCE, getY(), getHeading());
-	// }
-	// }
-	// }
-
-	// @Override
-	// final void up(final Direction up) {
-	// final int x = getGridPosX();
-	// final int y = getGridPosY();
-
-	// if (canMove(up.x(x), up.y(y))) {
-	// env.updateGridEmpty(x, y);
-	// updateGrid(up.x(x), up.y(y));
-
-	// if (env.getMode() == Mode.EVAL) {
-	// travel(CELL_DISTANCE);
-	// } else {
-	// setPose(getX(), getY() - CELL_DISTANCE, getHeading());
-	// }
-	// }
-	// }
-
-	// @Override
-	// final void right(final Direction right) {
-	// final int x = getGridPosX();
-	// final int y = getGridPosY();
-
-	// if (canMove(right.x(x), right.y(y))) {
-	// env.updateGridEmpty(x, y);
-	// updateGrid(right.x(x), right.y(y));
-
-	// if (env.getMode() == Mode.EVAL) {
-	// travel(CELL_DISTANCE);
-	// } else {
-	// setPose(getX() + CELL_DISTANCE, getY(), getHeading());
-	// }
-	// }
-	// }
-
-	// @Override
-	// final void down(final Direction down) {
-	// final int x = getGridPosX();
-	// final int y = getGridPosY();
-
-	// if (canMove(down.x(x), down.y(y))) {
-	// env.updateGridEmpty(x, y);
-	// updateGrid(down.x(x), down.y(y));
-
-	// if (env.getMode() == Mode.EVAL) {
-	// travel(CELL_DISTANCE);
-	// } else {
-	// setPose(getX(), getY() + CELL_DISTANCE, getHeading());
-	// }
-	// }
-	// }
 
 	@Override
 	final void updateGrid(final int x, final int y) {

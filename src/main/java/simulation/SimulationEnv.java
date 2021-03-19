@@ -11,6 +11,8 @@ import robots.RobotController;
 public class SimulationEnv extends EnvController {
     // public static final String CONFIG_FILE = "resources/defaultConfig.txt";
 
+    public static final int CELL_DISTANCE = 350;
+
     private Boolean isRunning = true;
 
     public Boolean isRunning() {
