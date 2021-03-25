@@ -26,6 +26,8 @@ abstract class RobotRunner extends RobotMonitor {
 
 	final RobotController controller;
 
+	private boolean mode;
+
 	RobotRunner(final SimulatedRobot r, final int d, final SimulationEnv env,
 			final RobotController controller) {
 		super(r, d);
@@ -39,6 +41,8 @@ abstract class RobotRunner extends RobotMonitor {
 		this.controller = controller;
 
 		this.grid = env.getGrid();
+
+		mode = env.getMode() == Mode.EVAL;
 	}
 
 	abstract boolean canMove(int x, int y);
@@ -82,7 +86,9 @@ abstract class RobotRunner extends RobotMonitor {
 		final int x = getGridPosX();
 		final int y = getGridPosY();
 
-		if (canMove(direction.x(x), direction.y(y))) {
+		int x2 = direction.x(x);
+		int y2 = direction.y(y);
+		if (canMove(x2, y2)) {
 			env.updateGridEmpty(x, y);
 			updateGrid(direction.x(x), direction.y(y));
 
@@ -96,113 +102,53 @@ abstract class RobotRunner extends RobotMonitor {
 
 	abstract void updateGrid(final int x, final int y);
 
-	// final void forward() {
-	// switch (Direction.fromDegree(getHeading())) {
-	// case DOWN:
-	// moveDirection(Direction.DOWN);
-	// break;
-	// case RIGHT:
-	// moveDirection(Direction.RIGHT);
-	// break;
-	// case UP:
-	// moveDirection(Direction.UP);
-	// break;
-	// case LEFT:
-	// moveDirection(Direction.LEFT);
-	// break;
-	// default:
-	// break;
-	// }
-	// }
-
 	void doAction(final Action action) {
-		switch (action) {
-			case UP:
-				moveDirection(Direction.UP);
-				break;
-			case DOWN:
-				moveDirection(Direction.DOWN);
-				break;
-			case LEFT:
-				moveDirection(Direction.LEFT);
-				break;
-			case RIGHT:
-				moveDirection(Direction.RIGHT);
-				break;
-			case NOTHING:
-				break;
-			default:
-				break;
-		}
-		// switch (direction) {
-		// case FORWARD:
-		// forward();
+		// switch (action) {
+		// case UP:
+		// moveDirection(Direction.UP);
 		// break;
-
+		// case DOWN:
+		// moveDirection(Direction.DOWN);
+		// break;
 		// case LEFT:
-		// if (env.getMode() == Mode.EVAL) {
-		// rotate(-90);
-		// // forward();
-		// } else {
-		// setPose(getX(), getY(), getHeading() - 90);
-		// // switch (Direction.fromDegree(getHeading())) {
-		// // case DOWN:
-		// // if (canMove(getGridPosX(), getGridPosY() + 1))
-		// // setPose(getX(), getY() + CELL_DISTANCE, getHeading());
-		// // break;
-		// // case RIGHT:
-		// // if (canMove(getGridPosX() + 1, getGridPosY()))
-		// // setPose(getX() + CELL_DISTANCE, getY(), getHeading());
-		// // break;
-		// // case UP:
-		// // if (canMove(getGridPosX(), getGridPosY() - 1))
-		// // setPose(getX(), getY() - CELL_DISTANCE, getHeading());
-		// // break;
-		// // case LEFT:
-		// // if (canMove(getGridPosX() - 1, getGridPosY()))
-		// // setPose(getX() - CELL_DISTANCE, getY(), getHeading());
-		// // break;
-		// // default:
-		// // break;
-		// // }
-		// }
+		// moveDirection(Direction.LEFT);
 		// break;
-
 		// case RIGHT:
-		// if (env.getMode() == Mode.EVAL) {
-		// rotate(90);
-		// // forward();
-		// } else {
-		// setPose(getX(), getY(), getHeading() + 90);
-		// // switch (Direction.fromDegree(getHeading())) {
-		// // case DOWN:
-		// // if (canMove(getGridPosX(), getGridPosY() + 1))
-		// // setPose(getX(), getY() + CELL_DISTANCE, getHeading());
-		// // break;
-		// // case RIGHT:
-		// // if (canMove(getGridPosX() + 1, getGridPosY()))
-		// // setPose(getX() + CELL_DISTANCE, getY(), getHeading());
-		// // break;
-		// // case UP:
-		// // if (canMove(getGridPosX(), getGridPosY() - 1))
-		// // setPose(getX(), getY() - CELL_DISTANCE, getHeading());
-		// // break;
-		// // case LEFT:
-		// // if (canMove(getGridPosX() - 1, getGridPosY()))
-		// // setPose(getX() - CELL_DISTANCE, getY(), getHeading());
-		// // break;
-		// // default:
-		// // break;
-		// // }
-		// }
+		// moveDirection(Direction.RIGHT);
 		// break;
-
 		// case NOTHING:
 		// break;
-
 		// default:
 		// break;
 		// }
+
+		switch (action) {
+			case FORWARD:
+				moveDirection(Direction.fromDegree(getHeading()));
+				break;
+
+			case LEFT:
+				if (mode) {
+					rotate(-90);
+				} else {
+					setPose(getX(), getY(), getHeading() - 90);
+				}
+				break;
+
+			case RIGHT:
+				if (mode) {
+					rotate(90);
+				} else {
+					setPose(getX(), getY(), getHeading() + 90);
+				}
+				break;
+
+			case NOTHING:
+				break;
+
+			default:
+				break;
+		}
 	}
 
 }

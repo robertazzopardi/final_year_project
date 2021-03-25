@@ -88,14 +88,14 @@ final class Hunter extends RobotRunner {
 				|| grid[y + 1][x].getCellType() == OccupancyType.PREY;
 	}
 
-	// public boolean isAdjacentToHunter() {
-	// final int x = getGridPosX();
-	// final int y = getGridPosY();
-	// return grid[y][x - 1].getCellType() == OccupancyType.HUNTER
-	// || grid[y][x + 1].getCellType() == OccupancyType.HUNTER
-	// || grid[y - 1][x].getCellType() == OccupancyType.HUNTER
-	// || grid[y + 1][x].getCellType() == OccupancyType.HUNTER;
-	// }
+	public boolean isAdjacentToHunter() {
+		final int x = getGridPosX();
+		final int y = getGridPosY();
+		return grid[y][x - 1].getCellType() == OccupancyType.HUNTER
+				|| grid[y][x + 1].getCellType() == OccupancyType.HUNTER
+				|| grid[y - 1][x].getCellType() == OccupancyType.HUNTER
+				|| grid[y + 1][x].getCellType() == OccupancyType.HUNTER;
+	}
 
 	// public boolean isAdjacentToObstacle() {
 	// final int x = getGridPosX();
@@ -160,13 +160,13 @@ final class Hunter extends RobotRunner {
 		while (!exit) {
 			action = learning.getActionFromStates(currState);
 
-			//
-			// final Direction direction = Direction.fromDegree(getHeading());
-			// System.out.println(action + " " + isAdjacentToPrey() + " "
-			// + canMove(direction.x(getGridPosX()), direction.y(getGridPosY())) + " "
-			// + grid[direction.y(getGridPosY())][direction.x(getGridPosX())].getCellType()
-			// + " hunter: " + number);
-			//
+
+			final Direction direction = Direction.fromDegree(getHeading());
+			System.out.println(action + " " + isAdjacentToPrey() + " "
+					+ canMove(direction.x(getGridPosX()), direction.y(getGridPosY())) + " "
+					+ grid[direction.y(getGridPosY())][direction.x(getGridPosX())].getCellType()
+					+ " hunter: " + number);
+
 
 			if (gameMode) {
 				learning.updateEpsilon();
@@ -176,9 +176,7 @@ final class Hunter extends RobotRunner {
 
 			doAction(action);
 
-			// newState = getGridState();
 			newState = getStates();
-
 
 			if (gameMode) {
 				learning.update(currState, action, score, newState);
@@ -199,28 +197,37 @@ final class Hunter extends RobotRunner {
 		double score = 0;
 
 		switch (action) {
-			case UP:
-				if (!isAdjacentToPrey(direction.x(getGridPosX()), direction.y(getGridPosY()))) {
+			case FORWARD:
+				if (!canMove(direction.x(getGridPosX()), direction.y(getGridPosY()))) {
 					score = -REWARD;
+				} else if (!isAdjacentToPrey(direction.x(getGridPosX()),
+						direction.y(getGridPosY()))) {
+					score = -REWARD;
+				} else if (isAdjacentToPrey()) {
+					score = REWARD;
 				}
 				break;
-			case DOWN:
-				if (!isAdjacentToPrey(direction.x(getGridPosX()), direction.y(getGridPosY()))) {
-					score = -REWARD;
-				}
-				break;
+
 			case LEFT:
-				if (!isAdjacentToPrey(direction.x(getGridPosX()), direction.y(getGridPosY()))) {
+				final Direction left = Direction.fromDegree(getHeading() - 90);
+
+				if (!isAdjacentToPrey(left.x(getGridPosX()), left.y(getGridPosY()))) {
 					score = -REWARD;
 				}
 				break;
+
 			case RIGHT:
-				if (!isAdjacentToPrey(direction.x(getGridPosX()), direction.y(getGridPosY()))) {
+				final Direction right = Direction.fromDegree(getHeading() + 90);
+
+				if (!isAdjacentToPrey(right.x(getGridPosX()), right.y(getGridPosY()))) {
 					score = -REWARD;
 				}
 				break;
+
 			case NOTHING:
-				if (!isAdjacentToPrey()) {
+				if (isAdjacentToPrey() && !isAdjacentToHunter()) {
+					score = REWARD;
+				} else if (!isAdjacentToPrey()) {
 					score = -REWARD;
 				}
 				break;
@@ -230,31 +237,36 @@ final class Hunter extends RobotRunner {
 		}
 
 		// switch (action) {
-		// case FORWARD:
-		// if (isAdjacentToPrey(direction.x(getGridPosX()), direction.y(getGridPosY()))) {
-		// score = 100;
-		// } else if (canMove(direction.x(getGridPosX()), direction.y(getGridPosY()))) {
-		// score = 0;
-		// } else {
-		// score = -100;
+		// case UP:
+		// if (!isAdjacentToPrey(direction.x(getGridPosX()), direction.y(getGridPosY()))) {
+		// score = -REWARD;
 		// }
 		// break;
-		// case NOTHING:
-		// if (isAdjacentToPrey()) {
-		// score = 100;
-		// } else {
-		// score = -100;
+		// case DOWN:
+		// if (!isAdjacentToPrey(direction.x(getGridPosX()), direction.y(getGridPosY()))) {
+		// score = -REWARD;
 		// }
 		// break;
 		// case LEFT:
-
+		// if (!isAdjacentToPrey(direction.x(getGridPosX()), direction.y(getGridPosY()))) {
+		// score = -REWARD;
+		// }
 		// break;
 		// case RIGHT:
-
+		// if (!isAdjacentToPrey(direction.x(getGridPosX()), direction.y(getGridPosY()))) {
+		// score = -REWARD;
+		// }
 		// break;
+		// case NOTHING:
+		// if (!isAdjacentToPrey()) {
+		// score = -REWARD;
+		// }
+		// break;
+
 		// default:
 		// break;
 		// }
+
 
 		return score;
 	}

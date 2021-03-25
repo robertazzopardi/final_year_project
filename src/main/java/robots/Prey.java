@@ -100,7 +100,7 @@ final class Prey extends RobotRunner {
 
 			final Action randomMove = Action.getRandomAction();
 
-			// doAction(randomMove);
+			doAction(randomMove);
 
 		}
 		// logger.info("Prey Stopped");

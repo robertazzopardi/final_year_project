@@ -49,7 +49,7 @@ public class DeepQLearning {
 
 	// 0.001
 	// private static final double LEARNING_RATE = 0.0006;
-	private static final double LEARNING_RATE = 0.0006;
+	private static final double LEARNING_RATE = 0.001;
 
 
 	// Just make sure the number of inputs of the next layer equals to the number of
@@ -59,14 +59,19 @@ public class DeepQLearning {
 			.weightInit(WeightInit.XAVIER)
 			//
 			.updater(new Adam(LEARNING_RATE))
-			.gradientNormalization(GradientNormalization.RenormalizeL2PerLayer).dropOut(0.5)
 			//
-			.l2(0.000001).list()
-			.layer(0,
-					new DenseLayer.Builder().nIn(RobotController.STATE_COUNT).nOut(HIDDEN_NEURONS)
-							.weightInit(WeightInit.XAVIER).activation(Activation.RELU).build())
+			.gradientNormalization(GradientNormalization.RenormalizeL2PerLayer)
+			//
+			.dropOut(0.8)
+			//
+			.l2(0.000001)
+			//
+			.list()
+			//
+			.layer(0, new DenseLayer.Builder().nIn(RobotController.STATE_COUNT).nOut(HIDDEN_NEURONS)
+					.dropOut(0.5).weightInit(WeightInit.XAVIER).activation(Activation.RELU).build())
 			.layer(1,
-					new DenseLayer.Builder().nIn(HIDDEN_NEURONS).nOut(HIDDEN_NEURONS)
+					new DenseLayer.Builder().nIn(HIDDEN_NEURONS).nOut(HIDDEN_NEURONS).dropOut(0.5)
 							.weightInit(WeightInit.XAVIER).activation(Activation.RELU).build())
 			.layer(2,
 					new OutputLayer.Builder(LossFunctions.LossFunction.MSE).nIn(HIDDEN_NEURONS)
@@ -90,7 +95,6 @@ public class DeepQLearning {
 			// this will limit frequency of gc calls to 5000 milliseconds
 			Nd4j.getMemoryManager().setAutoGcWindow(5000);
 		}
-
 	}
 
 	public DeepQLearning(final MultiLayerNetwork network, boolean eval) {
@@ -288,14 +292,17 @@ public class DeepQLearning {
 	private double getMaxQScore(final float[] states) {
 		final String gameStateString = Arrays.toString(states);
 
-		final String UP = makeKey(gameStateString, Action.UP);
-		final String DOWN = makeKey(gameStateString, Action.DOWN);
+		// final String UP = makeKey(gameStateString, Action.UP);
+		// final String DOWN = makeKey(gameStateString, Action.DOWN);
+		// final String LEFT = makeKey(gameStateString, Action.LEFT);
+		// final String RIGHT = makeKey(gameStateString, Action.RIGHT);
+		// final String NOTHING = makeKey(gameStateString, Action.NOTHING);
+		final String FORWARD = makeKey(gameStateString, Action.FORWARD);
 		final String LEFT = makeKey(gameStateString, Action.LEFT);
 		final String RIGHT = makeKey(gameStateString, Action.RIGHT);
 		final String NOTHING = makeKey(gameStateString, Action.NOTHING);
 
-		qTable.putIfAbsent(UP, 0.0);
-		qTable.putIfAbsent(DOWN, 0.0);
+		qTable.putIfAbsent(FORWARD, 0.0);
 		qTable.putIfAbsent(LEFT, 0.0);
 		qTable.putIfAbsent(RIGHT, 0.0);
 		qTable.putIfAbsent(NOTHING, 0.0);
@@ -308,19 +315,14 @@ public class DeepQLearning {
 			score = scoreRight;
 		}
 
-		final Double scoreDown = qTable.getOrDefault(DOWN, 0.0);
-		if (scoreDown > score) {
-			score = scoreDown;
-		}
-
 		final Double scoreLeft = qTable.getOrDefault(LEFT, 0.0);
 		if (scoreLeft > score) {
 			score = scoreLeft;
 		}
 
-		final Double scoreUp = qTable.getOrDefault(UP, 0.0);
-		if (scoreUp > score) {
-			score = scoreUp;
+		final Double scoreForward = qTable.getOrDefault(FORWARD, 0.0);
+		if (scoreForward > score) {
+			score = scoreForward;
 		}
 
 		return score;

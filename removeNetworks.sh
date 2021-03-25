@@ -1,1 +1,1 @@
-rm -r ./resources/*.zip
+rm -r src/main/resources/*.zip

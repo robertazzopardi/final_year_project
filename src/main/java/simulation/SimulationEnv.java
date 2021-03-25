@@ -23,7 +23,7 @@ public class SimulationEnv extends EnvController {
         isRunning = false;
     }
 
-    public static final String OUTPUT_FOLDER = "./resources/";
+    public static final String OUTPUT_FOLDER = "src/main/resources";
 
     public static final int EPISODES = 50;
 
@@ -71,7 +71,7 @@ public class SimulationEnv extends EnvController {
 
         new RobotController(this);
 
-        // new GridPrinter(grid).start();
+        // new GridPrinter<MyGridCell>(grid).start();
 
     }
 
