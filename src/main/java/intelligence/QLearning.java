@@ -5,7 +5,6 @@ import java.util.Random;
 
 import comp329robosim.MyGridCell;
 import comp329robosim.OccupancyType;
-
 import simulation.SimulationEnv;
 
 /**

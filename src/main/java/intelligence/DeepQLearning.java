@@ -23,6 +23,7 @@ import org.nd4j.linalg.activations.Activation;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.learning.config.Adam;
+import org.nd4j.linalg.learning.config.Sgd;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,8 +49,8 @@ public class DeepQLearning {
 	// private final Map<String, Double> qTable = initQTable();
 
 	// 0.001
-	// private static final double LEARNING_RATE = 0.0006;
-	private static final double LEARNING_RATE = 0.001;
+	private static final double LEARNING_RATE = 0.0006;
+	// private static final double LEARNING_RATE = 0.001;
 
 
 	// Just make sure the number of inputs of the next layer equals to the number of
@@ -58,7 +59,10 @@ public class DeepQLearning {
 			.seed(12345).optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
 			.weightInit(WeightInit.XAVIER)
 			//
-			.updater(new Adam(LEARNING_RATE))
+			// .updater(new Adam(LEARNING_RATE))
+			// .updater(new Adam(0.0005, 0.9, 0.999, 1e-08))
+			// .updater(new Adam(0.0005, 0.9, 0.999, 0.1))
+			.updater(new Sgd(LEARNING_RATE))
 			//
 			.gradientNormalization(GradientNormalization.RenormalizeL2PerLayer)
 			//

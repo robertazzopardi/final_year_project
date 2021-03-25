@@ -4,7 +4,6 @@ import java.util.Arrays;
 import java.util.logging.Logger;
 import comp329robosim.OccupancyType;
 import comp329robosim.SimulatedRobot;
-
 import simulation.SimulationEnv;
 
 /**

@@ -1,5 +1,6 @@
 package robots;
 
+import java.util.Arrays;
 import java.util.Random;
 import java.util.logging.Logger;
 import comp329robosim.OccupancyType;
@@ -154,8 +155,8 @@ final class Hunter extends RobotRunner {
 		double score = 0;
 		final boolean gameMode = env.getMode() != Mode.EVAL;
 
-		// final Hunter[] hunters =
-		// new Hunter[] {otherHunters[0], otherHunters[1], otherHunters[2], this};
+		final Hunter[] hunters =
+				new Hunter[] {otherHunters[0], otherHunters[1], otherHunters[2], this};
 
 		while (!exit) {
 			action = learning.getActionFromStates(currState);
@@ -186,8 +187,8 @@ final class Hunter extends RobotRunner {
 		}
 
 		if (prey.isCaptured()) {
-			// score = Arrays.stream(hunters).filter(Hunter::isAdjacentToPrey).count();
-			score = REWARD;
+			score = Arrays.stream(hunters).filter(Hunter::isAdjacentToPrey).count();
+			// score = REWARD;
 			learning.update(currState, action, score, newState);
 		}
 	}
@@ -225,7 +226,8 @@ final class Hunter extends RobotRunner {
 				break;
 
 			case NOTHING:
-				if (isAdjacentToPrey() && !isAdjacentToHunter()) {
+				if (isAdjacentToPrey()) {
+					// && !isAdjacentToHunter()
 					score = REWARD;
 				} else if (!isAdjacentToPrey()) {
 					score = -REWARD;

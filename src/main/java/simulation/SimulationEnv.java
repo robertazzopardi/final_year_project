@@ -23,7 +23,7 @@ public class SimulationEnv extends EnvController {
         isRunning = false;
     }
 
-    public static final String OUTPUT_FOLDER = "src/main/resources";
+    public static final String OUTPUT_FOLDER = "src/main/resources/";
 
     public static final int EPISODES = 50;
 
