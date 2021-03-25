@@ -13,7 +13,8 @@ import simulation.SimulationEnv;
  */
 final class Prey extends RobotRunner {
 
-	public Prey(final SimulatedRobot r, final int d, final SimulationEnv env, final RobotController controller) {
+	public Prey(final SimulatedRobot r, final int d, final SimulationEnv env,
+			final RobotController controller) {
 		super(r, d, env, controller);
 
 		logger = Logger.getLogger(Prey.class.getName());
@@ -39,8 +40,9 @@ final class Prey extends RobotRunner {
 		final int x = getGridPosX();
 		final int y = getGridPosY();
 
-		final OccupancyType[] adjacent = new OccupancyType[] { grid[y + 1][x].getCellType(),
-				grid[y - 1][x].getCellType(), grid[y][x + 1].getCellType(), grid[y][x - 1].getCellType() };
+		final OccupancyType[] adjacent =
+				new OccupancyType[] {grid[y + 1][x].getCellType(), grid[y - 1][x].getCellType(),
+						grid[y][x + 1].getCellType(), grid[y][x - 1].getCellType()};
 		return (int) Arrays.stream(adjacent).filter(z -> z == OccupancyType.OBSTACLE).count();
 
 	}
@@ -49,14 +51,16 @@ final class Prey extends RobotRunner {
 		final int x = getGridPosX();
 		final int y = getGridPosY();
 
-		return new Direction[] { canMove(x, y + 1) ? Direction.DOWN : Direction.NONE,
-				canMove(x, y - 1) ? Direction.UP : Direction.NONE, canMove(x + 1, y) ? Direction.RIGHT : Direction.NONE,
-				canMove(x - 1, y) ? Direction.LEFT : Direction.NONE, };
+		return new Direction[] {canMove(x, y + 1) ? Direction.DOWN : Direction.NONE,
+				canMove(x, y - 1) ? Direction.UP : Direction.NONE,
+				canMove(x + 1, y) ? Direction.RIGHT : Direction.NONE,
+				canMove(x - 1, y) ? Direction.LEFT : Direction.NONE,};
 	}
 
 	@Override
 	boolean canMove(final int x, final int y) {
-		return grid[y][x].getCellType() == OccupancyType.GOAL || grid[y][x].getCellType() == OccupancyType.EMPTY;
+		return grid[y][x].getCellType() == OccupancyType.GOAL
+				|| grid[y][x].getCellType() == OccupancyType.EMPTY;
 	}
 
 	@Override
@@ -85,7 +89,8 @@ final class Prey extends RobotRunner {
 			// }
 
 			if (isCaptured()) {
-				System.out.println(RobotController.STEP_COUNT - moveCount);
+				System.out.println((RobotController.STEP_COUNT - moveCount) + "  average: "
+						+ (RobotController.STEP_COUNT - moveCount) / 4);
 				controller.handleCapture(true);
 				resetMoves();
 			} else if (moveCount <= 0) {
@@ -93,9 +98,9 @@ final class Prey extends RobotRunner {
 				resetMoves();
 			}
 
-			Action randomMove = Action.getRandomAction();
+			final Action randomMove = Action.getRandomAction();
 
-			doAction(randomMove);
+			// doAction(randomMove);
 
 		}
 		// logger.info("Prey Stopped");

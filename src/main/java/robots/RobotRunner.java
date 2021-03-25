@@ -26,7 +26,8 @@ abstract class RobotRunner extends RobotMonitor {
 
 	final RobotController controller;
 
-	RobotRunner(final SimulatedRobot r, final int d, final SimulationEnv env, final RobotController controller) {
+	RobotRunner(final SimulatedRobot r, final int d, final SimulationEnv env,
+			final RobotController controller) {
 		super(r, d);
 
 		monitorRobotStatus(false);
@@ -65,8 +66,8 @@ abstract class RobotRunner extends RobotMonitor {
 	}
 
 	static final float normalise(final int x, final int min, final int max) {
-		// return (2 * ((float) (x - min) / (max - min))) - 1;
-		return (float) (x - min) / (max - min);
+		return (2 * ((float) (x - min) / (max - min))) - 1;
+		// return (float) (x - min) / (max - min);
 	}
 
 	static synchronized void incrementMoves() {
@@ -76,82 +77,6 @@ abstract class RobotRunner extends RobotMonitor {
 	static void resetMoves() {
 		moveCount = RobotController.STEP_COUNT;
 	}
-
-	// // abstract void left(final Direction left);
-
-	// final void left(final Direction left) {
-	// final int x = getGridPosX();
-	// final int y = getGridPosY();
-
-	// if (canMove(left.x(x), left.y(y))) {
-	// env.updateGridEmpty(x, y);
-	// updateGrid(left.x(x), left.y(y));
-
-	// if (env.getMode() == Mode.EVAL) {
-	// travel(SimulationEnv.CELL_DISTANCE);
-	// } else {
-	// // setPose(getX() - SimulationEnv.CELL_DISTANCE, getY(), getHeading());
-	// setPose(left.px(getX()), left.py(getY()), getHeading());
-	// }
-	// }
-	// }
-
-	// // abstract void down(final Direction down);
-
-	// final void down(final Direction down) {
-	// final int x = getGridPosX();
-	// final int y = getGridPosY();
-
-	// if (canMove(down.x(x), down.y(y))) {
-	// env.updateGridEmpty(x, y);
-	// updateGrid(down.x(x), down.y(y));
-
-	// if (env.getMode() == Mode.EVAL) {
-	// travel(SimulationEnv.CELL_DISTANCE);
-	// } else {
-	// // setPose(getX(), getY() + SimulationEnv.CELL_DISTANCE, getHeading());
-	// setPose(down.px(getX()), down.py(getY()), getHeading());
-	// }
-	// }
-	// }
-
-	// // abstract void right(final Direction right);
-
-	// final void right(final Direction right) {
-	// final int x = getGridPosX();
-	// final int y = getGridPosY();
-
-	// if (canMove(right.x(x), right.y(y))) {
-	// env.updateGridEmpty(x, y);
-	// updateGrid(right.x(x), right.y(y));
-
-	// if (env.getMode() == Mode.EVAL) {
-	// travel(SimulationEnv.CELL_DISTANCE);
-	// } else {
-	// // setPose(getX() + SimulationEnv.CELL_DISTANCE, getY(), getHeading());
-	// setPose(right.px(getX()), right.py(getY()), getHeading());
-	// }
-	// }
-	// }
-
-	// // abstract void up(final Direction up);
-
-	// final void up(final Direction up) {
-	// final int x = getGridPosX();
-	// final int y = getGridPosY();
-
-	// if (canMove(up.x(x), up.y(y))) {
-	// env.updateGridEmpty(x, y);
-	// updateGrid(up.x(x), up.y(y));
-
-	// if (env.getMode() == Mode.EVAL) {
-	// travel(SimulationEnv.CELL_DISTANCE);
-	// } else {
-	// // setPose(getX(), getY() - SimulationEnv.CELL_DISTANCE, getHeading());
-	// setPose(up.px(getX()), up.py(getY()), getHeading());
-	// }
-	// }
-	// }
 
 	final void moveDirection(final Direction direction) {
 		final int x = getGridPosX();
@@ -171,95 +96,113 @@ abstract class RobotRunner extends RobotMonitor {
 
 	abstract void updateGrid(final int x, final int y);
 
-	final void forward() {
-		switch (Direction.fromDegree(getHeading())) {
-		case DOWN:
-			moveDirection(Direction.DOWN);
-			break;
-		case RIGHT:
-			moveDirection(Direction.RIGHT);
-			break;
-		case UP:
-			moveDirection(Direction.UP);
-			break;
-		case LEFT:
-			moveDirection(Direction.LEFT);
-			break;
-		default:
-			break;
+	// final void forward() {
+	// switch (Direction.fromDegree(getHeading())) {
+	// case DOWN:
+	// moveDirection(Direction.DOWN);
+	// break;
+	// case RIGHT:
+	// moveDirection(Direction.RIGHT);
+	// break;
+	// case UP:
+	// moveDirection(Direction.UP);
+	// break;
+	// case LEFT:
+	// moveDirection(Direction.LEFT);
+	// break;
+	// default:
+	// break;
+	// }
+	// }
+
+	void doAction(final Action action) {
+		switch (action) {
+			case UP:
+				moveDirection(Direction.UP);
+				break;
+			case DOWN:
+				moveDirection(Direction.DOWN);
+				break;
+			case LEFT:
+				moveDirection(Direction.LEFT);
+				break;
+			case RIGHT:
+				moveDirection(Direction.RIGHT);
+				break;
+			case NOTHING:
+				break;
+			default:
+				break;
 		}
-	}
+		// switch (direction) {
+		// case FORWARD:
+		// forward();
+		// break;
 
-	void doAction(final Action direction) {
-		switch (direction) {
-		case FORWARD:
-			forward();
-			break;
+		// case LEFT:
+		// if (env.getMode() == Mode.EVAL) {
+		// rotate(-90);
+		// // forward();
+		// } else {
+		// setPose(getX(), getY(), getHeading() - 90);
+		// // switch (Direction.fromDegree(getHeading())) {
+		// // case DOWN:
+		// // if (canMove(getGridPosX(), getGridPosY() + 1))
+		// // setPose(getX(), getY() + CELL_DISTANCE, getHeading());
+		// // break;
+		// // case RIGHT:
+		// // if (canMove(getGridPosX() + 1, getGridPosY()))
+		// // setPose(getX() + CELL_DISTANCE, getY(), getHeading());
+		// // break;
+		// // case UP:
+		// // if (canMove(getGridPosX(), getGridPosY() - 1))
+		// // setPose(getX(), getY() - CELL_DISTANCE, getHeading());
+		// // break;
+		// // case LEFT:
+		// // if (canMove(getGridPosX() - 1, getGridPosY()))
+		// // setPose(getX() - CELL_DISTANCE, getY(), getHeading());
+		// // break;
+		// // default:
+		// // break;
+		// // }
+		// }
+		// break;
 
-		case LEFT:
-			if (env.getMode() == Mode.EVAL) {
-				rotate(-90);
-				// forward();
-			} else {
-				setPose(getX(), getY(), getHeading() - 90);
-				// switch (Direction.fromDegree(getHeading())) {
-				// case DOWN:
-				// if (canMove(getGridPosX(), getGridPosY() + 1))
-				// setPose(getX(), getY() + CELL_DISTANCE, getHeading());
-				// break;
-				// case RIGHT:
-				// if (canMove(getGridPosX() + 1, getGridPosY()))
-				// setPose(getX() + CELL_DISTANCE, getY(), getHeading());
-				// break;
-				// case UP:
-				// if (canMove(getGridPosX(), getGridPosY() - 1))
-				// setPose(getX(), getY() - CELL_DISTANCE, getHeading());
-				// break;
-				// case LEFT:
-				// if (canMove(getGridPosX() - 1, getGridPosY()))
-				// setPose(getX() - CELL_DISTANCE, getY(), getHeading());
-				// break;
-				// default:
-				// break;
-				// }
-			}
-			break;
+		// case RIGHT:
+		// if (env.getMode() == Mode.EVAL) {
+		// rotate(90);
+		// // forward();
+		// } else {
+		// setPose(getX(), getY(), getHeading() + 90);
+		// // switch (Direction.fromDegree(getHeading())) {
+		// // case DOWN:
+		// // if (canMove(getGridPosX(), getGridPosY() + 1))
+		// // setPose(getX(), getY() + CELL_DISTANCE, getHeading());
+		// // break;
+		// // case RIGHT:
+		// // if (canMove(getGridPosX() + 1, getGridPosY()))
+		// // setPose(getX() + CELL_DISTANCE, getY(), getHeading());
+		// // break;
+		// // case UP:
+		// // if (canMove(getGridPosX(), getGridPosY() - 1))
+		// // setPose(getX(), getY() - CELL_DISTANCE, getHeading());
+		// // break;
+		// // case LEFT:
+		// // if (canMove(getGridPosX() - 1, getGridPosY()))
+		// // setPose(getX() - CELL_DISTANCE, getY(), getHeading());
+		// // break;
+		// // default:
+		// // break;
+		// // }
+		// }
+		// break;
 
-		case RIGHT:
-			if (env.getMode() == Mode.EVAL) {
-				rotate(90);
-				// forward();
-			} else {
-				setPose(getX(), getY(), getHeading() + 90);
-				// switch (Direction.fromDegree(getHeading())) {
-				// case DOWN:
-				// if (canMove(getGridPosX(), getGridPosY() + 1))
-				// setPose(getX(), getY() + CELL_DISTANCE, getHeading());
-				// break;
-				// case RIGHT:
-				// if (canMove(getGridPosX() + 1, getGridPosY()))
-				// setPose(getX() + CELL_DISTANCE, getY(), getHeading());
-				// break;
-				// case UP:
-				// if (canMove(getGridPosX(), getGridPosY() - 1))
-				// setPose(getX(), getY() - CELL_DISTANCE, getHeading());
-				// break;
-				// case LEFT:
-				// if (canMove(getGridPosX() - 1, getGridPosY()))
-				// setPose(getX() - CELL_DISTANCE, getY(), getHeading());
-				// break;
-				// default:
-				// break;
-				// }
-			}
-			break;
+		// case NOTHING:
+		// break;
 
-		case NOTHING:
-			break;
-
-		default:
-			break;
-		}
+		// default:
+		// break;
+		// }
 	}
 
 }

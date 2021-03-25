@@ -4,7 +4,8 @@ import simulation.SimulationEnv;
 public class Main {
 
     public static void main(final String[] args) {
-        final SimulationEnv env = new SimulationEnv("", SimulationEnv.GRID_SIZE, SimulationEnv.GRID_SIZE, Mode.TRAIN);
+        final SimulationEnv env =
+                new SimulationEnv("", SimulationEnv.GRID_SIZE, SimulationEnv.GRID_SIZE, Mode.EVAL);
 
         // Keep thread alive so that the learning visualisation ui server keeps running
         while (Boolean.TRUE.equals(env.isRunning())) {

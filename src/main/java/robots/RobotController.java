@@ -10,8 +10,8 @@ import simulation.SimulationEnv;
 public class RobotController {
 	public static final int STEP_COUNT = 5000;
 
-	// public static final int STATE_COUNT = 20;
-	public static final int STATE_COUNT = 11;
+	public static final int STATE_COUNT = 20;
+	// public static final int STATE_COUNT = 9;
 
 	private static final int DELAY = 1000;
 
@@ -28,6 +28,7 @@ public class RobotController {
 
 		initRobots();
 
+		prey.start();
 		startRobots();
 	}
 
@@ -48,30 +49,30 @@ public class RobotController {
 				// learning = new DeepQLearning();
 				// }
 				switch (mode) {
-				case EVAL:
-					if (env.getFiles().length == 0) {
-						learning = new DeepQLearning(true);
-					} else {
-						learning = DeepQLearning.loadNetwork(env.getFiles()[i], false, true);
-					}
-					break;
+					case EVAL:
+						if (env.getFiles().length == 0) {
+							learning = new DeepQLearning(true);
+						} else {
+							learning = DeepQLearning.loadNetwork(env.getFiles()[i], false, true);
+						}
+						break;
 
-				case TRAIN_ON:
-					if (env.getFiles().length < 4) {
+					case TRAIN_ON:
+						if (env.getFiles().length < 4) {
+							learning = new DeepQLearning(false);
+
+						} else {
+							learning = DeepQLearning.loadNetwork(env.getFiles()[i], true, false);
+
+						}
+						break;
+
+					case TRAIN:
 						learning = new DeepQLearning(false);
+						break;
 
-					} else {
-						learning = DeepQLearning.loadNetwork(env.getFiles()[i], true, false);
-
-					}
-					break;
-
-				case TRAIN:
-					learning = new DeepQLearning(false);
-					break;
-
-				default:
-					break;
+					default:
+						break;
 				}
 				hunters[i] = new Hunter(simulatedRobot, DELAY, env, learning, this, prey);
 			} while (isSamePosition(i));
@@ -83,7 +84,8 @@ public class RobotController {
 	}
 
 	private boolean isSamePosition(final int i) {
-		if (hunters[i].getGridPosX() == prey.getGridPosX() && hunters[i].getGridPosY() == prey.getGridPosY()) {
+		if (hunters[i].getGridPosX() == prey.getGridPosX()
+				&& hunters[i].getGridPosY() == prey.getGridPosY()) {
 			return true;
 		}
 
@@ -98,13 +100,14 @@ public class RobotController {
 	}
 
 	public void restartRobots() {
-		final SimulatedRobot preyRobot = env.getAndSetPrey();
-		prey = new Prey(preyRobot, DELAY, env, this);
+		// final SimulatedRobot preyRobot = env.getAndSetPrey();
+		// prey = new Prey(preyRobot, DELAY, env, this);
 
 		for (int i = 0; i < 4; i++) {
 			do {
 				final SimulatedRobot simulatedHunter = env.getAndSetHunter(i);
-				hunters[i] = new Hunter(simulatedHunter, DELAY, env, hunters[i].getLearning(), this, prey);
+				hunters[i] = new Hunter(simulatedHunter, DELAY, env, hunters[i].getLearning(), this,
+						prey);
 			} while (isSamePosition(i));
 		}
 
@@ -122,14 +125,14 @@ public class RobotController {
 	}
 
 	private void startRobots() {
-		prey.start();
+		// prey.start();
 		for (final Hunter hunter : hunters) {
 			hunter.start();
 		}
 	}
 
 	public void stopRobots() {
-		prey.stopRobot();
+		// prey.stopRobot();
 		for (final Hunter hunter : hunters) {
 			hunter.stopRobot();
 		}
@@ -217,7 +220,8 @@ public class RobotController {
 		env.resetGrid();
 
 		if (env.getEpisode() <= SimulationEnv.EPISODES + env.getTrainedEpisodes()) {
-			env.updateTitle(env.incrementEpisode() + " Captures " + (capture ? ++captures : captures));
+			env.updateTitle(
+					env.incrementEpisode() + " Captures " + (capture ? ++captures : captures));
 			// TODO: add captures to the file name and retrieve
 			restartRobots();
 		} else if (env.getMode() == Mode.TRAIN || env.getMode() == Mode.TRAIN_ON) {
