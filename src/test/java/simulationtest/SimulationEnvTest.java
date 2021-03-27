@@ -25,11 +25,15 @@ class SimulationEnvTest {
 
     @Test
     void incrementEpisodeTest() {
-        simulationEnv.incrementEpisode();
-        assertEquals(2, simulationEnv.getEpisode());
+        int episode = simulationEnv.getEpisode();
 
         simulationEnv.incrementEpisode();
-        assertEquals(3, simulationEnv.getEpisode());
+        assertEquals(episode + 1, simulationEnv.getEpisode());
+
+        episode = simulationEnv.getEpisode();
+
+        simulationEnv.incrementEpisode();
+        assertEquals(episode + 1, simulationEnv.getEpisode());
     }
 
     @Test

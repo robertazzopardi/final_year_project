@@ -31,7 +31,7 @@ public class SimulationEnv extends EnvController {
 
     public static final int GRID_SIZE = 6;
 
-    private int episode = 0;
+    private int episode = 1;
 
     private final int trainedEpisodes;
 
@@ -69,10 +69,11 @@ public class SimulationEnv extends EnvController {
 
         addBoundaries();
 
-        new RobotController(this);
-
         // new GridPrinter<MyGridCell>(grid).start();
+    }
 
+    public void startController() {
+        new RobotController(this);
     }
 
     public Mode getMode() {
@@ -80,11 +81,11 @@ public class SimulationEnv extends EnvController {
     }
 
     public int getEpisode() {
-        return episode + 1;
+        return episode;
     }
 
     public int incrementEpisode() {
-        return ++episode;
+        return episode++;
     }
 
     private void addBoundaries() {

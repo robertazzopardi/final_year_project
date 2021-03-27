@@ -88,8 +88,10 @@ final class Prey extends RobotRunner {
 			// }
 
 			if (isCaptured()) {
-				System.out.println((RobotController.STEP_COUNT - moveCount) + "  average: "
-						+ (RobotController.STEP_COUNT - moveCount) / 4);
+				float totalMoves = RobotController.STEP_COUNT - moveCount;
+				float averageMoves = totalMoves / 4;
+				// controller.capturesChart.update(averageMoves);
+				System.out.println(totalMoves + "  average: " + averageMoves);
 				controller.handleCapture(true);
 				resetMoves();
 			} else if (moveCount <= 0) {

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import comp329robosim.SimulatedRobot;
 import intelligence.DeepQLearning;
+import simulation.CapturesChart;
 import simulation.Mode;
 import simulation.SimulationEnv;
 
@@ -23,8 +24,13 @@ public class RobotController {
 
 	private final SimulationEnv env;
 
+	// public final CapturesChart capturesChart;
+
 	public RobotController(final SimulationEnv env) {
 		this.env = env;
+
+		// this.capturesChart = new CapturesChart("Average Moves");
+		// CapturesChart.startChart(this.capturesChart);
 
 		initRobots();
 

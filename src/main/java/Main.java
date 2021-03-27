@@ -7,6 +7,8 @@ public class Main {
         final SimulationEnv env =
                 new SimulationEnv("", SimulationEnv.GRID_SIZE, SimulationEnv.GRID_SIZE, Mode.TRAIN);
 
+        env.startController();
+
         // Keep thread alive so that the learning visualisation ui server keeps running
         while (Boolean.TRUE.equals(env.isRunning())) {
             try {
