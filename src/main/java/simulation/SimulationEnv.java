@@ -11,42 +11,19 @@ import robots.RobotController;
 public class SimulationEnv extends EnvController {
     // public static final String CONFIG_FILE = "resources/defaultConfig.txt";
 
+    public static final int TOTAL_EPISODES = 20;
+    private int episode = 1;
+
+    public static final int GRID_SIZE = 8;
     public static final int CELL_DISTANCE = 350;
+    public static final String OUTPUT_FOLDER = "src/main/resources/";
+
 
     private Boolean isRunning = true;
 
-    public Boolean isRunning() {
-        return isRunning;
-    }
-
-    public void stopRunning() {
-        isRunning = false;
-    }
-
-    public static final String OUTPUT_FOLDER = "src/main/resources/";
-
-    public static final int EPISODES = 50;
-
     private final Mode mode;
 
-    public static final int GRID_SIZE = 6;
-
-    private int episode = 1;
-
     private final int trainedEpisodes;
-
-    public int getTrainedEpisodes() {
-        return trainedEpisodes;
-    }
-
-    private final MyGridCell[][] grid;
-
-    private final File[] files =
-            new File(OUTPUT_FOLDER).listFiles((dir1, filename) -> filename.endsWith(".zip"));
-
-    public File[] getFiles() {
-        return files;
-    }
 
     public SimulationEnv(final String confFileName, final int cols, final int rows,
             final Mode mode) {
@@ -70,6 +47,27 @@ public class SimulationEnv extends EnvController {
         addBoundaries();
 
         // new GridPrinter<MyGridCell>(grid).start();
+    }
+
+    public Boolean isRunning() {
+        return isRunning;
+    }
+
+    public void stopRunning() {
+        isRunning = false;
+    }
+
+    public int getTrainedEpisodes() {
+        return trainedEpisodes;
+    }
+
+    private final MyGridCell[][] grid;
+
+    private final File[] files =
+            new File(OUTPUT_FOLDER).listFiles((dir1, filename) -> filename.endsWith(".zip"));
+
+    public File[] getFiles() {
+        return files;
     }
 
     public void startController() {
@@ -104,23 +102,29 @@ public class SimulationEnv extends EnvController {
         }
     }
 
-    public void updateGridGoal(final int x, final int y) {
+    public void updateGrid(final int x, final int y, final OccupancyType occupancyType) {
         synchronized (grid[y][x]) {
-            grid[y][x].setCellType(OccupancyType.GOAL);
+            grid[y][x].setCellType(occupancyType);
         }
     }
 
-    public void updateGridHunter(final int x, final int y) {
-        synchronized (grid[y][x]) {
-            grid[y][x].setCellType(OccupancyType.HUNTER);
-        }
-    }
+    // public void updateGridGoal(final int x, final int y) {
+    // synchronized (grid[y][x]) {
+    // grid[y][x].setCellType(OccupancyType.GOAL);
+    // }
+    // }
 
-    public void updateGridPrey(final int x, final int y) {
-        synchronized (grid[y][x]) {
-            grid[y][x].setCellType(OccupancyType.PREY);
-        }
-    }
+    // public void updateGridHunter(final int x, final int y) {
+    // synchronized (grid[y][x]) {
+    // grid[y][x].setCellType(OccupancyType.HUNTER);
+    // }
+    // }
+
+    // public void updateGridPrey(final int x, final int y) {
+    // synchronized (grid[y][x]) {
+    // grid[y][x].setCellType(OccupancyType.PREY);
+    // }
+    // }
 
     public void resetGrid() {
         for (final MyGridCell[] myGridCells : grid) {

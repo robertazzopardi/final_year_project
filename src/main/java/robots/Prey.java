@@ -1,6 +1,5 @@
 package robots;
 
-import java.util.Arrays;
 import java.util.logging.Logger;
 import comp329robosim.OccupancyType;
 import comp329robosim.SimulatedRobot;
@@ -19,7 +18,9 @@ final class Prey extends RobotRunner {
 		logger = Logger.getLogger(Prey.class.getName());
 
 		// set position
-		env.updateGridPrey(getGridPosX(), getGridPosY());
+		// env.updateGridPrey(getGridPosX(), getGridPosY());
+		env.updateGrid(getGridPosX(), getGridPosY(), OccupancyType.PREY);
+
 	}
 
 	public boolean isCaptured() {
@@ -35,26 +36,25 @@ final class Prey extends RobotRunner {
 						|| grid[y][x - 1].getCellType() == OccupancyType.OBSTACLE);
 	}
 
-	public int getAdjacentObstacles() {
-		final int x = getGridPosX();
-		final int y = getGridPosY();
+	// public int getAdjacentObstacles() {
+	// final int x = getGridPosX();
+	// final int y = getGridPosY();
 
-		final OccupancyType[] adjacent =
-				new OccupancyType[] {grid[y + 1][x].getCellType(), grid[y - 1][x].getCellType(),
-						grid[y][x + 1].getCellType(), grid[y][x - 1].getCellType()};
-		return (int) Arrays.stream(adjacent).filter(z -> z == OccupancyType.OBSTACLE).count();
+	// final OccupancyType[] adjacent =
+	// new OccupancyType[] {grid[y + 1][x].getCellType(), grid[y - 1][x].getCellType(),
+	// grid[y][x + 1].getCellType(), grid[y][x - 1].getCellType()};
+	// return (int) Arrays.stream(adjacent).filter(z -> z == OccupancyType.OBSTACLE).count();
+	// }
 
-	}
+	// public Direction[] getFreeAdjacentSquares() {
+	// final int x = getGridPosX();
+	// final int y = getGridPosY();
 
-	public Direction[] getFreeAdjacentSquares() {
-		final int x = getGridPosX();
-		final int y = getGridPosY();
-
-		return new Direction[] {canMove(x, y + 1) ? Direction.DOWN : Direction.NONE,
-				canMove(x, y - 1) ? Direction.UP : Direction.NONE,
-				canMove(x + 1, y) ? Direction.RIGHT : Direction.NONE,
-				canMove(x - 1, y) ? Direction.LEFT : Direction.NONE,};
-	}
+	// return new Direction[] {canMove(x, y + 1) ? Direction.DOWN : Direction.NONE,
+	// canMove(x, y - 1) ? Direction.UP : Direction.NONE,
+	// canMove(x + 1, y) ? Direction.RIGHT : Direction.NONE,
+	// canMove(x - 1, y) ? Direction.LEFT : Direction.NONE,};
+	// }
 
 	@Override
 	boolean canMove(final int x, final int y) {
@@ -68,7 +68,9 @@ final class Prey extends RobotRunner {
 
 			final int x = getGridPosX();
 			final int y = getGridPosY();
-			env.updateGridPrey(x, y);
+			// env.updateGridPrey(x, y);
+			env.updateGrid(x, y, OccupancyType.PREY);
+
 			// final int a = getHeading();
 
 			// final boolean right = canMove(x + 1, y);
@@ -109,6 +111,8 @@ final class Prey extends RobotRunner {
 
 	@Override
 	final void updateGrid(final int x, final int y) {
-		env.updateGridPrey(x, y);
+		// env.updateGridPrey(x, y);
+		env.updateGrid(x, y, OccupancyType.PREY);
+
 	}
 }

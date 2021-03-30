@@ -11,8 +11,10 @@ import simulation.SimulationEnv;
 public class RobotController {
 	public static final int STEP_COUNT = 5000;
 
-	public static final int STATE_COUNT = 20;
-	// public static final int STATE_COUNT = 9;
+	// public static final int STATE_COUNT = 20;
+	public static final int STATE_COUNT = 28;
+
+	// public static final int STATE_COUNT = 14;
 
 	private static final int DELAY = 1000;
 
@@ -190,7 +192,7 @@ public class RobotController {
 		for (int i = 0; i < hunters.length; i++) {
 			if (env.getMode() == Mode.TRAIN) {
 				DeepQLearning.saveNetwork(hunters[i].getLearning().getNetwork(), i,
-						Integer.toString(SimulationEnv.EPISODES));
+						Integer.toString(SimulationEnv.TOTAL_EPISODES));
 			} else if (env.getMode() == Mode.TRAIN_ON) {
 				if (env.getFiles().length != 0) {
 					// final String fileName = env.getFiles()[i].getName();
@@ -205,7 +207,7 @@ public class RobotController {
 
 				} else {
 					DeepQLearning.saveNetwork(hunters[i].getLearning().getNetwork(), i,
-							Integer.toString(SimulationEnv.EPISODES));
+							Integer.toString(SimulationEnv.TOTAL_EPISODES));
 				}
 			}
 		}
@@ -225,7 +227,7 @@ public class RobotController {
 
 		env.resetGrid();
 
-		if (env.getEpisode() <= SimulationEnv.EPISODES + env.getTrainedEpisodes()) {
+		if (env.getEpisode() <= SimulationEnv.TOTAL_EPISODES + env.getTrainedEpisodes()) {
 			env.updateTitle(
 					env.incrementEpisode() + " Captures " + (capture ? ++captures : captures));
 			// TODO: add captures to the file name and retrieve

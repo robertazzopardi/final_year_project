@@ -19,11 +19,6 @@ class SimulationEnvTest {
     }
 
     @Test
-    void checkEpisodeTest() {
-        assertEquals(1, simulationEnv.getEpisode());
-    }
-
-    @Test
     void incrementEpisodeTest() {
         int episode = simulationEnv.getEpisode();
 
@@ -50,45 +45,58 @@ class SimulationEnvTest {
     }
 
     @Test
-    void updateGridGoalTest() {
+    void updateGridTest() {
         MyGridCell[][] grid = simulationEnv.getGrid();
 
         grid[1][1].setCellType(OccupancyType.UNKNOWN);
 
         assertEquals(OccupancyType.UNKNOWN, grid[1][1].getCellType());
 
-        simulationEnv.updateGridGoal(1, 1);
+        // test goal position
+        simulationEnv.updateGrid(1, 1, OccupancyType.GOAL);
 
         assertEquals(OccupancyType.GOAL, grid[1][1].getCellType(),
                 "Cell is:" + grid[1][1].getCellType());
-    }
 
-    @Test
-    void updateGridHunterTest() {
-        MyGridCell[][] grid = simulationEnv.getGrid();
-
-        grid[1][1].setCellType(OccupancyType.UNKNOWN);
-
-        assertEquals(OccupancyType.UNKNOWN, grid[1][1].getCellType());
-
-        simulationEnv.updateGridHunter(1, 1);
+        // test hunter position
+        simulationEnv.updateGrid(1, 1, OccupancyType.HUNTER);
 
         assertEquals(OccupancyType.HUNTER, grid[1][1].getCellType(),
                 "Cell is:" + grid[1][1].getCellType());
-    }
 
-    @Test
-    void updateGridPreyTest() {
-        MyGridCell[][] grid = simulationEnv.getGrid();
-
-        grid[1][1].setCellType(OccupancyType.UNKNOWN);
-
-        assertEquals(OccupancyType.UNKNOWN, grid[1][1].getCellType());
-
-        simulationEnv.updateGridPrey(1, 1);
+        // test prey Position
+        simulationEnv.updateGrid(1, 1, OccupancyType.PREY);
 
         assertEquals(OccupancyType.PREY, grid[1][1].getCellType(),
                 "Cell is:" + grid[1][1].getCellType());
     }
+
+    // @Test
+    // void updateGridHunterTest() {
+    // MyGridCell[][] grid = simulationEnv.getGrid();
+
+    // grid[1][1].setCellType(OccupancyType.UNKNOWN);
+
+    // assertEquals(OccupancyType.UNKNOWN, grid[1][1].getCellType());
+
+    // simulationEnv.updateGridHunter(1, 1);
+
+    // assertEquals(OccupancyType.HUNTER, grid[1][1].getCellType(),
+    // "Cell is:" + grid[1][1].getCellType());
+    // }
+
+    // @Test
+    // void updateGridPreyTest() {
+    // MyGridCell[][] grid = simulationEnv.getGrid();
+
+    // grid[1][1].setCellType(OccupancyType.UNKNOWN);
+
+    // assertEquals(OccupancyType.UNKNOWN, grid[1][1].getCellType());
+
+    // simulationEnv.updateGridPrey(1, 1);
+
+    // assertEquals(OccupancyType.PREY, grid[1][1].getCellType(),
+    // "Cell is:" + grid[1][1].getCellType());
+    // }
 
 }

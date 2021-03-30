@@ -26,7 +26,7 @@ abstract class RobotRunner extends RobotMonitor {
 
 	final RobotController controller;
 
-	private boolean mode;
+	private final boolean mode;
 
 	RobotRunner(final SimulatedRobot r, final int d, final SimulationEnv env,
 			final RobotController controller) {
@@ -45,7 +45,22 @@ abstract class RobotRunner extends RobotMonitor {
 		mode = env.getMode() == Mode.EVAL;
 	}
 
+	/**
+	 * Get whether the robot can move into the x and y position
+	 *
+	 * @param x
+	 * @param y
+	 * @return
+	 */
 	abstract boolean canMove(int x, int y);
+
+	/**
+	 * Set the cell at the x and y position with the value of the robot
+	 *
+	 * @param x
+	 * @param y
+	 */
+	abstract void updateGrid(final int x, final int y);
 
 	/**
 	 * get x position on the grid from the robots location
@@ -65,10 +80,22 @@ abstract class RobotRunner extends RobotMonitor {
 		return (int) ((((double) getY() / SimulationEnv.CELL_DISTANCE) * 2) - 1) / 2;
 	}
 
+	final int getDistanceAhead() {
+		return (int) ((((double) getUSenseRange() / SimulationEnv.CELL_DISTANCE) * 2) - 1) / 2;
+	}
+
 	public void stopRobot() {
 		exit = true;
 	}
 
+	/**
+	 * Normalise value between -1 and 1
+	 *
+	 * @param x
+	 * @param min
+	 * @param max
+	 * @return
+	 */
 	static final float normalise(final int x, final int min, final int max) {
 		return (2 * ((float) (x - min) / (max - min))) - 1;
 		// return (float) (x - min) / (max - min);
@@ -86,9 +113,7 @@ abstract class RobotRunner extends RobotMonitor {
 		final int x = getGridPosX();
 		final int y = getGridPosY();
 
-		int x2 = direction.x(x);
-		int y2 = direction.y(y);
-		if (canMove(x2, y2)) {
+		if (canMove(direction.x(x), direction.y(y))) {
 			env.updateGridEmpty(x, y);
 			updateGrid(direction.x(x), direction.y(y));
 
@@ -100,28 +125,12 @@ abstract class RobotRunner extends RobotMonitor {
 		}
 	}
 
-	abstract void updateGrid(final int x, final int y);
-
+	/**
+	 * Perform set in the environment based on chosen action
+	 *
+	 * @param action
+	 */
 	void doAction(final Action action) {
-		// switch (action) {
-		// case UP:
-		// moveDirection(Direction.UP);
-		// break;
-		// case DOWN:
-		// moveDirection(Direction.DOWN);
-		// break;
-		// case LEFT:
-		// moveDirection(Direction.LEFT);
-		// break;
-		// case RIGHT:
-		// moveDirection(Direction.RIGHT);
-		// break;
-		// case NOTHING:
-		// break;
-		// default:
-		// break;
-		// }
-
 		switch (action) {
 			case FORWARD:
 				moveDirection(Direction.fromDegree(getHeading()));

@@ -32,7 +32,6 @@ public enum Direction {
         }
     }
 
-    // TODO: condense the switch statements
     /**
      * Get new x position
      *
@@ -74,7 +73,7 @@ public enum Direction {
     }
 
     /**
-     * Get new x position
+     * Get new x position based on actual environment dimensions
      *
      * @param x
      * @return
@@ -94,7 +93,7 @@ public enum Direction {
     }
 
     /**
-     * Get new y position
+     * Get new y position based on actual environment dimensions
      *
      * @param y
      * @return

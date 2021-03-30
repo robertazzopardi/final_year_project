@@ -8,7 +8,7 @@ fi
 cd comp329robosim
 rm -rf ./*.class
 # javac ./*.java
-/Library/Java/JavaVirtualMachines/adoptopenjdk-15.jdk/Contents/Home/bin/javac ./*.java # set to the java version maven uses
+/Library/Java/JavaVirtualMachines/adoptopenjdk-16.jdk/Contents/Home/bin/javac ./*.java # set to the java version maven uses
 cd ..
 jar cf comp329robosim.jar comp329robosim
 
