@@ -32,6 +32,9 @@ abstract class RobotRunner extends RobotMonitor {
 
 	private final boolean mode;
 
+	int gx;
+	int gy;
+
 	RobotRunner(final SimulatedRobot r, final int d, final Env env,
 			final RobotController controller) {
 		super(r, d);
@@ -39,6 +42,10 @@ abstract class RobotRunner extends RobotMonitor {
 		monitorRobotStatus(false);
 
 		setTravelSpeed(100);
+
+		gx = getX();
+
+		gy = getY();
 
 		this.env = env;
 
@@ -133,6 +140,9 @@ abstract class RobotRunner extends RobotMonitor {
 			// env.updateGridEmpty(Env.ENV_SIZE / x, Env.ENV_SIZE / y);
 			// updateGrid(Env.ENV_SIZE / direction.px(x), Env.ENV_SIZE / direction.py(y));
 
+			gx = direction.px(x);
+			gy = direction.py(y);
+
 			if (env.getMode() == Mode.EVAL) {
 				travel(Env.CELL_WIDTH);
 			} else {
@@ -174,6 +184,7 @@ abstract class RobotRunner extends RobotMonitor {
 			default:
 				break;
 		}
+
 		// switch (action) {
 		// case UP:
 		// moveDirection(Direction.UP);

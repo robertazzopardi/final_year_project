@@ -103,6 +103,8 @@ public class DeepQLearning {
 		this.network = network;
 		network.init();
 
+		epsilon = MIN_EPSILON;
+
 		if (!eval) {
 			enableUIServer();
 		}
@@ -116,7 +118,8 @@ public class DeepQLearning {
 		network.setListeners(new StatsListener(statsStorage));
 
 		// this will limit frequency of gc calls to 5000 milliseconds
-		Nd4j.getMemoryManager().setAutoGcWindow(5000);
+		// Nd4j.getMemoryManager().setAutoGcWindow(5000);
+		Nd4j.getMemoryManager().togglePeriodicGc(false);
 	}
 
 	public MultiLayerNetwork getNetwork() {
@@ -230,7 +233,7 @@ public class DeepQLearning {
 
 		// final Double scoreNOTHING = qTable.getOrDefault(NOTHING, 0.0);
 		// if (scoreNOTHING > score) {
-		// 	score = scoreNOTHING;
+		// score = scoreNOTHING;
 		// }
 
 		return score;

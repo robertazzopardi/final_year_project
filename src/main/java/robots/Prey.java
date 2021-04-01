@@ -23,7 +23,7 @@ final class Prey extends RobotRunner {
 		// System.out.println(getX() + " " + getY());
 	}
 
-	public boolean isCaptured() {
+	public boolean isTrapped() {
 		final int x = getX() + Env.CELL_RADIUS;
 		final int y = getY() + Env.CELL_RADIUS;
 
@@ -46,8 +46,8 @@ final class Prey extends RobotRunner {
 		// .println(
 		count += Arrays.stream(controller.hunters).filter(Hunter::isAtGoal).count();
 		// + " ");
-		if (count >= 4)
-			System.out.println(count);
+		// if (count >= 4)
+		// System.out.println(count);
 
 		// System.out.println(Arrays.stream(controller.hunters)
 		// .filter(i -> i.getX() == getX() && i.getY() == getY()).count());
@@ -96,9 +96,16 @@ final class Prey extends RobotRunner {
 		// || grid[y][x].getCellType() == OccupancyType.EMPTY;
 		// return true;
 
+		// System.out.println("x: " + x + " y: " + y + " gx: " + gx + " gy: " + gy);
+
+		if (Arrays.stream(controller.hunters).anyMatch(i -> i.gx == x && i.gy == y)) {
+			return false;
+		}
+
 		return (x < Env.ENV_SIZE - Env.CELL_WIDTH && x > Env.CELL_WIDTH)
 				&& (y < Env.ENV_SIZE - Env.CELL_WIDTH && y > Env.CELL_WIDTH)
-				&& Arrays.stream(controller.hunters).anyMatch(i -> i.getX() != x && i.getY() != y);
+		// && Arrays.stream(controller.hunters).noneMatch(i -> i.getX() == x && i.getY() == y)
+		;
 	}
 
 	@Override
@@ -129,7 +136,7 @@ final class Prey extends RobotRunner {
 			// break;
 			// }
 
-			if (isCaptured()) {
+			if (isTrapped()) {
 				float totalMoves = RobotController.STEP_COUNT - moveCount;
 				float averageMoves = totalMoves / 4;
 				// controller.capturesChart.update(averageMoves);

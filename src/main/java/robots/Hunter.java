@@ -88,11 +88,17 @@ final class Hunter extends RobotRunner {
 		// System.out.println("true");
 		// }
 
+		if (Arrays.stream(otherHunters).anyMatch(i -> i.gx == x && i.gy == y)) {
+			return false;
+		} else if (x == prey.gx && y == prey.gy) {
+			return false;
+		}
 
 		return (x < Env.ENV_SIZE - Env.CELL_WIDTH && x > Env.CELL_WIDTH)
 				&& (y < Env.ENV_SIZE - Env.CELL_WIDTH && y > Env.CELL_WIDTH)
-				&& Arrays.stream(otherHunters).anyMatch(i -> i.getX() != x && i.getY() != y)
-				&& (x != prey.getX() || y != prey.getY());
+		// && Arrays.stream(otherHunters).noneMatch(i -> i.getX() == x && i.getY() == y)
+		// && (x != prey.getX() || y != prey.getY())
+		;
 	}
 
 	public DeepQLearning getLearning() {
@@ -215,7 +221,7 @@ final class Hunter extends RobotRunner {
 			currState = newState;
 		}
 
-		// if (prey.isCaptured()) {
+		// if (prey.isTrapped()) {
 		if (moveCount > 0) {
 			score = Arrays.stream(hunters).filter(Hunter::isAtGoal).count();
 			// score = 100;
@@ -293,6 +299,15 @@ final class Hunter extends RobotRunner {
 
 				score = getScoreForAction(score, preyStates, direction, x, y);
 
+				if (isAtGoal()) {
+					score -= 5;
+				}
+
+				if (getManhattenDistance(direction.px(x), direction.py(y), prey.getX(),
+						prey.getY()) < getManhattenDistance(x, y, prey.getX(), prey.getY())) {
+					score = .5;
+				}
+
 				break;
 
 			case LEFT:
@@ -319,6 +334,7 @@ final class Hunter extends RobotRunner {
 				break;
 		}
 
+		// System.out.println(score);
 		return score;
 	}
 
@@ -328,30 +344,34 @@ final class Hunter extends RobotRunner {
 			case UP:
 				score += getScoreForStates(getStatsForDirectionUp(x, y));
 				score += getScoreForPreyState(preyStates, 0);
-				score += getScoreForPreyState(preyStates, 4);
-				score += getScoreForPreyState(preyStates, 5);
+				// score += getScoreForPreyState(preyStates, 4);
+				// score += getScoreForPreyState(preyStates, 5);
 				score += isAtGoal(direction.px(x), direction.py(y)) ? 1 : 0;
+				score += canMove(direction.px(x), direction.py(y)) ? 0 : -1;
 				break;
 			case DOWN:
 				score += getScoreForStates(getStatsForDirectionDown(x, y));
 				score += getScoreForPreyState(preyStates, 2);
-				score += getScoreForPreyState(preyStates, 6);
-				score += getScoreForPreyState(preyStates, 7);
+				// score += getScoreForPreyState(preyStates, 6);
+				// score += getScoreForPreyState(preyStates, 7);
 				score += isAtGoal(direction.px(x), direction.py(y)) ? 1 : 0;
+				score += canMove(direction.px(x), direction.py(y)) ? 0 : -1;
 				break;
 			case LEFT:
 				score += getScoreForStates(getStatsForDirectionLeft(x, y));
 				score += getScoreForPreyState(preyStates, 3);
-				score += getScoreForPreyState(preyStates, 5);
-				score += getScoreForPreyState(preyStates, 7);
+				// score += getScoreForPreyState(preyStates, 5);
+				// score += getScoreForPreyState(preyStates, 7);
 				score += isAtGoal(direction.px(x), direction.py(y)) ? 1 : 0;
+				score += canMove(direction.px(x), direction.py(y)) ? 0 : -1;
 				break;
 			case RIGHT:
 				score += getScoreForStates(getStatsForDirectionRight(x, y));
 				score += getScoreForPreyState(preyStates, 1);
-				score += getScoreForPreyState(preyStates, 4);
-				score += getScoreForPreyState(preyStates, 6);
+				// score += getScoreForPreyState(preyStates, 4);
+				// score += getScoreForPreyState(preyStates, 6);
 				score += isAtGoal(direction.px(x), direction.py(y)) ? 1 : 0;
+				score += canMove(direction.px(x), direction.py(y)) ? 0 : -1;
 				break;
 
 			default:
@@ -364,15 +384,18 @@ final class Hunter extends RobotRunner {
 		// System.out.println(Arrays.toString(states));
 		// return -1;
 
-		if (states[0] && states[1]) {
-			return 1;
-		}
+		// if (states[0] && states[1]) {
+		// return 1;
+		// }
 
 		return -1;
 	}
 
-	private static double getScoreForPreyState(final Boolean[] foodState, final int index) {
-		return foodState[index] ? 0 : -.5;
+	private static double getScoreForPreyState(final Boolean[] preyState, final int index) {
+		// if (index <= 3) {
+		// return preyState[index] ? 0.5 : 0;
+		// }
+		return preyState[index] ? 1 : 0;
 	}
 
 	@Override
@@ -383,10 +406,10 @@ final class Hunter extends RobotRunner {
 		}
 	}
 
-	// private static int getManhattenDistance(final int x1, final int y1, final int x2,
-	// final int y2) {
-	// return Math.abs(x2 - x1) + Math.abs(y2 - y1);
-	// }
+	private static int getManhattenDistance(final int x1, final int y1, final int x2,
+			final int y2) {
+		return Math.abs(x2 - x1) + Math.abs(y2 - y1);
+	}
 
 	// private static float getNormalisedManhattenDistance(final int x1, final int y1, final int x2,
 	// final int y2) {
@@ -515,17 +538,18 @@ final class Hunter extends RobotRunner {
 		final Boolean[] cantSeeStates = getNegativeStates();
 
 		final Boolean[] states = mergeStates(
-				currentDirection == Direction.DOWN ? cantSeeStates : getStatsForDirectionUp(x, y),
-				currentDirection == Direction.LEFT ? cantSeeStates
-						: getStatsForDirectionRight(x, y),
-				currentDirection == Direction.UP ? cantSeeStates : getStatsForDirectionDown(x, y),
-				currentDirection == Direction.RIGHT ? cantSeeStates
-						: getStatsForDirectionLeft(x, y),
-				getPreyStates(x, y, px, py)
-		// getPreyStates(x, y, otherHunters[0].getGridPosX(), otherHunters[0].getGridPosX()),
-		// getPreyStates(x, y, otherHunters[1].getGridPosX(), otherHunters[1].getGridPosX()),
-		// getPreyStates(x, y, otherHunters[2].getGridPosX(), otherHunters[2].getGridPosX())
-		);
+				// currentDirection == Direction.DOWN ? cantSeeStates : getStatsForDirectionUp(x,
+				// y),
+				// currentDirection == Direction.LEFT ? cantSeeStates
+				// : getStatsForDirectionRight(x, y),
+				// currentDirection == Direction.UP ? cantSeeStates : getStatsForDirectionDown(x,
+				// y),
+				// currentDirection == Direction.RIGHT ? cantSeeStates
+				// : getStatsForDirectionLeft(x, y),
+				getPreyStates(x, y, px, py),
+				getPreyStates(x, y, otherHunters[0].getX(), otherHunters[0].getY()),
+				getPreyStates(x, y, otherHunters[1].getX(), otherHunters[1].getY()),
+				getPreyStates(x, y, otherHunters[2].getX(), otherHunters[2].getY()));
 
 		shuffle(states);
 
@@ -593,10 +617,10 @@ final class Hunter extends RobotRunner {
 	}
 
 	private Boolean isPositionPositive(final int tx, final int ty) {
-		return (tx == prey.getX() && ty == prey.getY())
-				|| (tx == otherHunters[0].getX() && ty == otherHunters[0].getY())
-				|| (tx == otherHunters[1].getX() && ty == otherHunters[1].getY())
-				|| (tx == otherHunters[2].getX() && ty == otherHunters[2].getY());
+		return (tx == prey.getX() && ty == prey.getY());
+		// || (tx == otherHunters[0].getX() && ty == otherHunters[0].getY())
+		// || (tx == otherHunters[1].getX() && ty == otherHunters[1].getY())
+		// || (tx == otherHunters[2].getX() && ty == otherHunters[2].getY());
 
 		// return ((tx > 0 && tx < Env.GRID_SIZE) && (ty > 0 && ty < Env.GRID_SIZE));
 	}

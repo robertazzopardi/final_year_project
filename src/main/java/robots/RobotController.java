@@ -13,7 +13,8 @@ public class RobotController {
 	public static final int STEP_COUNT = 5000;
 
 	// public static final int STATE_COUNT = 20;
-	public static final int STATE_COUNT = 28;
+	// public static final int STATE_COUNT = 28;
+	public static final int STATE_COUNT = 32;
 
 	// public static final int STATE_COUNT = 14;
 

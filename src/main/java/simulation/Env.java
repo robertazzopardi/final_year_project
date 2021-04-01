@@ -11,12 +11,12 @@ import robots.RobotController;
 public class Env extends EnvController {
     // public static final String CONFIG_FILE = "resources/defaultConfig.txt";
 
-    public static final int TOTAL_EPISODES = 50;
+    public static final int TOTAL_EPISODES = 100;
     private int episode = 1;
 
     public static final int CELL_WIDTH = 350;
     public static final int CELL_RADIUS = CELL_WIDTH / 2;
-    public static final int GRID_SIZE = 7;
+    public static final int GRID_SIZE = 6;
     public static final int ENV_SIZE = Env.GRID_SIZE * Env.CELL_WIDTH;
     public static final String OUTPUT_FOLDER = "src/main/resources/";
 
