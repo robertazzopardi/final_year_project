@@ -5,7 +5,7 @@ import java.util.Random;
 
 import comp329robosim.MyGridCell;
 import comp329robosim.OccupancyType;
-import simulation.SimulationEnv;
+import simulation.Env;
 
 /**
  * @author rob
@@ -23,7 +23,7 @@ final class QLearning {
 	private static final Random rand = new Random();
 
 	private static final int REWARD = 100;
-	private static final int STATESCOUNT = SimulationEnv.GRID_SIZE * SimulationEnv.GRID_SIZE;
+	private static final int STATESCOUNT = Env.GRID_SIZE * Env.GRID_SIZE;
 
 	private final MyGridCell[][] maze;
 
@@ -109,8 +109,8 @@ final class QLearning {
 		for (int k = 0; k < STATESCOUNT; k++) {
 			// We will navigate with i and j through the maze, so we need
 			// to translate k into i and j
-			i = k / SimulationEnv.GRID_SIZE;
-			j = k - i * SimulationEnv.GRID_SIZE;
+			i = k / Env.GRID_SIZE;
+			j = k - i * Env.GRID_SIZE;
 
 			// Fill in the reward matrix with -1
 			for (int s = 0; s < STATESCOUNT; s++) {
@@ -150,8 +150,8 @@ final class QLearning {
 	}
 
 	private boolean isFinalState(final int state) {
-		final int i = state / SimulationEnv.GRID_SIZE;
-		final int j = state - i * SimulationEnv.GRID_SIZE;
+		final int i = state / Env.GRID_SIZE;
+		final int j = state - i * Env.GRID_SIZE;
 
 		return maze[i][j].getCellType() == OccupancyType.GOAL;
 	}
@@ -187,8 +187,8 @@ final class QLearning {
 	 */
 	private void tryMoveDown(final int i, final int j, final int k) {
 		final int goDown = i + 1;
-		if (goDown < SimulationEnv.GRID_SIZE) {
-			final int target = goDown * SimulationEnv.GRID_SIZE + j;
+		if (goDown < Env.GRID_SIZE) {
+			final int target = goDown * Env.GRID_SIZE + j;
 
 			switch (maze[goDown][j].getCellType()) {
 				case EMPTY:
@@ -212,7 +212,7 @@ final class QLearning {
 	private void tryMoveLeft(final int i, final int j, final int k) {
 		final int goLeft = j - 1;
 		if (goLeft >= 0) {
-			final int target = i * SimulationEnv.GRID_SIZE + goLeft;
+			final int target = i * Env.GRID_SIZE + goLeft;
 
 			switch (maze[i][goLeft].getCellType()) {
 				case EMPTY:
@@ -235,8 +235,8 @@ final class QLearning {
 	 */
 	private void tryMoveRight(final int i, final int j, final int k) {
 		final int goRight = j + 1;
-		if (goRight < SimulationEnv.GRID_SIZE) {
-			final int target = i * SimulationEnv.GRID_SIZE + goRight;
+		if (goRight < Env.GRID_SIZE) {
+			final int target = i * Env.GRID_SIZE + goRight;
 
 			switch (maze[i][goRight].getCellType()) {
 				case EMPTY:
@@ -295,7 +295,7 @@ final class QLearning {
 	private void tryMoveUp(final int i, final int j, final int k) {
 		final int goUp = i - 1;
 		if (goUp >= 0) {
-			final int target = goUp * SimulationEnv.GRID_SIZE + j;
+			final int target = goUp * Env.GRID_SIZE + j;
 
 			switch (maze[goUp][j].getCellType()) {
 				case EMPTY:

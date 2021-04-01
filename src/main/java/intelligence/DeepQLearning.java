@@ -30,12 +30,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import robots.Action;
 import robots.RobotController;
-import simulation.SimulationEnv;
+import simulation.Env;
 
 public class DeepQLearning {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(DeepQLearning.class);
-	private static final String FILE_NAME_PREFIX = SimulationEnv.OUTPUT_FOLDER + "network_";
+	private static final String FILE_NAME_PREFIX = Env.OUTPUT_FOLDER + "network_";
 
 	private static final int HIDDEN_NEURONS = 150;
 
@@ -201,11 +201,14 @@ public class DeepQLearning {
 		final String FORWARD = makeKey(gameStateString, Action.FORWARD);
 		final String LEFT = makeKey(gameStateString, Action.LEFT);
 		final String RIGHT = makeKey(gameStateString, Action.RIGHT);
+		// final String DOWN = makeKey(gameStateString, Action.DOWN);
 		final String NOTHING = makeKey(gameStateString, Action.NOTHING);
+
 
 		qTable.putIfAbsent(FORWARD, 0.0);
 		qTable.putIfAbsent(LEFT, 0.0);
 		qTable.putIfAbsent(RIGHT, 0.0);
+		// qTable.putIfAbsent(DOWN, 0.0);
 		qTable.putIfAbsent(NOTHING, 0.0);
 
 		double score = qTable.getOrDefault(NOTHING, 0.0);
@@ -220,10 +223,15 @@ public class DeepQLearning {
 			score = scoreLeft;
 		}
 
-		final Double scoreForward = qTable.getOrDefault(FORWARD, 0.0);
-		if (scoreForward > score) {
-			score = scoreForward;
+		final Double scoreFORWARD = qTable.getOrDefault(FORWARD, 0.0);
+		if (scoreFORWARD > score) {
+			score = scoreFORWARD;
 		}
+
+		// final Double scoreNOTHING = qTable.getOrDefault(NOTHING, 0.0);
+		// if (scoreNOTHING > score) {
+		// 	score = scoreNOTHING;
+		// }
 
 		return score;
 	}

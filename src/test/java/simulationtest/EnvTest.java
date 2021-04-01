@@ -6,12 +6,11 @@ import org.junit.jupiter.api.Test;
 import comp329robosim.MyGridCell;
 import comp329robosim.OccupancyType;
 import simulation.Mode;
-import simulation.SimulationEnv;
+import simulation.Env;
 
-class SimulationEnvTest {
+class EnvTest {
 
-    private final SimulationEnv simulationEnv =
-            new SimulationEnv("", SimulationEnv.GRID_SIZE, SimulationEnv.GRID_SIZE, Mode.EVAL);
+    private final Env simulationEnv = new Env("", Env.GRID_SIZE, Env.GRID_SIZE, Mode.EVAL);
 
     @Test
     void checkModeTest() {
@@ -39,7 +38,7 @@ class SimulationEnvTest {
 
         assertEquals(OccupancyType.UNKNOWN, grid[1][1].getCellType());
 
-        simulationEnv.updateGridEmpty(1, 1);
+        // simulationEnv.updateGridEmpty(1, 1);
 
         assertTrue(grid[1][1].isEmpty());
     }
@@ -53,19 +52,19 @@ class SimulationEnvTest {
         assertEquals(OccupancyType.UNKNOWN, grid[1][1].getCellType());
 
         // test goal position
-        simulationEnv.updateGrid(1, 1, OccupancyType.GOAL);
+        // simulationEnv.updateGrid(1, 1, OccupancyType.GOAL);
 
         assertEquals(OccupancyType.GOAL, grid[1][1].getCellType(),
                 "Cell is:" + grid[1][1].getCellType());
 
         // test hunter position
-        simulationEnv.updateGrid(1, 1, OccupancyType.HUNTER);
+        // simulationEnv.updateGrid(1, 1, OccupancyType.HUNTER);
 
         assertEquals(OccupancyType.HUNTER, grid[1][1].getCellType(),
                 "Cell is:" + grid[1][1].getCellType());
 
         // test prey Position
-        simulationEnv.updateGrid(1, 1, OccupancyType.PREY);
+        // simulationEnv.updateGrid(1, 1, OccupancyType.PREY);
 
         assertEquals(OccupancyType.PREY, grid[1][1].getCellType(),
                 "Cell is:" + grid[1][1].getCellType());

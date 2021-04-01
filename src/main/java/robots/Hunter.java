@@ -4,16 +4,16 @@ import java.util.Arrays;
 import java.util.Random;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
-import comp329robosim.OccupancyType;
 import comp329robosim.SimulatedRobot;
 import intelligence.DeepQLearning;
+import simulation.Env;
 import simulation.Mode;
-import simulation.SimulationEnv;
 
 /**
  *
  */
 final class Hunter extends RobotRunner {
+
 
 	private static final double REWARD = 1;
 
@@ -38,10 +38,11 @@ final class Hunter extends RobotRunner {
 	private final Hunter[] otherHunters = new Hunter[3];
 
 	private static Prey prey;
+	private final Direction goalDirection;
 
 	// Grid min max
 	private static final int MIN_GRID = 1;
-	private static final int MAX_GRID = SimulationEnv.GRID_SIZE;
+	private static final int MAX_GRID = Env.GRID_SIZE;
 
 	// Range scanners
 	// private static final int SENSOR_SCAN_MIN = 0;
@@ -57,16 +58,17 @@ final class Hunter extends RobotRunner {
 		}
 	}
 
-	public Hunter(final SimulatedRobot r, final int d, final SimulationEnv env,
-			final DeepQLearning learning, final RobotController controller, final Prey prey) {
+	public Hunter(final SimulatedRobot r, final int d, final Env env, final DeepQLearning learning,
+			final RobotController controller, final Prey prey, final int num) {
 		super(r, d, env, controller);
+
+		this.goalDirection = Direction.values()[num];
 
 		this.number = hunterCount++;
 
 		this.logger = Logger.getLogger("Hunter " + number);
 
-		// env.updateGridHunter(getGridPosX(), getGridPosY());
-		env.updateGrid(getGridPosX(), getGridPosY(), OccupancyType.HUNTER);
+		// env.updateGrid(getGridPosX(), getGridPosY(), OccupancyType.HUNTER);
 
 		this.learning = learning;
 
@@ -75,42 +77,80 @@ final class Hunter extends RobotRunner {
 
 	@Override
 	boolean canMove(final int x, final int y) {
-		return grid[y][x].getCellType() != OccupancyType.OBSTACLE
-				&& grid[y][x].getCellType() != OccupancyType.HUNTER
-				&& grid[y][x].getCellType() != OccupancyType.PREY;
+		// return grid[y][x].getCellType() != OccupancyType.OBSTACLE
+		// && grid[y][x].getCellType() != OccupancyType.HUNTER
+		// && grid[y][x].getCellType() != OccupancyType.PREY;
+
+		// System.out
+		// .println(getX() + " " + getY() + " " + ENV_SIZE / getX() + " " + ENV_SIZE / getY());
+
+		// if (x == prey.getX() && y == prey.getY()) {
+		// System.out.println("true");
+		// }
+
+
+		return (x < Env.ENV_SIZE - Env.CELL_WIDTH && x > Env.CELL_WIDTH)
+				&& (y < Env.ENV_SIZE - Env.CELL_WIDTH && y > Env.CELL_WIDTH)
+				&& Arrays.stream(otherHunters).anyMatch(i -> i.getX() != x && i.getY() != y)
+				&& (x != prey.getX() || y != prey.getY());
 	}
 
 	public DeepQLearning getLearning() {
 		return learning;
 	}
 
-	public boolean isAdjacentToPrey() {
-		final int x = getGridPosX();
-		final int y = getGridPosY();
-		return grid[y][x - 1].getCellType() == OccupancyType.PREY
-				|| grid[y][x + 1].getCellType() == OccupancyType.PREY
-				|| grid[y - 1][x].getCellType() == OccupancyType.PREY
-				|| grid[y + 1][x].getCellType() == OccupancyType.PREY;
+	// private boolean isAdjacentToPrey() {
+	// final int x = getGridPosX();
+	// final int y = getGridPosY();
+	// return grid[y][x - 1].getCellType() == OccupancyType.PREY
+	// || grid[y][x + 1].getCellType() == OccupancyType.PREY
+	// || grid[y - 1][x].getCellType() == OccupancyType.PREY
+	// || grid[y + 1][x].getCellType() == OccupancyType.PREY;
+	// }
+
+	// private boolean isAdjacentToHunter() {
+	// final int x = getGridPosX();
+	// final int y = getGridPosY();
+	// return grid[y][x - 1].getCellType() == OccupancyType.HUNTER
+	// || grid[y][x + 1].getCellType() == OccupancyType.HUNTER
+	// || grid[y - 1][x].getCellType() == OccupancyType.HUNTER
+	// || grid[y + 1][x].getCellType() == OccupancyType.HUNTER;
+	// }
+
+	// private boolean isAdjacentToPrey(final int x, final int y) {
+	// try {
+	// return grid[y][x - 1].getCellType() == OccupancyType.PREY
+	// || grid[y][x + 1].getCellType() == OccupancyType.PREY
+	// || grid[y - 1][x].getCellType() == OccupancyType.PREY
+	// || grid[y + 1][x].getCellType() == OccupancyType.PREY;
+	// } catch (final ArrayIndexOutOfBoundsException ignored) {
+	// return false;
+	// }
+	// }
+
+	// private boolean inGoalState(final int x, final int y) {
+	// return x == goalDirection.px(prey.getX()) && y == goalDirection.py(prey.getY());
+	// }
+
+	// public boolean inGoalState() {
+	// return getX() == goalDirection.px(prey.getX()) && getY() == goalDirection.py(prey.getY());
+	// }
+
+	public boolean isAtGoal(final int x, final int y) {
+		final int px = prey.getX();
+		final int py = prey.getY();
+		return (x == UP.px(px) && y == UP.py(py)) || (x == DOWN.px(px) && y == DOWN.py(py))
+				|| (x == LEFT.px(px) && y == LEFT.py(py))
+				|| (x == RIGHT.px(px) && y == RIGHT.py(py));
 	}
 
-	public boolean isAdjacentToHunter() {
-		final int x = getGridPosX();
-		final int y = getGridPosY();
-		return grid[y][x - 1].getCellType() == OccupancyType.HUNTER
-				|| grid[y][x + 1].getCellType() == OccupancyType.HUNTER
-				|| grid[y - 1][x].getCellType() == OccupancyType.HUNTER
-				|| grid[y + 1][x].getCellType() == OccupancyType.HUNTER;
-	}
-
-	public boolean isAdjacentToPrey(final int x, final int y) {
-		try {
-			return grid[y][x - 1].getCellType() == OccupancyType.PREY
-					|| grid[y][x + 1].getCellType() == OccupancyType.PREY
-					|| grid[y - 1][x].getCellType() == OccupancyType.PREY
-					|| grid[y + 1][x].getCellType() == OccupancyType.PREY;
-		} catch (final ArrayIndexOutOfBoundsException ignored) {
-			return false;
-		}
+	public boolean isAtGoal() {
+		final int px = prey.getX();
+		final int py = prey.getY();
+		return (getX() == UP.px(px) && getY() == UP.py(py))
+				|| (getX() == DOWN.px(px) && getY() == DOWN.py(py))
+				|| (getX() == LEFT.px(px) && getY() == LEFT.py(py))
+				|| (getX() == RIGHT.px(px) && getY() == RIGHT.py(py));
 	}
 
 	public boolean isPaused() {
@@ -155,6 +195,8 @@ final class Hunter extends RobotRunner {
 			// System.out.println(Arrays.toString(createGameState(getGridPosX(), getGridPosY(),
 			// Direction.fromDegree(getHeading()), prey.getGridPosX(), prey.getGridPosY())));
 
+			// System.out.println(getX() + " " + getY());
+
 			if (gameMode) {
 				learning.updateEpsilon();
 
@@ -173,59 +215,102 @@ final class Hunter extends RobotRunner {
 			currState = newState;
 		}
 
-		if (prey.isCaptured()) {
-			score = Arrays.stream(hunters).filter(Hunter::isAdjacentToPrey).count();
+		// if (prey.isCaptured()) {
+		if (moveCount > 0) {
+			score = Arrays.stream(hunters).filter(Hunter::isAtGoal).count();
+			// score = 100;
 			learning.update(currState, action, score, newState);
 		}
 	}
 
 	private Boolean[] getPreyStates(final int x, final int y, final int px, final int py) {
-		final boolean isFoodUp = py < y;
-		final boolean isFoodRight = px > x;
-		final boolean isFoodDown = py > y;
-		final boolean isFoodLeft = px < x;
+		final boolean isPreyUp = py < y;
+		final boolean isPreyRight = px > x;
+		final boolean isPreyDown = py > y;
+		final boolean isPreyLeft = px < x;
 
-		return new Boolean[] {isFoodUp, isFoodRight, isFoodDown, isFoodLeft,
-				isFoodUp && isFoodRight, isFoodUp && isFoodLeft, isFoodDown && isFoodRight,
-				isFoodDown && isFoodLeft};
+		return new Boolean[] {isPreyUp, isPreyRight, isPreyDown, isPreyLeft,
+				isPreyUp && isPreyRight, isPreyUp && isPreyLeft, isPreyDown && isPreyRight,
+				isPreyDown && isPreyLeft};
 	}
 
 	public double getScoreForAction(final Action action) {
 		double score = 0;
 
-		final int x = getGridPosX();
-		final int y = getGridPosY();
-		final int px = prey.getGridPosX();
-		final int py = prey.getGridPosY();
+		final int x = getX();
+		final int y = getY();
+		final int px = prey.getX();
+		final int py = prey.getY();
 
 		final Boolean[] preyStates = getPreyStates(x, y, px, py);
 
 		Direction direction;
 
+		// switch (action) {
+		// case UP:
+		// score += getScoreForStates(getStatsForDirectionUp(x, y));
+		// score += getScoreForPreyState(preyStates, 0);
+		// score += getScoreForPreyState(preyStates, 4);
+		// score += getScoreForPreyState(preyStates, 5);
+		// score += isAtGoal(UP.px(x), UP.py(y)) ? 1 : 0;
+		// break;
+		// case DOWN:
+		// score += getScoreForStates(getStatsForDirectionDown(x, y));
+		// score += getScoreForPreyState(preyStates, 2);
+		// score += getScoreForPreyState(preyStates, 6);
+		// score += getScoreForPreyState(preyStates, 7);
+		// score += isAtGoal(DOWN.px(x), DOWN.py(y)) ? 1 : 0;
+		// break;
+		// case LEFT:
+		// score += getScoreForStates(getStatsForDirectionLeft(x, y));
+		// score += getScoreForPreyState(preyStates, 3);
+		// score += getScoreForPreyState(preyStates, 5);
+		// score += getScoreForPreyState(preyStates, 7);
+		// score += isAtGoal(LEFT.px(x), LEFT.py(y)) ? 1 : 0;
+		// break;
+		// case RIGHT:
+		// score += getScoreForStates(getStatsForDirectionRight(x, y));
+		// score += getScoreForPreyState(preyStates, 1);
+		// score += getScoreForPreyState(preyStates, 4);
+		// score += getScoreForPreyState(preyStates, 6);
+		// score += isAtGoal(RIGHT.px(x), RIGHT.py(y)) ? 1 : 0;
+		// break;
+		// case NOTHING:
+		// if (isAtGoal()) {
+		// score = 1;
+		// } else {
+		// score = -1;
+		// }
+		// break;
+
+		// default:
+		// break;
+		// }
+
 		switch (action) {
 			case FORWARD:
 				direction = Direction.fromDegree(getHeading());
 
-				score = getScoreForAction(score, preyStates, direction);
+				score = getScoreForAction(score, preyStates, direction, x, y);
 
 				break;
 
 			case LEFT:
 				direction = Direction.fromDegree(getHeading() - 90);
 
-				score = getScoreForAction(score, preyStates, direction);
+				score = getScoreForAction(score, preyStates, direction, x, y);
 				break;
 
 			case RIGHT:
 				direction = Direction.fromDegree(getHeading() + 90);
 
-				score = getScoreForAction(score, preyStates, direction);
+				score = getScoreForAction(score, preyStates, direction, x, y);
 				break;
 
 			case NOTHING:
-				if (isAdjacentToPrey()) {
+				if (isAtGoal()) {
 					score = 0.1;
-				} else if (!isAdjacentToPrey()) {
+				} else if (!isAtGoal()) {
 					score = -REWARD;
 				}
 				break;
@@ -237,66 +322,57 @@ final class Hunter extends RobotRunner {
 		return score;
 	}
 
-	private static double getScoreForStates(final Boolean[] states) {
-		// if (Arrays.stream(states).allMatch(x -> false)) {
-		// return -100; // Will die
-		// }
-
-		return -1;
-	}
-
-	private static double getScoreForFoodState(final Boolean[] foodState, final int index) {
-		return foodState[index] ? 0 : -.5;
-	}
-
 	private double getScoreForAction(double score, final Boolean[] preyStates,
-			final Direction direction) {
-
+			final Direction direction, final int x, final int y) {
 		switch (direction) {
 			case UP:
-				score += getScoreForStates(getStatsForDirectionUp(getGridPosX(), getGridPosY()));
-				score += getScoreForFoodState(preyStates, 0);
-				score += getScoreForFoodState(preyStates, 4);
-				score += getScoreForFoodState(preyStates, 5);
-				score += isAdjacentToPrey(direction.x(getGridPosX()), direction.y(getGridPosY()))
-						? 1
-						: 0;
+				score += getScoreForStates(getStatsForDirectionUp(x, y));
+				score += getScoreForPreyState(preyStates, 0);
+				score += getScoreForPreyState(preyStates, 4);
+				score += getScoreForPreyState(preyStates, 5);
+				score += isAtGoal(direction.px(x), direction.py(y)) ? 1 : 0;
 				break;
-
 			case DOWN:
-				score += getScoreForStates(getStatsForDirectionDown(getGridPosX(), getGridPosY()));
-				score += getScoreForFoodState(preyStates, 2);
-				score += getScoreForFoodState(preyStates, 6);
-				score += getScoreForFoodState(preyStates, 7);
-				score += isAdjacentToPrey(direction.x(getGridPosX()), direction.y(getGridPosY()))
-						? 1
-						: 0;
+				score += getScoreForStates(getStatsForDirectionDown(x, y));
+				score += getScoreForPreyState(preyStates, 2);
+				score += getScoreForPreyState(preyStates, 6);
+				score += getScoreForPreyState(preyStates, 7);
+				score += isAtGoal(direction.px(x), direction.py(y)) ? 1 : 0;
 				break;
-
 			case LEFT:
-				score += getScoreForStates(getStatsForDirectionLeft(getGridPosX(), getGridPosY()));
-				score += getScoreForFoodState(preyStates, 3);
-				score += getScoreForFoodState(preyStates, 5);
-				score += getScoreForFoodState(preyStates, 7);
-				score += isAdjacentToPrey(direction.x(getGridPosX()), direction.y(getGridPosY()))
-						? 1
-						: 0;
+				score += getScoreForStates(getStatsForDirectionLeft(x, y));
+				score += getScoreForPreyState(preyStates, 3);
+				score += getScoreForPreyState(preyStates, 5);
+				score += getScoreForPreyState(preyStates, 7);
+				score += isAtGoal(direction.px(x), direction.py(y)) ? 1 : 0;
 				break;
-
 			case RIGHT:
-				score += getScoreForStates(getStatsForDirectionRight(getGridPosX(), getGridPosY()));
-				score += getScoreForFoodState(preyStates, 1);
-				score += getScoreForFoodState(preyStates, 4);
-				score += getScoreForFoodState(preyStates, 6);
-				score += isAdjacentToPrey(direction.x(getGridPosX()), direction.y(getGridPosY()))
-						? 1
-						: 0;
+				score += getScoreForStates(getStatsForDirectionRight(x, y));
+				score += getScoreForPreyState(preyStates, 1);
+				score += getScoreForPreyState(preyStates, 4);
+				score += getScoreForPreyState(preyStates, 6);
+				score += isAtGoal(direction.px(x), direction.py(y)) ? 1 : 0;
 				break;
 
 			default:
 				break;
 		}
 		return score;
+	}
+
+	private static double getScoreForStates(final Boolean[] states) {
+		// System.out.println(Arrays.toString(states));
+		// return -1;
+
+		if (states[0] && states[1]) {
+			return 1;
+		}
+
+		return -1;
+	}
+
+	private static double getScoreForPreyState(final Boolean[] foodState, final int index) {
+		return foodState[index] ? 0 : -.5;
 	}
 
 	@Override
@@ -314,7 +390,7 @@ final class Hunter extends RobotRunner {
 
 	// private static float getNormalisedManhattenDistance(final int x1, final int y1, final int x2,
 	// final int y2) {
-	// return normalise(getManhattenDistance(x1, y1, x2, y2), 1, SimulationEnv.GRID_SIZE);
+	// return normalise(getManhattenDistance(x1, y1, x2, y2), 1, Env.GRID_SIZE);
 	// }
 
 	// public float[] getStates() {
@@ -420,39 +496,39 @@ final class Hunter extends RobotRunner {
 		resetHunterCount();
 	}
 
-	@Override
-	final void updateGrid(final int x, final int y) {
-		// env.updateGridHunter(x, y);
-		env.updateGrid(x, y, OccupancyType.HUNTER);
-	}
+	// @Override
+	// final void updateGrid(final int x, final int y) {
+	// env.updateGrid(x, y, OccupancyType.HUNTER);
+	// }
 
-	private static Boolean[] mergeStates(Boolean[]... stateArrays) {
+	private static Boolean[] mergeStates(final Boolean[]... stateArrays) {
 		return Stream.of(stateArrays).flatMap(Stream::of).toArray(Boolean[]::new);
 	}
 
 	public Boolean[] createGameState(final Direction currentDirection) {
-		// final Position[] snakeBodyPosition =
-		// Arrays.copyOfRange(snakePosition, 1, snakePosition.length);
+		final int x = getX();
+		final int y = getY();
 
-		final int x = getGridPosX();
-		final int y = getGridPosY();
+		final int px = prey.getX();
+		final int py = prey.getY();
 
-		final int px = prey.getGridPosX();
-		final int py = prey.getGridPosY();
-
+		final Boolean[] cantSeeStates = getNegativeStates();
 
 		final Boolean[] states = mergeStates(
-				currentDirection == Direction.DOWN ? getNegativeStates()
-						: getStatsForDirectionUp(x, y),
-				currentDirection == Direction.LEFT ? getNegativeStates()
+				currentDirection == Direction.DOWN ? cantSeeStates : getStatsForDirectionUp(x, y),
+				currentDirection == Direction.LEFT ? cantSeeStates
 						: getStatsForDirectionRight(x, y),
-				currentDirection == Direction.UP ? getNegativeStates()
-						: getStatsForDirectionDown(x, y),
-				currentDirection == Direction.RIGHT ? getNegativeStates()
+				currentDirection == Direction.UP ? cantSeeStates : getStatsForDirectionDown(x, y),
+				currentDirection == Direction.RIGHT ? cantSeeStates
 						: getStatsForDirectionLeft(x, y),
-				getPreyStates(x, y, px, py));
+				getPreyStates(x, y, px, py)
+		// getPreyStates(x, y, otherHunters[0].getGridPosX(), otherHunters[0].getGridPosX()),
+		// getPreyStates(x, y, otherHunters[1].getGridPosX(), otherHunters[1].getGridPosX()),
+		// getPreyStates(x, y, otherHunters[2].getGridPosX(), otherHunters[2].getGridPosX())
+		);
 
 		shuffle(states);
+
 		return states;
 	}
 
@@ -460,13 +536,13 @@ final class Hunter extends RobotRunner {
 		final Boolean[] states = new Boolean[VIEW_DISTANCE];
 
 		for (int i = 1; i <= VIEW_DISTANCE; i++) {
-			// final Position tmpPosition = new Position(headPosition.getX(),
-			// headPosition.getY() - (GameUtils.PLAYER_SIZE * i));
 			final int tx = x;
-			final int ty = y - i;
+			final int ty = y - (i * Env.CELL_WIDTH);
 
-			states[i - 1] = isPositionPositive(tx, ty, x, y);
+			states[i - 1] = isPositionPositive(tx, ty);
 		}
+
+		// System.out.println(Arrays.toString(states));
 
 		return states;
 	}
@@ -475,13 +551,13 @@ final class Hunter extends RobotRunner {
 		final Boolean[] states = new Boolean[VIEW_DISTANCE];
 
 		for (int i = 1; i <= VIEW_DISTANCE; i++) {
-			// final Position tmpPosition = new Position(
-			// headPosition.getX() + (GameUtils.PLAYER_SIZE * i), headPosition.getY());
-			final int tx = x + i;
+			final int tx = x + (i * Env.CELL_WIDTH);
 			final int ty = y;
 
-			states[i - 1] = isPositionPositive(tx, ty, x, y);
+			states[i - 1] = isPositionPositive(tx, ty);
 		}
+
+		// System.out.println(Arrays.toString(states));
 
 		return states;
 	}
@@ -490,13 +566,13 @@ final class Hunter extends RobotRunner {
 		final Boolean[] states = new Boolean[VIEW_DISTANCE];
 
 		for (int i = 1; i <= VIEW_DISTANCE; i++) {
-			// final Position tmpPosition = new Position(headPosition.getX(),
-			// headPosition.getY() + (GameUtils.PLAYER_SIZE * i));
 			final int tx = x;
-			final int ty = y + i;
+			final int ty = y + (i * Env.CELL_WIDTH);
 
-			states[i - 1] = isPositionPositive(tx, ty, x, y);
+			states[i - 1] = isPositionPositive(tx, ty);
 		}
+
+		// System.out.println(Arrays.toString(states));
 
 		return states;
 	}
@@ -505,20 +581,24 @@ final class Hunter extends RobotRunner {
 		final Boolean[] states = new Boolean[VIEW_DISTANCE];
 
 		for (int i = 1; i <= VIEW_DISTANCE; i++) {
-			// final Position tmpPosition = new Position(
-			// headPosition.getX() - (GameUtils.PLAYER_SIZE * i), headPosition.getY());
-			final int tx = x - i;
+			final int tx = x - (i * Env.CELL_WIDTH);
 			final int ty = y;
 
-			states[i - 1] = isPositionPositive(tx, ty, x, y);
+			states[i - 1] = isPositionPositive(tx, ty);
 		}
+
+		// System.out.println(Arrays.toString(states));
 
 		return states;
 	}
 
-	private Boolean isPositionPositive(final int tx, final int ty, final int x, final int y) {
-		return ((tx > 0 && tx < SimulationEnv.GRID_SIZE)
-				&& (ty > 0 && ty < SimulationEnv.GRID_SIZE));
+	private Boolean isPositionPositive(final int tx, final int ty) {
+		return (tx == prey.getX() && ty == prey.getY())
+				|| (tx == otherHunters[0].getX() && ty == otherHunters[0].getY())
+				|| (tx == otherHunters[1].getX() && ty == otherHunters[1].getY())
+				|| (tx == otherHunters[2].getX() && ty == otherHunters[2].getY());
+
+		// return ((tx > 0 && tx < Env.GRID_SIZE) && (ty > 0 && ty < Env.GRID_SIZE));
 	}
 
 	private Boolean[] getNegativeStates() {

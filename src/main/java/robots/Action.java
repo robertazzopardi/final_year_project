@@ -8,6 +8,7 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 public enum Action {
     LEFT, RIGHT, FORWARD, NOTHING;
+    // UP, DOWN, LEFT, RIGHT, NOTHING;
 
     private static final Action[] ACTIONS = values();
 

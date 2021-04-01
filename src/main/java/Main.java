@@ -1,11 +1,10 @@
 import simulation.Mode;
-import simulation.SimulationEnv;
+import simulation.Env;
 
 public class Main {
 
     public static void main(final String[] args) {
-        final SimulationEnv env =
-                new SimulationEnv("", SimulationEnv.GRID_SIZE, SimulationEnv.GRID_SIZE, Mode.TRAIN);
+        final Env env = new Env("", Env.GRID_SIZE, Env.GRID_SIZE, Mode.EVAL);
 
         env.startController();
 

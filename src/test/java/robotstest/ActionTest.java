@@ -8,27 +8,32 @@ import java.util.Arrays;
 import java.util.List;
 import robots.Action;
 
-class SimulationEnvTest {
-
-    Action left = Action.LEFT;
-    Action right = Action.RIGHT;
-    Action forward = Action.FORWARD;
-    Action nothing = Action.NOTHING;
+class EnvTest {
 
     @Test
     void checkActionAtIndex() {
-        assertEquals(left, Action.getActionByIndex(0));
-        assertEquals(right, Action.getActionByIndex(1));
-        assertEquals(forward, Action.getActionByIndex(2));
-        assertEquals(nothing, Action.getActionByIndex(3));
+        // assertEquals(left, Action.getActionByIndex(0));
+        // assertEquals(right, Action.getActionByIndex(1));
+        // assertEquals(forward, Action.getActionByIndex(2));
+        // assertEquals(nothing, Action.getActionByIndex(3));
+
+        int i = 0;
+        for (Action action : Action.values()) {
+            assertEquals(action, Action.getActionByIndex(i++));
+        }
     }
 
     @Test
     void checkActionIsIndex() {
-        assertEquals(0, left.getActionIndex());
-        assertEquals(1, right.getActionIndex());
-        assertEquals(2, forward.getActionIndex());
-        assertEquals(3, nothing.getActionIndex());
+        // assertEquals(0, left.getActionIndex());
+        // assertEquals(1, right.getActionIndex());
+        // assertEquals(2, forward.getActionIndex());
+        // assertEquals(3, nothing.getActionIndex());
+
+        int i = 0;
+        for (Action action : Action.values()) {
+            assertEquals(i++, action.getActionIndex());
+        }
     }
 
     @Test
