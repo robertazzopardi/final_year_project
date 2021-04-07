@@ -1,17 +1,19 @@
-package intelligence;
+package intelligence.QLearning;
 
 import java.util.ArrayList;
 import java.util.Random;
-
+import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import comp329robosim.MyGridCell;
 import comp329robosim.OccupancyType;
+import intelligence.Inteligence;
+import robots.Action;
 import simulation.Env;
 
 /**
  * @author rob
  *
  */
-final class QLearning {
+final class QLearning implements Inteligence {
 	private static final double ALPHA = 0.1; // Learning rate
 	private static final int EPOCH = 1000;
 
@@ -38,64 +40,65 @@ final class QLearning {
 	private void calculateQ() {
 		for (int i = 0; i < EPOCH; i++) {
 			// Select random initial state
-			int crtState = rand.nextInt(STATESCOUNT);
+			int crtObservation = rand.nextInt(STATESCOUNT);
 
-			while (!isFinalState(crtState)) {
-				final int[] actionsFromCurrentState = possibleActionsFromState(crtState);
+			while (!isFinalObservation(crtObservation)) {
+				final int[] actionsFromCurrentObservation =
+						possibleActionsFromObservation(crtObservation);
 
-				if (actionsFromCurrentState.length == 0) {
+				if (actionsFromCurrentObservation.length == 0) {
 					return;
 				}
 
 				// Pick a random action from the ones possible
-				final int index = rand.nextInt(actionsFromCurrentState.length);
-				final int nextState = actionsFromCurrentState[index];
+				final int index = rand.nextInt(actionsFromCurrentObservation.length);
+				final int newObservations = actionsFromCurrentObservation[index];
 
 				// Q(state,action)= Q(state,action) + alpha * (R(state,action) + gamma *
 				// Max(next state, all actions) - Q(state,action))
-				final double q = qValues[crtState][nextState];
-				final double maxQ = maxQ(nextState);
-				final int r = rValues[crtState][nextState];
+				final double q = qValues[crtObservation][newObservations];
+				final double maxQ = maxQ(newObservations);
+				final int r = rValues[crtObservation][newObservations];
 				final double value = q + ALPHA * (r + GAMMA * maxQ - q);
 
-				qValues[crtState][nextState] = value;
-				crtState = nextState;
+				qValues[crtObservation][newObservations] = value;
+				crtObservation = newObservations;
 			}
 		}
 	}
 
-	// public int getPolicyFromState(final int state) {
-	// final int[] actionsFromState = possibleActionsFromState(state);
+	// public int getPolicyFromObservation(final int state) {
+	// final int[] actionsFromObservation = possibleActionsFromObservation(state);
 	// double maxValue = Double.MIN_VALUE;
-	// int policyGotoState = state;
+	// int policyGotoObservation = state;
 
 	// // Pick to move to the state that has the maximum Q value
-	// for (final int nextState : actionsFromState) {
-	// final double value = Q[state][nextState];
+	// for (final int newObservations : actionsFromObservation) {
+	// final double value = Q[state][newObservations];
 	// if (value > maxValue) {
 	// maxValue = value;
-	// policyGotoState = nextState;
+	// policyGotoObservation = newObservations;
 	// }
 	// }
-	// return policyGotoState;
+	// return policyGotoObservation;
 	// }
 
-	public int getActionFromState(final int state) {
+	public int getActionFromObservation(final int state) {
 		train();
 
-		final int[] actionsFromState = possibleActionsFromState(state);
+		final int[] actionsFromObservation = possibleActionsFromObservation(state);
 		double maxValue = Double.MIN_VALUE;
-		int policyGotoState = state;
+		int policyGotoObservation = state;
 
 		// Pick to move to the state that has the maximum Q value
-		for (final int nextState : actionsFromState) {
-			final double value = qValues[state][nextState];
+		for (final int newObservations : actionsFromObservation) {
+			final double value = qValues[state][newObservations];
 			if (value > maxValue) {
 				maxValue = value;
-				policyGotoState = nextState;
+				policyGotoObservation = newObservations;
 			}
 		}
-		return policyGotoState;
+		return policyGotoObservation;
 	}
 
 	private void init() {
@@ -149,19 +152,19 @@ final class QLearning {
 		}
 	}
 
-	private boolean isFinalState(final int state) {
+	private boolean isFinalObservation(final int state) {
 		final int i = state / Env.GRID_SIZE;
 		final int j = state - i * Env.GRID_SIZE;
 
 		return maze[i][j].getCellType() == OccupancyType.GOAL;
 	}
 
-	private double maxQ(final int nextState) {
-		final int[] actionsFromState = possibleActionsFromState(nextState);
+	private double maxQ(final int newObservations) {
+		final int[] actionsFromObservation = possibleActionsFromObservation(newObservations);
 		// the learning rate and eagerness will keep the W value above the lowest reward
 		double maxValue = -10;
-		for (final int nextAction : actionsFromState) {
-			final double value = qValues[nextState][nextAction];
+		for (final int nextAction : actionsFromObservation) {
+			final double value = qValues[newObservations][nextAction];
 			if (value > maxValue) {
 				maxValue = value;
 			}
@@ -169,7 +172,7 @@ final class QLearning {
 		return maxValue;
 	}
 
-	public int[] possibleActionsFromState(final int state) {
+	public int[] possibleActionsFromObservation(final int state) {
 		final ArrayList<Integer> result = new ArrayList<>();
 		for (int i = 0; i < STATESCOUNT; i++) {
 			if (rValues[state][i] != -1) {
@@ -256,7 +259,7 @@ final class QLearning {
 	// System.out.println("\nPrint policy");
 	// for (int i = 0; i < STATESCOUNT; i++) {
 	// System.out.println("From state " + i + " goto state " +
-	// getPolicyFromState(i));
+	// getPolicyFromObservation(i));
 	// }
 	// }
 	//
@@ -273,7 +276,7 @@ final class QLearning {
 	//
 	// // Used for debug
 	// public void printR(final int[][] matrix) {
-	// System.out.printf("%25s", "States: ");
+	// System.out.printf("%25s", "Observations: ");
 	// for (int i = 0; i <= 8; i++) {
 	// System.out.printf("%4s", i);
 	// }
@@ -314,5 +317,23 @@ final class QLearning {
 	void train() {
 		init();
 		calculateQ();
+	}
+
+	@Override
+	public Action getAction(Boolean[] state) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public MultiLayerNetwork getNetwork() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void update(Boolean[] state, Action action, double score, Boolean[] newObservation) {
+		// TODO Auto-generated method stub
+
 	}
 }

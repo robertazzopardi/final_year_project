@@ -1,5 +1,6 @@
 package robots;
 
+import java.util.Arrays;
 import java.util.logging.Logger;
 
 import comp329robosim.MyGridCell;
@@ -20,11 +21,9 @@ abstract class RobotRunner extends RobotMonitor {
 
 	static int moveCount = RobotController.STEP_COUNT;
 
+
 	final Env env;
 
-	volatile boolean exit = false;
-
-	// final MyGridCell[][] grid;
 
 	Logger logger;
 
@@ -105,9 +104,7 @@ abstract class RobotRunner extends RobotMonitor {
 	// return (int) ((((double) getUSenseRange() / Env.CELL_WIDTH) * 2) - 1) / 2;
 	// }
 
-	public void stopRobot() {
-		exit = true;
-	}
+
 
 	/**
 	 * Normalise value between -1 and 1
@@ -156,7 +153,7 @@ abstract class RobotRunner extends RobotMonitor {
 	 *
 	 * @param action
 	 */
-	void doAction(final Action action) {
+	void doAction(final Action action, final boolean isPrey) {
 		switch (action) {
 			case FORWARD:
 				moveDirection(Direction.fromDegree(getHeading()));
@@ -184,6 +181,7 @@ abstract class RobotRunner extends RobotMonitor {
 			default:
 				break;
 		}
+
 
 		// switch (action) {
 		// case UP:

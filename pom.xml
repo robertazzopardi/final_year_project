@@ -28,6 +28,12 @@
     <dependencies>
 
         <dependency>
+            <groupId>org.deeplearning4j</groupId>
+            <artifactId>rl4j-core</artifactId>
+            <version>${dl4j-master.version}</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.jfree</groupId>
             <artifactId>jfreechart</artifactId>
             <version>1.5.3</version>

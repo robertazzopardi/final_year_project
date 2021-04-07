@@ -1,4 +1,4 @@
-package intelligence;
+package intelligence.DeepQLearning;
 
 import java.io.File;
 import java.io.IOException;
@@ -23,16 +23,15 @@ import org.nd4j.linalg.activations.Activation;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.learning.config.Adam;
-import org.nd4j.linalg.learning.config.Sgd;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
-import org.nd4j.shade.guava.primitives.Booleans;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import intelligence.Inteligence;
 import robots.Action;
 import robots.RobotController;
 import simulation.Env;
 
-public class DeepQLearning {
+public class DeepQLearning implements Inteligence {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(DeepQLearning.class);
 	private static final String FILE_NAME_PREFIX = Env.OUTPUT_FOLDER + "network_";
@@ -137,31 +136,21 @@ public class DeepQLearning {
 		}
 	}
 
-	public Action getActionFromStates(final Boolean[] states) {
+	public Action getAction(final Boolean[] states) {
 		// epsilon greedy action
 		if (RANDOM.nextDouble() < epsilon) {
 			return Action.getRandomAction();
 		}
 
-		return getActionFromTheNetwork(states);
-	}
-
-	private Action getActionFromTheNetwork(final Boolean[] states) {
-		final INDArray output = network.output(toINDArray(states), false);
-
-		final float[] outputValues = output.data().asFloat();
-
-		// Find index of the highest value
-		final int maxValueIndex = getMaxValueIndex(outputValues);
-
-		return Action.getActionByIndex(maxValueIndex);
+		final Action actionFromTheNetwork = getActionFromTheNetwork(states);
+		updateEpsilon();
+		return actionFromTheNetwork;
 	}
 
 	// private INDArray toINDArray(final float[] states) {
 	// return Nd4j.create(new float[][] {states});
 	// }
 	private static INDArray toINDArray(final Boolean[] states) {
-		// System.out.println(Arrays.toString(Arrays.stream(states).map(i -> i ? 1 : 0).toArray()));
 		return Nd4j.create(
 				new double[][] {Arrays.stream(states).mapToDouble(i -> i ? 1 : 0).toArray()});
 	}
@@ -176,11 +165,22 @@ public class DeepQLearning {
 		return maxAt;
 	}
 
+	private Action getActionFromTheNetwork(final Boolean[] states) {
+		final INDArray output = network.output(toINDArray(states), false);
+
+		final float[] outputValues = output.data().asFloat();
+
+		// Find index of the highest value
+		final int maxValueIndex = getMaxValueIndex(outputValues);
+
+		return Action.getActionByIndex(maxValueIndex);
+	}
+
 	public void update(final Boolean[] states, final Action action, final double score,
-			final Boolean[] nextState) {
+			final Boolean[] newObservations) {
 
 		// Get max q score for next state
-		final double maxQScore = getMaxQScore(nextState);
+		final double maxQScore = getMaxQScore(newObservations);
 
 		// Calculate target score
 		final double targetScore = score + (0.9 * maxQScore);
@@ -199,13 +199,13 @@ public class DeepQLearning {
 	}
 
 	private double getMaxQScore(final Boolean[] states) {
-		final String gameStateString = Arrays.toString(states);
+		final String gameObservationString = Arrays.toString(states);
 
-		final String FORWARD = makeKey(gameStateString, Action.FORWARD);
-		final String LEFT = makeKey(gameStateString, Action.LEFT);
-		final String RIGHT = makeKey(gameStateString, Action.RIGHT);
-		// final String DOWN = makeKey(gameStateString, Action.DOWN);
-		final String NOTHING = makeKey(gameStateString, Action.NOTHING);
+		final String FORWARD = makeKey(gameObservationString, Action.FORWARD);
+		final String LEFT = makeKey(gameObservationString, Action.LEFT);
+		final String RIGHT = makeKey(gameObservationString, Action.RIGHT);
+		// final String DOWN = makeKey(gameObservationString, Action.DOWN);
+		final String NOTHING = makeKey(gameObservationString, Action.NOTHING);
 
 
 		qTable.putIfAbsent(FORWARD, 0.0);

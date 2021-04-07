@@ -11,6 +11,10 @@ import simulation.Env;
  */
 final class Prey extends RobotRunner {
 
+	volatile boolean running = true;
+	volatile boolean paused = false;
+	final Object pauseLock = new Object();
+
 	public Prey(final SimulatedRobot r, final int d, final Env env,
 			final RobotController controller) {
 		super(r, d, env, controller);
@@ -110,10 +114,10 @@ final class Prey extends RobotRunner {
 
 	@Override
 	public void run() {
-		while (!exit) {
+		while (running) {
 
-			final int x = getX();
-			final int y = getY();
+			// final int x = getX();
+			// final int y = getY();
 
 			// env.updateGridPrey(x, y);
 			// env.updateGrid(x, y, OccupancyType.PREY);
@@ -137,8 +141,9 @@ final class Prey extends RobotRunner {
 			// }
 
 			if (isTrapped()) {
-				float totalMoves = RobotController.STEP_COUNT - moveCount;
-				float averageMoves = totalMoves / 4;
+				// controller.maddpg.resume();
+				final float totalMoves = RobotController.STEP_COUNT - moveCount;
+				final float averageMoves = totalMoves / 4;
 				// controller.capturesChart.update(averageMoves);
 				System.out.println(totalMoves + "  average: " + averageMoves
 						+ " in correct positions: "
@@ -146,12 +151,13 @@ final class Prey extends RobotRunner {
 				controller.handleCapture(true);
 				resetMoves();
 			} else if (moveCount <= 0) {
+				// controller.maddpg.resume();
 				controller.handleCapture(false);
 				resetMoves();
 			}
 
 
-			doAction(Action.getRandomAction());
+			doAction(Action.getRandomAction(), true);
 		}
 		// logger.info("Prey Stopped");
 	}
