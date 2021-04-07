@@ -1,12 +1,9 @@
 package simulation;
 
 import java.io.File;
-import org.deeplearning4j.rl4j.mdp.MDP;
-import org.deeplearning4j.rl4j.space.DiscreteSpace;
 import comp329robosim.EnvController;
 import comp329robosim.MyGridCell;
 import comp329robosim.OccupancyType;
-
 import robots.RobotController;
 
 public class Env extends EnvController {
@@ -97,19 +94,8 @@ public class Env extends EnvController {
         }
     }
 
-    // public void updateGridEmpty(final int x, final int y) {
-    // synchronized (grid[y][x]) {
-    // grid[y][x].setEmpty();
-    // }
-    // }
 
-    // public void updateGrid(final int x, final int y, final OccupancyType occupancyType) {
-    // synchronized (grid[y][x]) {
-    // grid[y][x].setCellType(occupancyType);
-    // }
-    // }
-
-    public void resetGrid() {
+    public void resetGridToEmpty() {
         for (final MyGridCell[] myGridCells : grid) {
             for (final MyGridCell myGridCell : myGridCells) {
                 if (myGridCell.getCellType() == OccupancyType.HUNTER

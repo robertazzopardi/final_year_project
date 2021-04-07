@@ -1,8 +1,6 @@
 package intelligence.Maddpg;
 
 import java.util.Arrays;
-import java.util.stream.IntStream;
-import com.google.common.primitives.Booleans;
 import org.deeplearning4j.nn.api.OptimizationAlgorithm;
 import org.deeplearning4j.nn.conf.BackpropType;
 import org.deeplearning4j.nn.conf.GradientNormalization;
@@ -19,7 +17,6 @@ import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.learning.config.Adam;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
-import kotlin.NotImplementedError;
 import robots.Action;
 import robots.RobotController;
 

@@ -1,19 +1,15 @@
 package robots;
 
-import java.util.Arrays;
 import java.util.logging.Logger;
-
-import comp329robosim.MyGridCell;
 import comp329robosim.RobotMonitor;
 import comp329robosim.SimulatedRobot;
-import simulation.Mode;
 import simulation.Env;
+import simulation.Mode;
 
 /**
- * @author rob
  *
  */
-abstract class RobotRunner extends RobotMonitor {
+public abstract class Agent extends RobotMonitor {
 	static final Direction LEFT = Direction.LEFT;
 	static final Direction UP = Direction.UP;
 	static final Direction RIGHT = Direction.RIGHT;
@@ -21,21 +17,20 @@ abstract class RobotRunner extends RobotMonitor {
 
 	static int moveCount = RobotController.STEP_COUNT;
 
-
 	final Env env;
-
 
 	Logger logger;
 
+	Action exeAction;
+
 	final RobotController controller;
 
-	private final boolean mode;
+	final boolean mode;
 
 	int gx;
 	int gy;
 
-	RobotRunner(final SimulatedRobot r, final int d, final Env env,
-			final RobotController controller) {
+	Agent(final SimulatedRobot r, final int d, final Env env, final RobotController controller) {
 		super(r, d);
 
 		monitorRobotStatus(false);
@@ -104,7 +99,13 @@ abstract class RobotRunner extends RobotMonitor {
 	// return (int) ((((double) getUSenseRange() / Env.CELL_WIDTH) * 2) - 1) / 2;
 	// }
 
+	public abstract Action getAction(final Boolean[] state);
 
+	public abstract Boolean[] getObservation();
+
+	public Action getAction() {
+		return exeAction;
+	}
 
 	/**
 	 * Normalise value between -1 and 1
@@ -112,11 +113,10 @@ abstract class RobotRunner extends RobotMonitor {
 	 * @param x
 	 * @param min
 	 * @param max
-	 * @return
+	 * @return x Normalised between -1 and 1
 	 */
 	static final float normalise(final int x, final int min, final int max) {
 		return (2 * ((float) (x - min) / (max - min))) - 1;
-		// return (float) (x - min) / (max - min);
 	}
 
 	static synchronized void incrementMoves() {

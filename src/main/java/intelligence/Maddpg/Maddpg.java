@@ -1,10 +1,12 @@
-package robots;
+package intelligence.Maddpg;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import intelligence.Maddpg.ReplayBuffer;
-import intelligence.Maddpg.Sample;
+import robots.Action;
+import robots.RobotController;
+import robots.StepObs;
+import robots.Agent;
 
 public class Maddpg implements Runnable {
 
@@ -12,7 +14,7 @@ public class Maddpg implements Runnable {
 
     private final ReplayBuffer replayBuffer;
 
-    private final Hunter[] agents;
+    private final Agent[] agents;
 
     private final RobotController robotController;
 
@@ -20,7 +22,7 @@ public class Maddpg implements Runnable {
     private final int maxStep;
     private final int batchSize;
 
-    public Maddpg(final int cap, final Hunter[] agents, final RobotController controller,
+    public Maddpg(final int cap, final Agent[] agents, final RobotController controller,
             final int maxEpisode, final int maxStep, final int batchSize) {
         this.replayBuffer = new ReplayBuffer(cap);
         this.agents = agents;
@@ -51,8 +53,8 @@ public class Maddpg implements Runnable {
 
             final var nextGlobalActions = new ArrayList<>();
 
-            for (final Hunter hunter : agents) {
-                final Action indivNextAction = hunter.getAction(nextObsBatchI);
+            for (final Agent agent : agents) {
+                final Action indivNextAction = agent.getAction(nextObsBatchI);
 
             }
         }
@@ -63,8 +65,8 @@ public class Maddpg implements Runnable {
         final List<Double> episodeRewards = new ArrayList<>();
 
         for (int i = 0; i < maxEpisode; i++) {
-            Boolean[][] states = Arrays.stream(agents).map(h -> h.createGameObservation())
-                    .toArray(Boolean[][]::new);
+            Boolean[][] states =
+                    Arrays.stream(agents).map(h -> h.getObservation()).toArray(Boolean[][]::new);
 
             double epReward = 0;
 
@@ -73,10 +75,9 @@ public class Maddpg implements Runnable {
 
                 final Action[] actions = getActions(states);
 
+                // Simulate one step in the environment
+                // Blocks until all hunters have moved in the environment
                 final StepObs obs = robotController.step(actions);
-
-
-                // getNextObs
 
                 System.out.println("one pass " + j);
 

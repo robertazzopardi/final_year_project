@@ -3,29 +3,21 @@ package robots;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.RunnableFuture;
 import comp329robosim.SimulatedRobot;
-import intelligence.Inteligence;
 import intelligence.DeepQLearning.DeepQLearning;
+import intelligence.Maddpg.Maddpg;
+import robots.Action;
+import robots.StepObs;
 import simulation.Env;
 import simulation.Mode;
 
 /**
- *
+ * Main utility class to handle the agents
  */
 public class RobotController {
-
-	private final int agents = 4;
-
+	public static final int AGENT_COUNT = 4;
 	private static final double GAMMA = 0.95;
 	private static final double TAU = 1e-3;
 	private static final int BATCH_SIZE = 1024;
@@ -36,97 +28,27 @@ public class RobotController {
 
 	private static final int MAX_REPLAY_BUFFER_LEN = BATCH_SIZE * EPISODES_LENGTH;
 
-	private int[] replaySampleIndex;
-
-
-
-	// private void experience(final List<Boolean> state, final List<Action> action,
-	// final List<Double> reward, final List<Boolean> nextObservation) {
-	// memory.add(state, action, reward, nextObservation);
-	// }
-
-	// private void preUpdate() {
-	// replaySampleIndex = null;
-	// }
-
-	// private T update(final int t) {
-	// if (memory.getMemoryLength() < MAX_REPLAY_BUFFER_LEN) {
-	// return null;
-	// }
-	// if (t % 100 != 0) {
-	// return null;
-	// }
-
-	// replaySampleIndex = memory.makeIndex(BATCH_SIZE);
-
-	// List<Boolean> obs = new ArrayList<>();
-	// List<Boolean> obsNext = new ArrayList<>();
-	// List<Action> act = new ArrayList<>();
-
-	// for (int i = 0; i < hunters.length; i++) {
-	// Experience exp = memory.sampleIndex(replaySampleIndex);
-	// obs.addAll(exp.obs);
-	// obsNext.addAll(exp.nextObs);
-	// act.addAll(exp.action);
-	// }
-
-	// final Experience exp = memory.sampleIndex(replaySampleIndex);
-
-	// int numSample = 1;
-	// double targetQ = 0.0;
-
-	// for (int i = 0; i < numSample; i++) {
-	// final List<Action> targetActionNext = IntStream.range(0, hunters.length)
-	// .forEach(i -> hunters[i].pDebug.get("targetAction")(obsNextN[i]));
-	// final List<Double> targetQNext = qDebug.get("targetQValues");
-	// targetQ += rew + GAMMA * (1 - done) * targetQNext;
-	// }
-
-	// targetQ /=
-
-
-	// return null;
-	// }
-
-
 	public static final int STEP_COUNT = 5000;
 
-	// public static final int STATE_COUNT = 20;
-	// public static final int STATE_COUNT = 28;
 	public static final int STATE_COUNT = 32;
-
 	// public static final int STATE_COUNT = 14;
 
 	public static final int DELAY = 1000;
 
 	private int captures = 0;
 
-	public final Hunter[] hunters = new Hunter[4];
+	public final Hunter[] hunters = new Hunter[AGENT_COUNT];
 
 	private Prey prey;
 
 	private final Env env;
-
-	// private final Maddpg maddpg;
-
-	// public final CapturesChart capturesChart;
 
 	private static final int capacity = 1000000;
 	private static final int maxEpisode = 500;
 	private static final int maxStep = 100;
 	private static final int batchSize = 1024;
 
-	private ExecutorService executor = Executors.newFixedThreadPool(4);
-
-	public final Maddpg maddpg;
-
-	class Tmp implements Callable<String> {
-		@Override
-		public String call() throws Exception {
-			System.out.println("3");
-			return "egg";
-		}
-	}
+	private static final ExecutorService executor = Executors.newFixedThreadPool(AGENT_COUNT);
 
 	public RobotController(final Env env) {
 		this.env = env;
@@ -136,51 +58,40 @@ public class RobotController {
 
 		initRobots();
 
-		// prey.start();
+		prey.start();
 		// startRobots();
 
-
-
-		// this.maddpg = new Maddpg(capacity, hunters, this, 500, 100, 32);
-		// this.maddpg.run();
-
-		maddpg = new Maddpg(capacity, hunters, this, 500, 10000, 3200);
-		new Thread(maddpg).start();
+		new Thread(new Maddpg(capacity, hunters, this, 500, 10000, 3200)).start();
 	}
 
-	// public StepObs step(final Action[] actions) {
-
-	// final Double[] rewards = new Double[hunters.length];
-	// for (int i = 0; i < actions.length; i++) {
-	// hunters[i].resumeRobot();
-	// hunters[i].setAction(actions[i]);
-	// rewards[i] = hunters[i].getScoreForAction(actions[i]);
-	// }
-
-	// final Boolean[][] nextStates = new Boolean[hunters.length][];
-	// for (int i = 0; i < hunters.length; i++) {
-	// nextStates[i] = hunters[i].createGameObservation();
-	// }
-
-	// return new StepObs(nextStates, rewards);
-	// }
+	/**
+	 * Step through the simulation environment and return the a new observation
+	 *
+	 * @param actions
+	 * @return
+	 */
 	public StepObs step(final Action[] actions) {
+		// Set up new callable hunters with their action
+		// TODO: could probably remove the need to create a new class
+		// and get the rewards for the action
 		final Double[] rewards = new Double[hunters.length];
 		for (int i = 0; i < actions.length; i++) {
 			hunters[i] = new Hunter(hunters[i], actions[i]);
 			rewards[i] = hunters[i].getScoreForAction(actions[i]);
 		}
 
-		Boolean[][] nextStates = new Boolean[hunters.length][];
+		// Step each agent through the world
 		try {
-			List<Future<Boolean[]>> res = executor.invokeAll(Arrays.asList(hunters));
-			for (int i = 0; i < res.size(); i++) {
-				nextStates[i] = res.get(i).get();
-			}
-		} catch (Exception e) {
+			executor.invokeAll(Arrays.asList(hunters));
+		} catch (final Exception e) {
 			e.printStackTrace();
 		}
 
+		// Collect the states after the agents have moved
+		final Boolean[][] nextStates = new Boolean[hunters.length][];
+		for (int i = 0; i < hunters.length; i++) {
+			nextStates[i] = hunters[i].getObservation();
+		}
 
 		return new StepObs(nextStates, rewards);
 	}
@@ -190,39 +101,40 @@ public class RobotController {
 		final SimulatedRobot preyRobot = env.getAndSetPrey();
 		prey = new Prey(preyRobot, DELAY, env, this);
 
-		final Mode mode = env.getMode();
+		// final Mode mode = env.getMode();
 
 		for (int i = 0; i < hunters.length; i++) {
 			do {
 				final SimulatedRobot simulatedRobot = env.getAndSetHunter(i);
-				Inteligence learning = null;
-				switch (mode) {
-					case EVAL:
-						if (env.getFiles().length == 0) {
-							learning = new DeepQLearning(true);
-						} else {
-							learning = DeepQLearning.loadNetwork(env.getFiles()[i], false, true);
-						}
-						break;
+				// Inteligence learning = null;
+				// switch (mode) {
+				// case EVAL:
+				// if (env.getFiles().length == 0) {
+				// learning = new DeepQLearning(true);
+				// } else {
+				// learning = DeepQLearning.loadNetwork(env.getFiles()[i], false, true);
+				// }
+				// break;
 
-					case TRAIN_ON:
-						if (env.getFiles().length < 4) {
-							learning = new DeepQLearning(false);
+				// case TRAIN_ON:
+				// if (env.getFiles().length < 4) {
+				// learning = new DeepQLearning(false);
 
-						} else {
-							learning = DeepQLearning.loadNetwork(env.getFiles()[i], true, false);
+				// } else {
+				// learning = DeepQLearning.loadNetwork(env.getFiles()[i], true, false);
 
-						}
-						break;
+				// }
+				// break;
 
-					case TRAIN:
-						learning = new DeepQLearning(false);
-						break;
+				// case TRAIN:
+				// learning = new DeepQLearning(false);
+				// break;
 
-					default:
-						break;
-				}
-				hunters[i] = new Hunter(simulatedRobot, DELAY, env, learning, this, prey, i);
+				// default:
+				// break;
+				// }
+				// hunters[i] = new Hunter(simulatedRobot, DELAY, env, learning, this, prey, i);
+				hunters[i] = new Hunter(simulatedRobot, DELAY, env, null, this, prey, i);
 			} while (isSamePosition(i));
 		}
 
@@ -256,10 +168,6 @@ public class RobotController {
 						prey, i);
 			} while (isSamePosition(i));
 		}
-
-		// for (final Hunter hunter : hunters) {
-		// hunter.setOthers(hunters);
-		// }
 
 		startRobots();
 	}
@@ -369,7 +277,7 @@ public class RobotController {
 			Thread.currentThread().interrupt();
 		}
 
-		env.resetGrid();
+		env.resetGridToEmpty();
 
 		if (env.getEpisode() <= Env.TOTAL_EPISODES + env.getTrainedEpisodes()) {
 			env.updateTitle(
@@ -380,6 +288,7 @@ public class RobotController {
 			// saveNetwork();
 			saveNetworks();
 			env.stopRunning();
+			executor.shutdown();
 			System.exit(0);
 		}
 	}

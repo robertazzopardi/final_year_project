@@ -14,8 +14,6 @@ import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.learning.config.Adam;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
-import intelligence.Inteligence;
-import kotlin.NotImplementedError;
 import robots.Action;
 import robots.RobotController;
 

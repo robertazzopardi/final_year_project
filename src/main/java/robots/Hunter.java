@@ -1,15 +1,12 @@
 package robots;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.factory.Nd4j;
 import comp329robosim.SimulatedRobot;
 import intelligence.Inteligence;
 import intelligence.Maddpg.Actor;
@@ -20,12 +17,12 @@ import simulation.Mode;
 /**
  *
  */
-final class Hunter extends RobotRunner implements Callable<Boolean[]> {
+final class Hunter extends Agent implements Callable<Void> {
 
 	@Override
-	public Boolean[] call() throws Exception {
+	public Void call() throws Exception {
 		doAction(exeAction, false);
-		return createGameObservation();
+		return null;
 	}
 
 	volatile boolean running = true;
@@ -48,22 +45,6 @@ final class Hunter extends RobotRunner implements Callable<Boolean[]> {
 	private final Actor actor;
 	private final Actor actorTarget;
 
-	final Action exeAction;
-
-
-	// public Action getAction(final Boolean[] state) {
-	// final Action action = this.actor.forward(state);
-	// return action;
-	// }
-
-	public Action getAction(final Boolean[] state) {
-		return this.actor.forward(state);
-	}
-
-	public Action getAction() {
-		return exeAction;
-	}
-
 	public void update(final INDArray indiv_reward_batch, final INDArray indiv_obs_batch,
 			final INDArray global_state_batch, final INDArray global_actions_batch,
 			final INDArray global_next_state_batch, final INDArray next_global_actions) {
@@ -80,6 +61,10 @@ final class Hunter extends RobotRunner implements Callable<Boolean[]> {
 
 	}
 
+	@Override
+	public Action getAction(final Boolean[] state) {
+		return this.actor.forward(state);
+	}
 
 
 	private static final double REWARD = 1;
@@ -275,7 +260,7 @@ final class Hunter extends RobotRunner implements Callable<Boolean[]> {
 			// if (exeAction != null)
 			// doAction(exeAction, false);
 
-			final Action action = getAction(createGameObservation());
+			final Action action = getAction(getObservation());
 			doAction(action, false);
 
 
@@ -318,7 +303,7 @@ final class Hunter extends RobotRunner implements Callable<Boolean[]> {
 	// if (exeAction != null)
 	// doAction(exeAction, false);
 
-	// // final Action action = getAction(createGameObservation());
+	// // final Action action = getAction(getObservation());
 	// // doAction(action);
 
 
@@ -357,7 +342,7 @@ final class Hunter extends RobotRunner implements Callable<Boolean[]> {
 	// // float[] currObservation = getObservations();
 	// // float[] newObservation = null;
 
-	// Boolean[] currObservation = createGameObservation(Direction.fromDegree(getHeading()));
+	// Boolean[] currObservation = getObservation(Direction.fromDegree(getHeading()));
 	// Boolean[] newObservation = null;
 
 	// Action action = Action.getRandomAction();
@@ -377,7 +362,7 @@ final class Hunter extends RobotRunner implements Callable<Boolean[]> {
 	// // + grid[direction.y(getGridPosY())][direction.x(getGridPosX())].getCellType()
 	// // + " hunter: " + number);
 
-	// // System.out.println(Arrays.toString(createGameObservation(getGridPosX(),
+	// // System.out.println(Arrays.toString(getObservation(getGridPosX(),
 	// // getGridPosY(),
 	// // Direction.fromDegree(getHeading()), prey.getGridPosX(), prey.getGridPosY())));
 
@@ -390,7 +375,7 @@ final class Hunter extends RobotRunner implements Callable<Boolean[]> {
 	// doAction(action);
 
 	// // newObservation = getObservations();
-	// newObservation = createGameObservation(Direction.fromDegree(getHeading()));
+	// newObservation = getObservation(Direction.fromDegree(getHeading()));
 
 	// if (gameMode) {
 	// learning.update(currObservation, action, score, newObservation);
@@ -701,7 +686,7 @@ final class Hunter extends RobotRunner implements Callable<Boolean[]> {
 		return Stream.of(stateArrays).flatMap(Stream::of).toArray(Boolean[]::new);
 	}
 
-	public Boolean[] createGameObservation(final Direction currentDirection) {
+	public Boolean[] getObservation(final Direction currentDirection) {
 		final int x = getX();
 		final int y = getY();
 
@@ -734,7 +719,8 @@ final class Hunter extends RobotRunner implements Callable<Boolean[]> {
 		return states;
 	}
 
-	public Boolean[] createGameObservation() {
+	@Override
+	public Boolean[] getObservation() {
 		final int x = getX();
 		final int y = getY();
 

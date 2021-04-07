@@ -9,7 +9,7 @@ import simulation.Env;
  * @author rob
  *
  */
-final class Prey extends RobotRunner {
+final class Prey extends Agent {
 
 	volatile boolean running = true;
 	volatile boolean paused = false;
@@ -160,6 +160,16 @@ final class Prey extends RobotRunner {
 			doAction(Action.getRandomAction(), true);
 		}
 		// logger.info("Prey Stopped");
+	}
+
+	@Override
+	public Action getAction(Boolean[] state) {
+		return null;
+	}
+
+	@Override
+	public Boolean[] getObservation() {
+		return null;
 	}
 
 	// @Override

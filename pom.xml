@@ -27,32 +27,31 @@
 
     <dependencies>
 
-        <dependency>
-            <groupId>org.deeplearning4j</groupId>
-            <artifactId>rl4j-core</artifactId>
-            <version>${dl4j-master.version}</version>
-        </dependency>
-
+        <!-- JFree Chart -->
         <dependency>
             <groupId>org.jfree</groupId>
             <artifactId>jfreechart</artifactId>
             <version>1.5.3</version>
         </dependency>
+        <!--  -->
 
+        <!-- Junit5 -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
             <version>5.8.0-M1</version>
         </dependency>
+        <!--  -->
 
+        <!-- Comp329Robosim -->
         <dependency>
             <groupId>comp329robosim</groupId>
             <artifactId>comp329robosim</artifactId>
             <version>1.0</version>
         </dependency>
+        <!--  -->
 
         <!-- Deep Learning 4 Java Dependencies -->
-
         <dependency>
             <groupId>org.deeplearning4j</groupId>
             <artifactId>deeplearning4j-core</artifactId>
@@ -76,6 +75,7 @@
             <artifactId>logback-classic</artifactId>
             <version>${logback.version}</version>
         </dependency>
+        <!--  -->
 
     </dependencies>
 
