@@ -1,5 +1,6 @@
 package robots;
 
+import java.util.concurrent.Callable;
 import java.util.logging.Logger;
 import comp329robosim.RobotMonitor;
 import comp329robosim.SimulatedRobot;
@@ -9,7 +10,7 @@ import simulation.Mode;
 /**
  *
  */
-public abstract class Agent extends RobotMonitor {
+public abstract class Agent extends RobotMonitor implements Callable<Void> {
 	static final Direction LEFT = Direction.LEFT;
 	static final Direction UP = Direction.UP;
 	static final Direction RIGHT = Direction.RIGHT;

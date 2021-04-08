@@ -140,21 +140,21 @@ final class Prey extends Agent {
 			// break;
 			// }
 
-			if (isTrapped()) {
-				// controller.maddpg.resume();
-				final float totalMoves = RobotController.STEP_COUNT - moveCount;
-				final float averageMoves = totalMoves / 4;
-				// controller.capturesChart.update(averageMoves);
-				System.out.println(totalMoves + "  average: " + averageMoves
-						+ " in correct positions: "
-						+ Arrays.stream(controller.hunters).filter(i -> i.isAtGoal()).count());
-				controller.handleCapture(true);
-				resetMoves();
-			} else if (moveCount <= 0) {
-				// controller.maddpg.resume();
-				controller.handleCapture(false);
-				resetMoves();
-			}
+			// if (isTrapped()) {
+			// // controller.maddpg.resume();
+			// final Boolean totalMoves = RobotController.STEP_COUNT - moveCount;
+			// final Boolean averageMoves = totalMoves / 4;
+			// // controller.capturesChart.update(averageMoves);
+			// System.out.println(totalMoves + " average: " + averageMoves
+			// + " in correct positions: "
+			// + Arrays.stream(controller.hunters).filter(i -> i.isAtGoal()).count());
+			// controller.handleCapture(true);
+			// resetMoves();
+			// } else if (moveCount <= 0) {
+			// // controller.maddpg.resume();
+			// controller.handleCapture(false);
+			// resetMoves();
+			// }
 
 
 			doAction(Action.getRandomAction(), true);
@@ -167,8 +167,19 @@ final class Prey extends Agent {
 		return null;
 	}
 
+	// @Override
+	// public Boolean[] getObservation() {
+	// return null;
+	// }
+
 	@Override
 	public Boolean[] getObservation() {
+		return null;
+	}
+
+	@Override
+	public Void call() throws Exception {
+		doAction(Action.getRandomAction(), true);
 		return null;
 	}
 

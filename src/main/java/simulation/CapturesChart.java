@@ -20,6 +20,8 @@ import javax.swing.JPanel;
 // import org.jfree.data.time.Second;
 
 /**
+ * TODO: just make a normal xy chart after all episodes have run
+ *
  * @see https://stackoverflow.com/a/21307289/230513
  */
 public class CapturesChart extends JPanel {
@@ -35,7 +37,7 @@ public class CapturesChart extends JPanel {
 
 
     // dataset.setPosition(0);
-    // dataset.addSeries(new float[1], 0, title);
+    // dataset.addSeries(new Boolean[1], 0, title);
     // chart = ChartFactory.createTimeSeriesChart(title, "Episode", title, dataset, true, true,
     // false);
 
@@ -49,9 +51,9 @@ public class CapturesChart extends JPanel {
     // add(chartPanel);
     // }
 
-    // public void update(final float value) {
+    // public void update(final Boolean value) {
     // System.out.println(value);
-    // final float[] newData = new float[1];
+    // final Boolean[] newData = new Boolean[1];
     // newData[0] = value;
     // dataset.advanceTime();
     // dataset.appendData(newData);

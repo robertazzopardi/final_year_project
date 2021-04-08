@@ -4,7 +4,7 @@ import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import robots.Action;
 
 /**
- * Definition of the algorithms used in the simulation
+ * Definition of the implementation of the machine learning algorithms used
  */
 public interface Inteligence {
 

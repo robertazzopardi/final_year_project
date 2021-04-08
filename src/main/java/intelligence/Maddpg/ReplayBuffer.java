@@ -1,72 +1,125 @@
 package intelligence.Maddpg;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
-import java.util.Random;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.factory.Nd4j;
+import org.nd4j.linalg.indexing.NDArrayIndex;
 import robots.Action;
 
+/**
+ * Collection of the previous experience in the simulation
+ */
 public class ReplayBuffer {
-    private static final Random RAND = new Random();
+    // private static final Random RAND = new Random();
 
     private static final int NUM_AGENTS = 4;
 
-    private final int maxSize;
-
-    private final Experience[] buffer;
-
-    private int index = 0;
+    private final List<Experience> buffer;
 
     public ReplayBuffer(final int maxSize) {
-        this.maxSize = maxSize;
-        this.buffer = new Experience[maxSize];
+        this.buffer = new ArrayList<>(maxSize);
     }
 
-
-
-    public void push(final Boolean[][] state, final Action[] action, final Double[] reward,
-            final Boolean[][] nextState) {
-        buffer[index++] = new Experience(state, action, reward, nextState);
+    /**
+     * Add new experiences to the memory
+     *
+     * @param state
+     * @param action
+     * @param reward
+     * @param nextState
+     * @param dones
+     */
+    public void push(final Boolean[][] state, final Action[] action, final Double[] rewards,
+            final Boolean[][] nextState, final Integer[] dones) {
+        buffer.add(new Experience(state, action, rewards, nextState, dones));
     }
 
+    /**
+     * Get a sample from the memory of size batchSize
+     *
+     * @param batchSize
+     * @return
+     */
     public Sample sample(final int batchSize) {
-        final List<List<Boolean>> obsBatch = new ArrayList<>(NUM_AGENTS);
-        final List<List<Action>> indivActionBatch = new ArrayList<>(NUM_AGENTS);
-        final List<List<Double>> indivRewardBatch = new ArrayList<>(NUM_AGENTS);
-        final List<List<Boolean>> nextObsBatch = new ArrayList<>(NUM_AGENTS);
+        final List<List<Boolean[]>> obsBatch = new ArrayList<>(Arrays.asList(new ArrayList<>(),
+                new ArrayList<>(), new ArrayList<>(), new ArrayList<>()));
+        final List<List<Action>> indivActionBatch = new ArrayList<>(Arrays.asList(new ArrayList<>(),
+                new ArrayList<>(), new ArrayList<>(), new ArrayList<>()));
+        final List<List<Double>> indivRewardBatch = new ArrayList<>(Arrays.asList(new ArrayList<>(),
+                new ArrayList<>(), new ArrayList<>(), new ArrayList<>()));
+        final List<List<Boolean[]>> nextObsBatch = new ArrayList<>(Arrays.asList(new ArrayList<>(),
+                new ArrayList<>(), new ArrayList<>(), new ArrayList<>()));
 
         final List<Boolean[]> globalStateBatch = new ArrayList<>();
         final List<Boolean[]> globalNextStateBatch = new ArrayList<>();
-        final List<Action> globalActionsBatch = new ArrayList<>();
+        final List<Action[]> globalActionsBatch = new ArrayList<>();
+        final List<Integer> doneBatch = new ArrayList<>();
 
-        final Experience[] batch = pickSample(this.buffer, batchSize);
+        final List<Experience> batch = randomSample(batchSize);
 
-        for (Experience experience : batch) {
+        for (final Experience experience : batch) {
+            final Boolean[][] state = experience.state;
+            final Action[] action = experience.action;
+            final Double[] reward = experience.reward;
+            final Boolean[][] nextState = experience.nextState;
+            final Integer[] done = experience.dones;
+
             for (int i = 0; i < NUM_AGENTS; i++) {
-                final Boolean[] obsI = experience.state[i];
-                final Action actionI = experience.action[i];
-                final Double rewardI = experience.reward[i];
-                final Boolean[] nextObsI = experience.nextState[i];
+                final Boolean[] obsI = state[i];
+                final Action actionI = action[i];
+                final Double rewardI = reward[i];
+                final Boolean[] nextObsI = nextState[i];
 
-                obsBatch.get(i).addAll(Arrays.asList(obsI));
+                // System.out.println(obsI.length);
+
+                obsBatch.get(i).add(obsI);
                 indivActionBatch.get(i).add(actionI);
                 indivRewardBatch.get(i).add(rewardI);
-                nextObsBatch.get(i).addAll(Arrays.asList(nextObsI));
+                nextObsBatch.get(i).add(nextObsI);
             }
 
-            // globalStateBatch.add(Arrays.stream(experience.state)
-            // .map(j -> Arrays.stream(j).map(x -> x)).toArray(Boolean[]::new));
+            // globalStateBatch.addAll(
+            // Arrays.asList(Stream.of(state).flatMap(Stream::of).toArray(Boolean[]::new)));
+            // globalActionsBatch.addAll(Arrays.asList(action));
+            // globalNextStateBatch.addAll(Arrays
+            // .asList(Stream.of(nextState).flatMap(Stream::of).toArray(Boolean[]::new)));
+            // doneBatch.addAll(Arrays.asList(done));
 
-            // TODO: add globalStates
+            globalStateBatch.add(Stream.of(state).flatMap(Stream::of).toArray(Boolean[]::new));
+            globalActionsBatch.add(action);
+            globalNextStateBatch
+                    .add(Stream.of(nextState).flatMap(Stream::of).toArray(Boolean[]::new));
+            doneBatch.addAll(Arrays.asList(done));
+
         }
 
         return new Sample(obsBatch, indivActionBatch, indivRewardBatch, nextObsBatch,
-                globalStateBatch, globalNextStateBatch, globalActionsBatch);
+                globalStateBatch, globalNextStateBatch, globalActionsBatch, doneBatch);
     }
 
     public int getLength() {
-        return index;
+        return buffer.size();
+    }
+
+    /**
+     * Generate a random sample from a list
+     *
+     * Based on
+     * https://stackoverflow.com/questions/8378752/pick-multiple-random-elements-from-a-list-in-java
+     *
+     * @param buff
+     * @param n
+     * @return
+     */
+    public List<Experience> randomSample(final int n) {
+        final List<Experience> copy = new ArrayList<>(buffer);
+        Collections.shuffle(copy);
+        return n > copy.size() ? copy.subList(0, copy.size()) : copy.subList(0, n);
     }
 
     /**
@@ -76,109 +129,20 @@ public class ReplayBuffer {
      * @param nSamplesNeeded
      * @return
      */
-    public static Experience[] pickSample(final Experience[] population, int nSamplesNeeded) {
-        final Experience[] ret = (Experience[]) Array
-                .newInstance(population.getClass().getComponentType(), nSamplesNeeded);
-        int nPicked = 0, i = 0, nLeft = population.length;
-        while (nSamplesNeeded > 0) {
-            final int rand = RAND.nextInt(nLeft);
-            if (rand < nSamplesNeeded) {
-                ret[nPicked++] = population[i];
-                nSamplesNeeded--;
-            }
-            nLeft--;
-            i++;
-        }
-        return ret;
-    }
-
-    // private final List<Experience> memory;
-
-    // private int index;
-
-    // private final int capacity;
-
-    // public ReplayBuffer(final int capacity) {
-    // memory = new ArrayList<>();
-    // this.capacity = capacity;
-    // index = 0;
+    // public static Experience[] pickSample(final Experience[] population, int nSamplesNeeded) {
+    // final Experience[] ret = (Experience[]) Array
+    // .newInstance(population.getClass().getComponentType(), nSamplesNeeded);
+    // int nPicked = 0, i = 0, nLeft = population.length;
+    // while (nSamplesNeeded > 0) {
+    // final int rand = RAND.nextInt(nLeft);
+    // if (rand < nSamplesNeeded) {
+    // ret[nPicked++] = population[i];
+    // nSamplesNeeded--;
     // }
-
-    // public int getMemoryLength() {
-    // return memory.size();
+    // nLeft--;
+    // i++;
     // }
-
-    // public void clear() {
-    // memory.clear();
-    // index = 0;
+    // return ret;
     // }
-
-    // public void add(final List<Boolean> state, final List<Action> action,
-    // final List<Double> reward, final List<Boolean> nextObservation) {
-    // final Experience data = new Experience(state, action, reward, nextObservation);
-
-    // if (index >= memory.size()) {
-    // memory.add(data);
-    // } else {
-    // memory.set(index, data);
-    // }
-    // index = (index + 1) % capacity;
-    // }
-
-    // public Experience encodeSample(final int[] idxes) {
-    // final List<Boolean> obs = new ArrayList<>();
-    // final List<Action> action = new ArrayList<>();
-    // final List<Double> reward = new ArrayList<>();
-    // final List<Boolean> nextObs = new ArrayList<>();
-
-    // for (final int i : idxes) {
-    // final Experience data = memory.get(i);
-    // obs.addAll(data.obs);
-    // action.addAll(data.action);
-    // reward.addAll(data.reward);
-    // nextObs.addAll(data.nextObs);
-    // }
-
-    // return new Experience(obs, action, reward, nextObs);
-    // }
-
-    // public int[] makeIndex(final int batchSize) {
-    // final int[] tmp = new int[batchSize];
-    // for (int i = 0; i < batchSize; i++)
-    // tmp[i] = ThreadLocalRandom.current().nextInt(0, memory.size() - 1);
-    // return tmp;
-    // }
-
-    // public int[] makeLatestIndex(final int batchSize) {
-    // final List<Integer> tmp = new ArrayList<>();
-    // for (int i = 0; i < batchSize; i++)
-    // tmp.add((index - 1 - i) % capacity);
-    // Collections.shuffle(tmp);
-    // return tmp.stream().mapToInt(i -> i).toArray();
-    // }
-
-    // public Experience sampleIndex(final int[] idxes) {
-    // return encodeSample(idxes);
-    // }
-
-    // public Experience sample(final int batchSize) {
-    // int[] idxes;
-    // if (batchSize > 0) {
-    // idxes = makeIndex(batchSize);
-    // } else {
-    // idxes = IntStream.range(0, memory.size()).toArray();
-    // }
-    // return encodeSample(idxes);
-    // }
-
-    // public Experience collect() {
-    // return sample(-1);
-    // }
-
-    // // public T sample() {
-    // // final List mem = memory;
-    // // Collections.shuffle(mem);
-    // // return mem.get(0);
-    // // }
 
 }

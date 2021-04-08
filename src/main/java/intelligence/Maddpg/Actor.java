@@ -18,7 +18,7 @@ import robots.Action;
 import robots.RobotController;
 
 public class Actor {
-    private final MultiLayerNetwork net;
+    public final MultiLayerNetwork net;
     private static final int HIDDEN_NEURONS = 64;
     private static final double LR_ACTOR = 1e-4;
 
@@ -43,16 +43,27 @@ public class Actor {
     public Actor() {
         this.net = new MultiLayerNetwork(conf);
         this.net.init();
+
     }
 
-    public Action forward(final Boolean[] state) {
+    // public Action forward(final Boolean[] state) {
+    // // INDArray x = this.net.getLayer(0).activate(toINDArray(state), false, null);
+    // // x = this.net.getLayer(1).activate(x, false, null);
+    // // x = this.net.getLayer(2).activate(x, false, null);
+    // // return Action.getActionByIndex(
+    // // getMaxValueIndex(this.net.getLayer(3).activate(x, false, null).toFloatVector()));
+    // final var x = this.net.output(toINDArray(state));
+    // return Action.getActionByIndex(getMaxValueIndex(x.toFloatVector()));
+    // }
+
+    public INDArray forward(final INDArray state) {
         // INDArray x = this.net.getLayer(0).activate(toINDArray(state), false, null);
         // x = this.net.getLayer(1).activate(x, false, null);
         // x = this.net.getLayer(2).activate(x, false, null);
         // return Action.getActionByIndex(
-        // getMaxValueIndex(this.net.getLayer(3).activate(x, false, null).data().asFloat()));
-        final var x = this.net.output(toINDArray(state));
-        return Action.getActionByIndex(getMaxValueIndex(x.data().asFloat()));
+        // getMaxValueIndex(this.net.getLayer(3).activate(x, false, null).toFloatVector()));
+        final INDArray x = this.net.output(state);
+        return x;
     }
 
     // public void update(final Boolean[] states, final Action action, final double score,
@@ -90,17 +101,17 @@ public class Actor {
     // return this.net.getLayer(3).activate(x, false, null);
     // }
 
-    private int getMaxValueIndex(final float[] values) {
-        int maxAt = 0;
+    // private int getMaxValueIndex(final float[] values) {
+    // int maxAt = 0;
 
-        for (int i = 0; i < values.length; i++) {
-            maxAt = values[i] > values[maxAt] ? i : maxAt;
-        }
+    // for (int i = 0; i < values.length; i++) {
+    // maxAt = values[i] > values[maxAt] ? i : maxAt;
+    // }
 
-        return maxAt;
-    }
+    // return maxAt;
+    // }
 
-    private static INDArray toINDArray(final Boolean[] states) {
+    public INDArray toINDArray(final Boolean[] states) {
         return Nd4j.create(
                 new double[][] {Arrays.stream(states).mapToDouble(i -> i ? 1 : 0).toArray()});
     }
@@ -112,5 +123,6 @@ public class Actor {
         }
         return result;
     }
+
 
 }

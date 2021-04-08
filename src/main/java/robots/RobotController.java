@@ -2,14 +2,14 @@ package robots;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import comp329robosim.SimulatedRobot;
 import intelligence.DeepQLearning.DeepQLearning;
 import intelligence.Maddpg.Maddpg;
-import robots.Action;
-import robots.StepObs;
 import simulation.Env;
 import simulation.Mode;
 
@@ -48,7 +48,7 @@ public class RobotController {
 	private static final int maxStep = 100;
 	private static final int batchSize = 1024;
 
-	private static final ExecutorService executor = Executors.newFixedThreadPool(AGENT_COUNT);
+	private static final ExecutorService executor = Executors.newFixedThreadPool(AGENT_COUNT + 1);
 
 	public RobotController(final Env env) {
 		this.env = env;
@@ -56,12 +56,17 @@ public class RobotController {
 		// this.capturesChart = new CapturesChart("Average Moves");
 		// CapturesChart.startChart(this.capturesChart);
 
-		initRobots();
+		// initRobots();
 
-		prey.start();
+		// prey.start();
 		// startRobots();
 
-		new Thread(new Maddpg(capacity, hunters, this, 500, 10000, 3200)).start();
+		new Maddpg(capacity, hunters, this, 500, 300, 32).run();
+	}
+
+	public Boolean[][] reset() {
+		initRobots();
+		return Arrays.stream(hunters).map(h -> h.getObservation()).toArray(Boolean[][]::new);
 	}
 
 	/**
@@ -82,18 +87,23 @@ public class RobotController {
 
 		// Step each agent through the world
 		try {
-			executor.invokeAll(Arrays.asList(hunters));
+			final List<Agent> agents = new ArrayList<>(Arrays.asList(hunters));
+			agents.add(prey);
+			executor.invokeAll(agents);
 		} catch (final Exception e) {
 			e.printStackTrace();
 		}
 
 		// Collect the states after the agents have moved
 		final Boolean[][] nextStates = new Boolean[hunters.length][];
+		final Boolean[] dones = new Boolean[hunters.length];
 		for (int i = 0; i < hunters.length; i++) {
 			nextStates[i] = hunters[i].getObservation();
+			dones[i] = hunters[i].isAtGoal();
 		}
 
-		return new StepObs(nextStates, rewards);
+		// System.out.println(Arrays.toString(dones));
+		return new StepObs(nextStates, rewards, dones);
 	}
 
 	private void initRobots() {

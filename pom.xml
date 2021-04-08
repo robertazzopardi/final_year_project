@@ -7,6 +7,7 @@
 
     <properties>
         <dl4j-master.version>1.0.0-SNAPSHOT</dl4j-master.version>
+        <!-- <dl4j-master.version>1.0.0-beta7</dl4j-master.version> -->
         <logback.version>1.2.3</logback.version>
         <maven-shade-plugin.version>2.4.3</maven-shade-plugin.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

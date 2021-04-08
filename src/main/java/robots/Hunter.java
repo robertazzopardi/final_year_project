@@ -1,12 +1,15 @@
 package robots;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.factory.Nd4j;
+import org.nd4j.linalg.lossfunctions.impl.LossMSE;
 import comp329robosim.SimulatedRobot;
 import intelligence.Inteligence;
 import intelligence.Maddpg.Actor;
@@ -17,7 +20,7 @@ import simulation.Mode;
 /**
  *
  */
-final class Hunter extends Agent implements Callable<Void> {
+public final class Hunter extends Agent {
 
 	@Override
 	public Void call() throws Exception {
@@ -42,30 +45,58 @@ final class Hunter extends Agent implements Callable<Void> {
 	private final Critic critic;
 	private final Critic criticTarget;
 
-	private final Actor actor;
+	public final Actor actor;
 	private final Actor actorTarget;
 
-	public void update(final INDArray indiv_reward_batch, final INDArray indiv_obs_batch,
-			final INDArray global_state_batch, final INDArray global_actions_batch,
-			final INDArray global_next_state_batch, final INDArray next_global_actions) {
+	public void update(List<Double> indivRewardBatchI, List<Boolean[]> obsBatchI,
+			List<Boolean[]> globalStateBatch, List<Action[]> globalActionsBatch,
+			List<Boolean[]> globalNextStateBatch, List<Action[]> nextGlobalActions) {
 
-		// critic
-		// final INDArray currQ = critic.forward(global_state_batch, global_actions_batch);
-		// final INDArray nextQ = criticTarget.forward(global_next_state_batch,
-		// next_global_actions);
+		final INDArray currQ = this.critic.forward(globalStateBatch.toArray(Boolean[]::new),
+				globalActionsBatch.toArray(Action[]::new));
+		final INDArray nextQ =
+				this.criticTarget.forward(globalNextStateBatch.toArray(Boolean[]::new),
+						nextGlobalActions.toArray(Action[]::new));
 
-		// final INDArray estimateQ = indiv_reward_batch.add(nextQ.mul(GAMMA));
 
-		// final INDArray criticLoss = critic.gradient(currQ, estimateQ.detach()).gradient();
-		// criticLoss.backward();
+		// final INDArray currQ = this.critic.forward(globalStateBatch.toArray(Boolean[]::new),
+		// globalActionsBatch.toArray(Action[]::new));
 
+		// final INDArray nextQ =
+		// this.criticTarget.forward(globalNextStateBatch.toArray(Boolean[]::new),
+		// nextGlobalActions.toArray(Action[]::new));
+
+		// final INDArray estimateQ =
+		// Nd4j.createFromArray(indivRewardBatchI.toArray(Double[]::new));
+
+		// final INDArray criticLoss =
+		// new LossMSE().computeScore(labels, preOutput, activationFn, mask, average);
+
+
+	}
+
+	public void targetUpdate() {
+		this.actorTarget.net.setParameters(this.actor.net.params());
+
+		this.criticTarget.net.setParameters(
+				this.critic.net.params().mul(TAU).add(this.critic.net.params().mul(1.0 - TAU)));
 	}
 
 	@Override
 	public Action getAction(final Boolean[] state) {
-		return this.actor.forward(state);
+		return Action.getActionByIndex(
+				getMaxValueIndex(this.actor.forward(this.actor.toINDArray(state)).toFloatVector()));
 	}
 
+	public int getMaxValueIndex(final float[] values) {
+		int maxAt = 0;
+
+		for (int i = 0; i < values.length; i++) {
+			maxAt = values[i] > values[maxAt] ? i : maxAt;
+		}
+
+		return maxAt;
+	}
 
 	private static final double REWARD = 1;
 
@@ -738,6 +769,27 @@ final class Hunter extends Agent implements Callable<Void> {
 						.map(j -> getPreyObservations(x, y, j.getX(), j.getY())).flatMap(Stream::of)
 						.toArray(Boolean[]::new));
 
+		// Double[] states = mergeObservations(
+		// new Double[] {normalise(px, 0, Env.ENV_SIZE), normalise(py, 0, Env.ENV_SIZE)},
+
+		// new Double[] {normalise(h[0].getX(), 0, Env.ENV_SIZE),
+		// normalise(h[0].getY(), 0, Env.ENV_SIZE)},
+
+		// new Double[] {normalise(h[1].getX(), 0, Env.ENV_SIZE),
+		// normalise(h[1].getY(), 0, Env.ENV_SIZE)},
+
+		// new Double[] {normalise(h[2].getX(), 0, Env.ENV_SIZE),
+		// normalise(h[2].getY(), 0, Env.ENV_SIZE)},
+
+		// new Double[] {normalise(h[3].getX(), 0, Env.ENV_SIZE),
+		// normalise(h[3].getY(), 0, Env.ENV_SIZE)}
+
+		// // Arrays.stream(controller.hunters).flatMap(h -> new Double[] {
+		// // normalise(h.getX(), 0, Env.ENV_SIZE), normalise(h.getY(), 0, Env.ENV_SIZE)})
+		// // .toArray(Double[]::new)
+		// );
+
+
 		shuffle(states);
 
 		return states;
@@ -820,5 +872,7 @@ final class Hunter extends Agent implements Callable<Void> {
 
 		return states;
 	}
+
+
 
 }

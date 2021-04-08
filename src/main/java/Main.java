@@ -7,7 +7,7 @@ import simulation.Mode;
 public class Main {
 
     public static void main(final String[] args) {
-        final Mode simMode = Mode.EVAL;
+        final Mode simMode = Mode.TRAIN;
         final Env env = new Env("", Env.GRID_SIZE, Env.GRID_SIZE, simMode);
 
         env.startController();

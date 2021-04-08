@@ -21,7 +21,7 @@ import robots.Action;
 import robots.RobotController;
 
 public class Critic {
-	private final MultiLayerNetwork net;
+	public final MultiLayerNetwork net;
 	private static final int HIDDEN_NEURONS = 64;
 	private static final double LR_CRITIC = 3e-4;
 
@@ -51,7 +51,7 @@ public class Critic {
 		this.net.init();
 	}
 
-	public INDArray forward(Boolean[] states, Action[] actions) {
+	public INDArray forward(final Boolean[] states, final Action[] actions) {
 		// System.out.println(states.shapeInfoToString() + " " + actions.shapeInfoToString());
 		final INDArray x = this.net.getLayer(0).activate(toINDArray(states), false,
 				LayerWorkspaceMgr.noWorkspaces());
@@ -61,21 +61,25 @@ public class Critic {
 		return this.net.getLayer(3).activate(xa, false, LayerWorkspaceMgr.noWorkspaces());
 	}
 
-	private static INDArray toINDArray(final Boolean[] states) {
+	public INDArray toINDArray(final Boolean[] states) {
 		return Nd4j.create(new int[][] {Arrays.stream(states).mapToInt(i -> i ? 1 : 0).toArray()});
 	}
 
-	private static INDArray toINDArray(final Action[] actions) {
-		System.out.println(Arrays.toString(actions));
+	public INDArray toINDArray(final Action[] actions) {
 		return Nd4j.create(
 				new int[][] {Arrays.stream(actions).mapToInt(i -> i.getActionIndex()).toArray()});
 	}
 
-	public Gradient gradient(INDArray input, INDArray labels) {
+	public Gradient gradient(final INDArray input, final INDArray labels) {
 		net.setInput(input);
 		net.setLabels(labels);
 		net.computeGradientAndScore();
 		return net.gradient();
+	}
+
+	public void update(final Boolean[] globalStateBatch, final Action[] globalActionBatch) {
+
+		this.net.fit(toINDArray(globalStateBatch), toINDArray(globalActionBatch));
 	}
 
 	// public void update(final Boolean[] states, final Action action, final double score,

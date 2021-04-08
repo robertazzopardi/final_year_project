@@ -147,15 +147,15 @@ public class DeepQLearning implements Inteligence {
 		return actionFromTheNetwork;
 	}
 
-	// private INDArray toINDArray(final float[] states) {
-	// return Nd4j.create(new float[][] {states});
+	// private INDArray toINDArray(final Boolean[] states) {
+	// return Nd4j.create(new Boolean[][] {states});
 	// }
 	private static INDArray toINDArray(final Boolean[] states) {
 		return Nd4j.create(
 				new double[][] {Arrays.stream(states).mapToDouble(i -> i ? 1 : 0).toArray()});
 	}
 
-	private int getMaxValueIndex(final float[] values) {
+	private int getMaxValueIndex(final double[] values) {
 		int maxAt = 0;
 
 		for (int i = 0; i < values.length; i++) {
@@ -168,7 +168,7 @@ public class DeepQLearning implements Inteligence {
 	private Action getActionFromTheNetwork(final Boolean[] states) {
 		final INDArray output = network.output(toINDArray(states), false);
 
-		final float[] outputValues = output.data().asFloat();
+		final double[] outputValues = output.toDoubleVector();
 
 		// Find index of the highest value
 		final int maxValueIndex = getMaxValueIndex(outputValues);
