@@ -30,19 +30,17 @@ public class Critic {
 			.weightInit(WeightInit.RELU).updater(new Adam(LR_CRITIC))
 			.gradientNormalization(GradientNormalization.ClipL2PerLayer)
 			.gradientNormalizationThreshold(0.5).miniBatch(true).dropOut(0.8).list()
-			.layer(0,
-					new DenseLayer.Builder().nIn(RobotController.STATE_COUNT * 4)
-							.nOut(HIDDEN_NEURONS).dropOut(0.5).weightInit(WeightInit.RELU)
-							.activation(Activation.RELU).build())
+			.layer(0, new DenseLayer.Builder().nIn(RobotController.OBSERVATION_COUNT * 4).nOut(1024)
+					.dropOut(0.5).weightInit(WeightInit.RELU).activation(Activation.RELU).build())
 			.layer(1,
-					new DenseLayer.Builder().nIn(HIDDEN_NEURONS).nOut(HIDDEN_NEURONS).dropOut(0.5)
+					new DenseLayer.Builder().nIn(1024 + Action.LENGTH).nOut(512).dropOut(0.5)
 							.weightInit(WeightInit.RELU).activation(Activation.RELU).build())
 			.layer(2,
-					new DenseLayer.Builder().nIn(HIDDEN_NEURONS).nOut(HIDDEN_NEURONS).dropOut(0.5)
+					new DenseLayer.Builder().nIn(512).nOut(300).dropOut(0.5)
 							.weightInit(WeightInit.RELU).activation(Activation.RELU).build())
 			.layer(3,
-					new OutputLayer.Builder(LossFunctions.LossFunction.MSE).nIn(HIDDEN_NEURONS)
-							.nOut(1).weightInit(WeightInit.RELU).activation(Activation.IDENTITY)
+					new OutputLayer.Builder(LossFunctions.LossFunction.MSE).nIn(300).nOut(1)
+							.weightInit(WeightInit.RELU).activation(Activation.IDENTITY)
 							.weightInit(WeightInit.RELU).build())
 			.backpropType(BackpropType.Standard).build();
 
@@ -51,23 +49,46 @@ public class Critic {
 		this.net.init();
 	}
 
-	public INDArray forward(final Boolean[] states, final Action[] actions) {
+	// public INDArray forward(final Boolean[] states, final Action[] actions) {
+	// // System.out.println(states.shapeInfoToString() + " " + actions.shapeInfoToString());
+	// final INDArray x = this.net.getLayer(0).activate(toINDArray(states), false,
+	// LayerWorkspaceMgr.noWorkspaces());
+	// final INDArray xaCat = Nd4j.concat(1, x, toINDArray(actions));
+	// INDArray xa = this.net.getLayer(1).activate(xaCat, false, LayerWorkspaceMgr.noWorkspaces());
+	// xa = this.net.getLayer(2).activate(xa, false, LayerWorkspaceMgr.noWorkspaces());
+	// return this.net.getLayer(3).activate(xa, false, LayerWorkspaceMgr.noWorkspaces());
+	// }
+
+	public INDArray forward(final INDArray states, final INDArray actions) {
 		// System.out.println(states.shapeInfoToString() + " " + actions.shapeInfoToString());
-		final INDArray x = this.net.getLayer(0).activate(toINDArray(states), false,
-				LayerWorkspaceMgr.noWorkspaces());
-		final INDArray xaCat = Nd4j.concat(1, x, toINDArray(actions));
+		final INDArray x =
+				this.net.getLayer(0).activate(states, false, LayerWorkspaceMgr.noWorkspaces());
+		final INDArray xaCat = Nd4j.concat(1, x, actions);
 		INDArray xa = this.net.getLayer(1).activate(xaCat, false, LayerWorkspaceMgr.noWorkspaces());
 		xa = this.net.getLayer(2).activate(xa, false, LayerWorkspaceMgr.noWorkspaces());
 		return this.net.getLayer(3).activate(xa, false, LayerWorkspaceMgr.noWorkspaces());
 	}
 
 	public INDArray toINDArray(final Boolean[] states) {
-		return Nd4j.create(new int[][] {Arrays.stream(states).mapToInt(i -> i ? 1 : 0).toArray()});
+		// return Nd4j.create(
+		// new float[][] {Arrays.stream(states).map(i -> i ? 1f : 0f).toArray(Float[]::new)});
+		float[] s = new float[states.length];
+		for (int i = 0; i < states.length; i++) {
+			s[i] = states[i] ? 1 : 0;
+		}
+
+		return Nd4j.create(new float[][] {s});
 	}
 
 	public INDArray toINDArray(final Action[] actions) {
-		return Nd4j.create(
-				new int[][] {Arrays.stream(actions).mapToInt(i -> i.getActionIndex()).toArray()});
+		// return Nd4j.create(new double[][] {
+		// Arrays.stream(actions).mapToDouble(i -> i.getActionIndex()).toArray()});
+		float[] s = new float[actions.length];
+		for (int i = 0; i < actions.length; i++) {
+			s[i] = actions[i].getActionIndex();
+		}
+
+		return Nd4j.create(new float[][] {s});
 	}
 
 	public Gradient gradient(final INDArray input, final INDArray labels) {

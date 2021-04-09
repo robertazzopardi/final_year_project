@@ -30,8 +30,8 @@ public class RobotController {
 
 	public static final int STEP_COUNT = 5000;
 
-	public static final int STATE_COUNT = 32;
-	// public static final int STATE_COUNT = 14;
+	public static final int OBSERVATION_COUNT = 32;
+	// public static final int OBSERVATION_COUNT = 14;
 
 	public static final int DELAY = 1000;
 
@@ -41,7 +41,7 @@ public class RobotController {
 
 	private Prey prey;
 
-	private final Env env;
+	public final Env env;
 
 	private static final int capacity = 1000000;
 	private static final int maxEpisode = 500;

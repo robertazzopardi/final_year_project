@@ -75,8 +75,10 @@ public class DeepQLearning implements Inteligence {
 			//
 			.list()
 			//
-			.layer(0, new DenseLayer.Builder().nIn(RobotController.STATE_COUNT).nOut(HIDDEN_NEURONS)
-					.dropOut(0.5).weightInit(WeightInit.RELU).activation(Activation.RELU).build())
+			.layer(0,
+					new DenseLayer.Builder().nIn(RobotController.OBSERVATION_COUNT)
+							.nOut(HIDDEN_NEURONS).dropOut(0.5).weightInit(WeightInit.RELU)
+							.activation(Activation.RELU).build())
 			.layer(1,
 					new DenseLayer.Builder().nIn(HIDDEN_NEURONS).nOut(HIDDEN_NEURONS).dropOut(0.5)
 							.weightInit(WeightInit.RELU).activation(Activation.RELU).build())

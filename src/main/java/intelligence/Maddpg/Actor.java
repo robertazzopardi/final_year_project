@@ -26,8 +26,10 @@ public class Actor {
             .seed(12345).optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
             .weightInit(WeightInit.RELU).updater(new Adam(LR_ACTOR))
             .gradientNormalizationThreshold(0.5).miniBatch(true).dropOut(0.8).list()
-            .layer(0, new DenseLayer.Builder().nIn(RobotController.STATE_COUNT).nOut(HIDDEN_NEURONS)
-                    .dropOut(0.5).weightInit(WeightInit.RELU).activation(Activation.RELU).build())
+            .layer(0,
+                    new DenseLayer.Builder().nIn(RobotController.OBSERVATION_COUNT)
+                            .nOut(HIDDEN_NEURONS).dropOut(0.5).weightInit(WeightInit.RELU)
+                            .activation(Activation.RELU).build())
             .layer(1,
                     new DenseLayer.Builder().nIn(HIDDEN_NEURONS).nOut(HIDDEN_NEURONS).dropOut(0.5)
                             .weightInit(WeightInit.RELU).activation(Activation.RELU).build())

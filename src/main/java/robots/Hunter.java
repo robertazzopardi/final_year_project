@@ -37,7 +37,7 @@ public final class Hunter extends Agent {
 	private static final double GAMMA = 0.99;
 	private static final double TAU = 1e-2;
 
-	private final int obsDim = RobotController.STATE_COUNT;
+	private final int obsDim = RobotController.OBSERVATION_COUNT;
 	private static final int numAgents = 4;
 
 	private static final int actionDim = Action.LENGTH;
@@ -50,29 +50,24 @@ public final class Hunter extends Agent {
 
 	public void update(List<Double> indivRewardBatchI, List<Boolean[]> obsBatchI,
 			List<Boolean[]> globalStateBatch, List<Action[]> globalActionsBatch,
-			List<Boolean[]> globalNextStateBatch, List<Action[]> nextGlobalActions) {
+			List<Boolean[]> globalNextStateBatch, INDArray nextGlobalActions) {
 
-		final INDArray currQ = this.critic.forward(globalStateBatch.toArray(Boolean[]::new),
-				globalActionsBatch.toArray(Action[]::new));
-		final INDArray nextQ =
-				this.criticTarget.forward(globalNextStateBatch.toArray(Boolean[]::new),
-						nextGlobalActions.toArray(Action[]::new));
+		INDArray irb = Nd4j.createFromArray(indivRewardBatchI.toArray(new Double[] {}));
+		irb = irb.reshape(irb.size(0), 1);
+		INDArray iob = Nd4j.createFromArray(obsBatchI.toArray(new Boolean[][] {}));
+		INDArray gsb = Nd4j.createFromArray(globalStateBatch.stream()
+				.map(x -> Arrays.stream(x).map(y -> y ? 1f : 0f).toArray(Float[]::new))
+				.toArray(Float[][]::new));
+		INDArray gab =
+				Nd4j.createFromArray(globalActionsBatch
+						.stream().map(x -> Arrays.stream(x)
+								.map(y -> Float.valueOf(y.getActionIndex())).toArray(Float[]::new))
+						.toArray(Float[][]::new));
+		INDArray gnsb = Nd4j.createFromArray(globalNextStateBatch.toArray(Boolean[][]::new));
+		INDArray nga = nextGlobalActions;
 
-
-		// final INDArray currQ = this.critic.forward(globalStateBatch.toArray(Boolean[]::new),
-		// globalActionsBatch.toArray(Action[]::new));
-
-		// final INDArray nextQ =
-		// this.criticTarget.forward(globalNextStateBatch.toArray(Boolean[]::new),
-		// nextGlobalActions.toArray(Action[]::new));
-
-		// final INDArray estimateQ =
-		// Nd4j.createFromArray(indivRewardBatchI.toArray(Double[]::new));
-
-		// final INDArray criticLoss =
-		// new LossMSE().computeScore(labels, preOutput, activationFn, mask, average);
-
-
+		System.out.println(gsb.shapeInfoToString() + "\n" + gab.shapeInfoToString());
+		INDArray currQ = this.critic.forward(gsb, gab);
 	}
 
 	public void targetUpdate() {
@@ -612,7 +607,7 @@ public final class Hunter extends Agent {
 	// }
 
 	// public float[] getObservations() {
-	// final float[] states = new float[RobotController.STATE_COUNT];
+	// final float[] states = new float[RobotController.OBSERVATION_COUNT];
 
 	// // normalised x and y positions
 	// final int x = getGridPosX();
