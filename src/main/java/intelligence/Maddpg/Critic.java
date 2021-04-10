@@ -1,18 +1,20 @@
 package intelligence.Maddpg;
 
-import java.util.Arrays;
+import org.deeplearning4j.nn.api.Layer;
 import org.deeplearning4j.nn.api.OptimizationAlgorithm;
 import org.deeplearning4j.nn.conf.BackpropType;
 import org.deeplearning4j.nn.conf.GradientNormalization;
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
 import org.deeplearning4j.nn.conf.layers.DenseLayer;
+import org.deeplearning4j.nn.conf.layers.FeedForwardLayer;
 import org.deeplearning4j.nn.conf.layers.OutputLayer;
 import org.deeplearning4j.nn.gradient.Gradient;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.nn.weights.WeightInit;
 import org.deeplearning4j.nn.workspace.LayerWorkspaceMgr;
 import org.nd4j.linalg.activations.Activation;
+import org.nd4j.linalg.activations.impl.ActivationReLU;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.learning.config.Adam;
@@ -21,6 +23,7 @@ import robots.Action;
 import robots.RobotController;
 
 public class Critic {
+
 	public final MultiLayerNetwork net;
 	private static final int HIDDEN_NEURONS = 64;
 	private static final double LR_CRITIC = 3e-4;
@@ -30,10 +33,11 @@ public class Critic {
 			.weightInit(WeightInit.RELU).updater(new Adam(LR_CRITIC))
 			.gradientNormalization(GradientNormalization.ClipL2PerLayer)
 			.gradientNormalizationThreshold(0.5).miniBatch(true).dropOut(0.8).list()
-			.layer(0, new DenseLayer.Builder().nIn(RobotController.OBSERVATION_COUNT * 4).nOut(1024)
+			.layer(0, new DenseLayer.Builder()
+					.nIn((RobotController.OBSERVATION_COUNT * 4) + Action.LENGTH).nOut(1024)
 					.dropOut(0.5).weightInit(WeightInit.RELU).activation(Activation.RELU).build())
 			.layer(1,
-					new DenseLayer.Builder().nIn(1024 + Action.LENGTH).nOut(512).dropOut(0.5)
+					new DenseLayer.Builder().nIn(1024).nOut(512).dropOut(0.5)
 							.weightInit(WeightInit.RELU).activation(Activation.RELU).build())
 			.layer(2,
 					new DenseLayer.Builder().nIn(512).nOut(300).dropOut(0.5)
@@ -59,14 +63,34 @@ public class Critic {
 	// return this.net.getLayer(3).activate(xa, false, LayerWorkspaceMgr.noWorkspaces());
 	// }
 
+	// public INDArray forward(final INDArray states, final INDArray actions) {
+	// // System.out.println(states.shapeInfoToString() + " " + actions.shapeInfoToString());
+	// final INDArray x =
+	// this.net.getLayer(0).activate(states, false, LayerWorkspaceMgr.noWorkspaces());
+	// final INDArray xaCat = Nd4j.concat(1, x, actions);
+
+	// System.out.println(xaCat.shapeInfoToString() + "\n" + this.net.getLayer(1).toString());
+
+	// INDArray xa = this.net.getLayer(1).activate(xaCat, false, LayerWorkspaceMgr.noWorkspaces());
+
+	// xa = this.net.getLayer(2).activate(xa, false, LayerWorkspaceMgr.noWorkspaces());
+	// return this.net.getLayer(3).activate(xa, false, LayerWorkspaceMgr.noWorkspaces());
+	// }
+
 	public INDArray forward(final INDArray states, final INDArray actions) {
 		// System.out.println(states.shapeInfoToString() + " " + actions.shapeInfoToString());
-		final INDArray x =
-				this.net.getLayer(0).activate(states, false, LayerWorkspaceMgr.noWorkspaces());
-		final INDArray xaCat = Nd4j.concat(1, x, actions);
-		INDArray xa = this.net.getLayer(1).activate(xaCat, false, LayerWorkspaceMgr.noWorkspaces());
-		xa = this.net.getLayer(2).activate(xa, false, LayerWorkspaceMgr.noWorkspaces());
-		return this.net.getLayer(3).activate(xa, false, LayerWorkspaceMgr.noWorkspaces());
+		// final INDArray x =
+		// this.net.getLayer(0).activate(states, false, LayerWorkspaceMgr.noWorkspaces());
+		final INDArray xaCat = Nd4j.concat(1, states, actions);
+
+		// System.out.println(xaCat.shapeInfoToString() + "\n" + this.net.getLayer(1).toString());
+
+		// INDArray xa = this.net.getLayer(1).activate(xaCat, false,
+		// LayerWorkspaceMgr.noWorkspaces());
+
+		// xa = this.net.getLayer(2).activate(xa, false, LayerWorkspaceMgr.noWorkspaces());
+		// return this.net.getLayer(3).activate(xa, false, LayerWorkspaceMgr.noWorkspaces());
+		return this.net.output(xaCat);
 	}
 
 	public INDArray toINDArray(final Boolean[] states) {
@@ -99,7 +123,6 @@ public class Critic {
 	}
 
 	public void update(final Boolean[] globalStateBatch, final Action[] globalActionBatch) {
-
 		this.net.fit(toINDArray(globalStateBatch), toINDArray(globalActionBatch));
 	}
 

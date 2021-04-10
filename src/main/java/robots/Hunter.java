@@ -6,8 +6,13 @@ import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
+
+import org.deeplearning4j.nn.gradient.Gradient;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
+import org.nd4j.linalg.activations.Activation;
+import org.nd4j.linalg.activations.impl.ActivationReLU;
 import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.api.ops.impl.loss.MeanSquaredErrorLoss;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.lossfunctions.impl.LossMSE;
 import comp329robosim.SimulatedRobot;
@@ -48,39 +53,49 @@ public final class Hunter extends Agent {
 	public final Actor actor;
 	private final Actor actorTarget;
 
-	public void update(List<Double> indivRewardBatchI, List<Boolean[]> obsBatchI,
-			List<Boolean[]> globalStateBatch, List<Action[]> globalActionsBatch,
-			List<Boolean[]> globalNextStateBatch, INDArray nextGlobalActions) {
+	public void update(List<Double> indivRewardBatchI, List<Boolean[]> obsBatchI, List<Boolean[]> globalStateBatch,
+			List<Action[]> globalActionsBatch, List<Boolean[]> globalNextStateBatch, INDArray nextGlobalActions) {
 
 		INDArray irb = Nd4j.createFromArray(indivRewardBatchI.toArray(new Double[] {}));
 		irb = irb.reshape(irb.size(0), 1);
 		INDArray iob = Nd4j.createFromArray(obsBatchI.toArray(new Boolean[][] {}));
 		INDArray gsb = Nd4j.createFromArray(globalStateBatch.stream()
-				.map(x -> Arrays.stream(x).map(y -> y ? 1f : 0f).toArray(Float[]::new))
+				.map(x -> Arrays.stream(x).map(y -> y ? 1f : 0f).toArray(Float[]::new)).toArray(Float[][]::new));
+		INDArray gab = Nd4j.createFromArray(globalActionsBatch.stream()
+				.map(x -> Arrays.stream(x).map(y -> Float.valueOf(y.getActionIndex())).toArray(Float[]::new))
 				.toArray(Float[][]::new));
-		INDArray gab =
-				Nd4j.createFromArray(globalActionsBatch
-						.stream().map(x -> Arrays.stream(x)
-								.map(y -> Float.valueOf(y.getActionIndex())).toArray(Float[]::new))
-						.toArray(Float[][]::new));
-		INDArray gnsb = Nd4j.createFromArray(globalNextStateBatch.toArray(Boolean[][]::new));
+		INDArray gnsb = Nd4j.createFromArray(globalNextStateBatch.stream()
+				.map(x -> Arrays.stream(x).map(y -> y ? 1f : 0f).toArray(Float[]::new)).toArray(Float[][]::new));
 		INDArray nga = nextGlobalActions;
 
-		System.out.println(gsb.shapeInfoToString() + "\n" + gab.shapeInfoToString());
 		INDArray currQ = this.critic.forward(gsb, gab);
+		INDArray nextQ = this.criticTarget.forward(gnsb, nga);
+		INDArray estimatedQ = irb.add(nextQ.mul(GAMMA));
+		this.critic.net.fit(Nd4j.concat(1, gsb, gab), estimatedQ);
+		this.critic.net.computeGradientAndScore();
+		this.critic.net.update(this.critic.net.gradient());
+
+		INDArray policyLoss = Nd4j.mean(this.critic.forward(gsb, gab));
+		INDArray currPolicyOut = this.actor.forward(iob);
+		policyLoss = policyLoss.add(Nd4j.mean(currPolicyOut.mul(currPolicyOut)).mul(1e-3));
+		// this.actor.net.fit(currPolicyOut);
+		// this.actor.net.computeGradientAndScore();
+		// this.actor.net.update(this.actor.net.gradient());
+
+		// System.out.println();
 	}
 
 	public void targetUpdate() {
 		this.actorTarget.net.setParameters(this.actor.net.params());
 
-		this.criticTarget.net.setParameters(
-				this.critic.net.params().mul(TAU).add(this.critic.net.params().mul(1.0 - TAU)));
+		this.criticTarget.net
+				.setParameters(this.critic.net.params().mul(TAU).add(this.critic.net.params().mul(1.0 - TAU)));
 	}
 
 	@Override
 	public Action getAction(final Boolean[] state) {
-		return Action.getActionByIndex(
-				getMaxValueIndex(this.actor.forward(this.actor.toINDArray(state)).toFloatVector()));
+		return Action
+				.getActionByIndex(getMaxValueIndex(this.actor.forward(this.actor.toINDArray(state)).toFloatVector()));
 	}
 
 	public int getMaxValueIndex(final float[] values) {
@@ -187,16 +202,15 @@ public final class Hunter extends Agent {
 		// && grid[y][x].getCellType() != OccupancyType.PREY;
 
 		// System.out
-		// .println(getX() + " " + getY() + " " + ENV_SIZE / getX() + " " + ENV_SIZE / getY());
+		// .println(getX() + " " + getY() + " " + ENV_SIZE / getX() + " " + ENV_SIZE /
+		// getY());
 
 		// if (x == prey.getX() && y == prey.getY()) {
 		// System.out.println("true");
 		// }
 
-
 		// if (Arrays.stream(otherHunters).anyMatch(i -> i.gx == x && i.gy == y)) {
-		if (Arrays.stream(controller.hunters)
-				.anyMatch(i -> (i != this) && i.gx == x && i.gy == y)) {
+		if (Arrays.stream(controller.hunters).anyMatch(i -> (i != this) && i.gx == x && i.gy == y)) {
 			return false;
 		} else if (x == prey.gx && y == prey.gy) {
 			return false;
@@ -251,26 +265,26 @@ public final class Hunter extends Agent {
 	// }
 
 	// private boolean inGoalObservation(final int x, final int y) {
-	// return x == goalDirection.px(prey.getX()) && y == goalDirection.py(prey.getY());
+	// return x == goalDirection.px(prey.getX()) && y ==
+	// goalDirection.py(prey.getY());
 	// }
 
 	// public boolean inGoalObservation() {
-	// return getX() == goalDirection.px(prey.getX()) && getY() == goalDirection.py(prey.getY());
+	// return getX() == goalDirection.px(prey.getX()) && getY() ==
+	// goalDirection.py(prey.getY());
 	// }
 
 	public boolean isAtGoal(final int x, final int y) {
 		final int px = prey.getX();
 		final int py = prey.getY();
 		return (x == UP.px(px) && y == UP.py(py)) || (x == DOWN.px(px) && y == DOWN.py(py))
-				|| (x == LEFT.px(px) && y == LEFT.py(py))
-				|| (x == RIGHT.px(px) && y == RIGHT.py(py));
+				|| (x == LEFT.px(px) && y == LEFT.py(py)) || (x == RIGHT.px(px) && y == RIGHT.py(py));
 	}
 
 	public boolean isAtGoal() {
 		final int px = prey.getX();
 		final int py = prey.getY();
-		return (getX() == UP.px(px) && getY() == UP.py(py))
-				|| (getX() == DOWN.px(px) && getY() == DOWN.py(py))
+		return (getX() == UP.px(px) && getY() == UP.py(py)) || (getX() == DOWN.px(px) && getY() == DOWN.py(py))
 				|| (getX() == LEFT.px(px) && getY() == LEFT.py(py))
 				|| (getX() == RIGHT.px(px) && getY() == RIGHT.py(py));
 	}
@@ -289,8 +303,6 @@ public final class Hunter extends Agent {
 			final Action action = getAction(getObservation());
 			doAction(action, false);
 
-
-
 			// critic.update();
 			// actor.update();
 
@@ -301,7 +313,6 @@ public final class Hunter extends Agent {
 			// controller.maddpg.incCount();
 		}
 	}
-
 
 	// private void deepLearningRunning() {
 	// final boolean gameMode = env.getMode() != Mode.EVAL;
@@ -331,7 +342,6 @@ public final class Hunter extends Agent {
 
 	// // final Action action = getAction(getObservation());
 	// // doAction(action);
-
 
 	// // actor.update();
 	// // critic.update();
@@ -368,7 +378,8 @@ public final class Hunter extends Agent {
 	// // float[] currObservation = getObservations();
 	// // float[] newObservation = null;
 
-	// Boolean[] currObservation = getObservation(Direction.fromDegree(getHeading()));
+	// Boolean[] currObservation =
+	// getObservation(Direction.fromDegree(getHeading()));
 	// Boolean[] newObservation = null;
 
 	// Action action = Action.getRandomAction();
@@ -385,12 +396,14 @@ public final class Hunter extends Agent {
 	// // final Direction direction = Direction.fromDegree(getHeading());
 	// // System.out.println(action + " " + isAdjacentToPrey() + " "
 	// // + canMove(direction.x(getGridPosX()), direction.y(getGridPosY())) + " "
-	// // + grid[direction.y(getGridPosY())][direction.x(getGridPosX())].getCellType()
+	// // +
+	// grid[direction.y(getGridPosY())][direction.x(getGridPosX())].getCellType()
 	// // + " hunter: " + number);
 
 	// // System.out.println(Arrays.toString(getObservation(getGridPosX(),
 	// // getGridPosY(),
-	// // Direction.fromDegree(getHeading()), prey.getGridPosX(), prey.getGridPosY())));
+	// // Direction.fromDegree(getHeading()), prey.getGridPosX(),
+	// prey.getGridPosY())));
 
 	// // System.out.println(getX() + " " + getY());
 
@@ -424,9 +437,8 @@ public final class Hunter extends Agent {
 		final boolean isPreyDown = py > y;
 		final boolean isPreyLeft = px < x;
 
-		return new Boolean[] {isPreyUp, isPreyRight, isPreyDown, isPreyLeft,
-				isPreyUp && isPreyRight, isPreyUp && isPreyLeft, isPreyDown && isPreyRight,
-				isPreyDown && isPreyLeft};
+		return new Boolean[] { isPreyUp, isPreyRight, isPreyDown, isPreyLeft, isPreyUp && isPreyRight,
+				isPreyUp && isPreyLeft, isPreyDown && isPreyRight, isPreyDown && isPreyLeft };
 	}
 
 	public double getScoreForAction(final Action action) {
@@ -483,88 +495,88 @@ public final class Hunter extends Agent {
 		// }
 
 		switch (action) {
-			case FORWARD:
-				direction = Direction.fromDegree(getHeading());
+		case FORWARD:
+			direction = Direction.fromDegree(getHeading());
 
-				score = getScoreForAction(score, preyObservations, direction, x, y);
+			score = getScoreForAction(score, preyObservations, direction, x, y);
 
-				if (isAtGoal()) {
-					score -= 5;
-				}
+			if (isAtGoal()) {
+				score -= 5;
+			}
 
-				if (getManhattenDistance(direction.px(x), direction.py(y), prey.getX(),
-						prey.getY()) < getManhattenDistance(x, y, prey.getX(), prey.getY())) {
-					score = .5;
-				}
+			if (getManhattenDistance(direction.px(x), direction.py(y), prey.getX(),
+					prey.getY()) < getManhattenDistance(x, y, prey.getX(), prey.getY())) {
+				score = .5;
+			}
 
-				break;
+			break;
 
-			case LEFT:
-				direction = Direction.fromDegree(getHeading() - 90);
+		case LEFT:
+			direction = Direction.fromDegree(getHeading() - 90);
 
-				score = getScoreForAction(score, preyObservations, direction, x, y);
-				break;
+			score = getScoreForAction(score, preyObservations, direction, x, y);
+			break;
 
-			case RIGHT:
-				direction = Direction.fromDegree(getHeading() + 90);
+		case RIGHT:
+			direction = Direction.fromDegree(getHeading() + 90);
 
-				score = getScoreForAction(score, preyObservations, direction, x, y);
-				break;
+			score = getScoreForAction(score, preyObservations, direction, x, y);
+			break;
 
-			case NOTHING:
-				if (isAtGoal()) {
-					score = 0.1;
-				} else if (!isAtGoal()) {
-					score = -REWARD;
-				}
-				break;
+		case NOTHING:
+			if (isAtGoal()) {
+				score = 0.1;
+			} else if (!isAtGoal()) {
+				score = -REWARD;
+			}
+			break;
 
-			default:
-				break;
+		default:
+			break;
 		}
 
 		// System.out.println(score);
 		return score;
 	}
 
-	private double getScoreForAction(double score, final Boolean[] preyObservations,
-			final Direction direction, final int x, final int y) {
+	private double getScoreForAction(double score, final Boolean[] preyObservations, final Direction direction,
+			final int x, final int y) {
 		switch (direction) {
-			case UP:
-				score += getScoreForObservations(getStatsForDirectionUp(x, y));
-				score += getScoreForPreyObservation(preyObservations, 0);
-				// score += getScoreForPreyObservation(preyObservations, 4);
-				// score += getScoreForPreyObservation(preyObservations, 5);
-				score += isAtGoal(direction.px(x), direction.py(y)) ? 1 : 0;
-				score += canMove(direction.px(x), direction.py(y)) ? 0 : -1;
-				break;
-			case DOWN:
-				score += getScoreForObservations(getStatsForDirectionDown(x, y));
-				score += getScoreForPreyObservation(preyObservations, 2);
-				// score += getScoreForPreyObservation(preyObservations, 6);
-				// score += getScoreForPreyObservation(preyObservations, 7);
-				score += isAtGoal(direction.px(x), direction.py(y)) ? 1 : 0;
-				score += canMove(direction.px(x), direction.py(y)) ? 0 : -1;
-				break;
-			case LEFT:
-				score += getScoreForObservations(getStatsForDirectionLeft(x, y));
-				score += getScoreForPreyObservation(preyObservations, 3);
-				// score += getScoreForPreyObservation(preyObservations, 5);
-				// score += getScoreForPreyObservation(preyObservations, 7);
-				score += isAtGoal(direction.px(x), direction.py(y)) ? 1 : 0;
-				score += canMove(direction.px(x), direction.py(y)) ? 0 : -1;
-				break;
-			case RIGHT:
-				score += getScoreForObservations(getStatsForDirectionRight(x, y));
-				score += getScoreForPreyObservation(preyObservations, 1);
-				// score += getScoreForPreyObservation(preyObservations, 4);
-				// score += getScoreForPreyObservation(preyObservations, 6);
-				score += isAtGoal(direction.px(x), direction.py(y)) ? 1 : 0;
-				score += canMove(direction.px(x), direction.py(y)) ? 0 : -1;
-				break;
+		case UP:
+			score += getScoreForObservations(getStatsForDirectionUp(x, y));
+			score += getScoreForPreyObservation(preyObservations, 0);
+			// score += getScoreForPreyObservation(preyObservations, 4);
+			// score += getScoreForPreyObservation(preyObservations, 5);
+			score += isAtGoal(direction.px(x), direction.py(y)) ? 1 : 0;
+			score += canMove(direction.px(x), direction.py(y)) ? 0 : -1;
+			break;
+		case DOWN:
+			score += getScoreForObservations(getStatsForDirectionDown(x, y));
+			score += getScoreForPreyObservation(preyObservations, 2);
+			// score += getScoreForPreyObservation(preyObservations, 6);
+			// score += getScoreForPreyObservation(preyObservations, 7);
+			score += isAtGoal(direction.px(x), direction.py(y)) ? 1 : 0;
+			score += canMove(direction.px(x), direction.py(y)) ? 0 : -1;
+			break;
+		case LEFT:
+			score += getScoreForObservations(getStatsForDirectionLeft(x, y));
+			score += getScoreForPreyObservation(preyObservations, 3);
+			// score += getScoreForPreyObservation(preyObservations, 5);
+			// score += getScoreForPreyObservation(preyObservations, 7);
+			score += isAtGoal(direction.px(x), direction.py(y)) ? 1 : 0;
+			score += canMove(direction.px(x), direction.py(y)) ? 0 : -1;
+			break;
+		case RIGHT:
+			score += getScoreForObservations(getStatsForDirectionRight(x, y));
+			score += getScoreForPreyObservation(preyObservations, 1);
+			// score += getScoreForPreyObservation(preyObservations, 4);
+			// score += getScoreForPreyObservation(preyObservations, 6);
+			score += isAtGoal(direction.px(x), direction.py(y)) ? 1 : 0;
+			score += canMove(direction.px(x), direction.py(y)) ? 0 : -1;
+			break;
 
-			default:
-				break;
+		default:
+			break;
 		}
 		return score;
 	}
@@ -580,8 +592,7 @@ public final class Hunter extends Agent {
 		return -1;
 	}
 
-	private static double getScoreForPreyObservation(final Boolean[] preyObservation,
-			final int index) {
+	private static double getScoreForPreyObservation(final Boolean[] preyObservation, final int index) {
 		// if (index <= 3) {
 		// return preyObservation[index] ? 0.5 : 0;
 		// }
@@ -592,16 +603,16 @@ public final class Hunter extends Agent {
 	final void doAction(final Action direction, boolean isPrey) {
 		super.doAction(direction, isPrey);
 		if (direction != Action.NOTHING) {
-			incrementMoves();
+			// incrementMoves();
 		}
 	}
 
-	private static int getManhattenDistance(final int x1, final int y1, final int x2,
-			final int y2) {
+	private static int getManhattenDistance(final int x1, final int y1, final int x2, final int y2) {
 		return Math.abs(x2 - x1) + Math.abs(y2 - y1);
 	}
 
-	// private static float getNormalisedManhattenDistance(final int x1, final int y1, final int x2,
+	// private static float getNormalisedManhattenDistance(final int x1, final int
+	// y1, final int x2,
 	// final int y2) {
 	// return normalise(getManhattenDistance(x1, y1, x2, y2), 1, Env.GRID_SIZE);
 	// }
@@ -702,7 +713,6 @@ public final class Hunter extends Agent {
 		// logger.info(endLog);
 	}
 
-
 	// @Override
 	// final void updateGrid(final int x, final int y) {
 	// env.updateGrid(x, y, OccupancyType.HUNTER);
@@ -765,7 +775,8 @@ public final class Hunter extends Agent {
 						.toArray(Boolean[]::new));
 
 		// Double[] states = mergeObservations(
-		// new Double[] {normalise(px, 0, Env.ENV_SIZE), normalise(py, 0, Env.ENV_SIZE)},
+		// new Double[] {normalise(px, 0, Env.ENV_SIZE), normalise(py, 0,
+		// Env.ENV_SIZE)},
 
 		// new Double[] {normalise(h[0].getX(), 0, Env.ENV_SIZE),
 		// normalise(h[0].getY(), 0, Env.ENV_SIZE)},
@@ -780,10 +791,10 @@ public final class Hunter extends Agent {
 		// normalise(h[3].getY(), 0, Env.ENV_SIZE)}
 
 		// // Arrays.stream(controller.hunters).flatMap(h -> new Double[] {
-		// // normalise(h.getX(), 0, Env.ENV_SIZE), normalise(h.getY(), 0, Env.ENV_SIZE)})
+		// // normalise(h.getX(), 0, Env.ENV_SIZE), normalise(h.getY(), 0,
+		// Env.ENV_SIZE)})
 		// // .toArray(Double[]::new)
 		// );
-
 
 		shuffle(states);
 
@@ -867,7 +878,5 @@ public final class Hunter extends Agent {
 
 		return states;
 	}
-
-
 
 }

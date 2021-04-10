@@ -18,17 +18,17 @@ import simulation.Mode;
  */
 public class RobotController {
 	public static final int AGENT_COUNT = 4;
-	private static final double GAMMA = 0.95;
-	private static final double TAU = 1e-3;
-	private static final int BATCH_SIZE = 1024;
+	// private static final double GAMMA = 0.95;
+	// private static final double TAU = 1e-3;
 
-	private static final int EPISODES_BEFORE_TRAIN = 20;
+	// private static final int EPISODES_BEFORE_TRAIN = 20;
 
-	private static final int EPISODES_LENGTH = 50;
+	// private static final int EPISODES_LENGTH = 50;
 
-	private static final int MAX_REPLAY_BUFFER_LEN = BATCH_SIZE * EPISODES_LENGTH;
+	// private static final int MAX_REPLAY_BUFFER_LEN = BATCH_SIZE *
+	// EPISODES_LENGTH;
 
-	public static final int STEP_COUNT = 5000;
+	// public static final int STEP_COUNT = 5000;
 
 	public static final int OBSERVATION_COUNT = 32;
 	// public static final int OBSERVATION_COUNT = 14;
@@ -43,10 +43,10 @@ public class RobotController {
 
 	public final Env env;
 
-	private static final int capacity = 1000000;
-	private static final int maxEpisode = 500;
-	private static final int maxStep = 100;
-	private static final int batchSize = 1024;
+	private static final int CAPACITY = 1000000;
+	private static final int MAX_EPISODE = 50;
+	private static final int MAX_STEP = 300;
+	private static final int BATCH_SIZE = 32;
 
 	private static final ExecutorService executor = Executors.newFixedThreadPool(AGENT_COUNT + 1);
 
@@ -61,7 +61,7 @@ public class RobotController {
 		// prey.start();
 		// startRobots();
 
-		new Maddpg(capacity, hunters, this, 500, 300, 32).run();
+		new Maddpg(CAPACITY, hunters, this, MAX_EPISODE, MAX_STEP, BATCH_SIZE).run();
 	}
 
 	public Boolean[][] reset() {
@@ -174,8 +174,7 @@ public class RobotController {
 		for (int i = 0; i < 4; i++) {
 			do {
 				final SimulatedRobot simulatedHunter = env.getAndSetHunter(i);
-				hunters[i] = new Hunter(simulatedHunter, DELAY, env, hunters[i].getLearning(), this,
-						prey, i);
+				hunters[i] = new Hunter(simulatedHunter, DELAY, env, hunters[i].getLearning(), this, prey, i);
 			} while (isSamePosition(i));
 		}
 
@@ -253,8 +252,7 @@ public class RobotController {
 	public void saveNetworks() {
 		for (int i = 0; i < hunters.length; i++) {
 			if (env.getMode() == Mode.TRAIN) {
-				DeepQLearning.saveNetwork(hunters[i].getNetwork(), i,
-						Integer.toString(Env.TOTAL_EPISODES));
+				DeepQLearning.saveNetwork(hunters[i].getNetwork(), i, Integer.toString(Env.TOTAL_EPISODES));
 			} else if (env.getMode() == Mode.TRAIN_ON) {
 				if (env.getFiles().length != 0) {
 					// final String fileName = env.getFiles()[i].getName();
@@ -264,12 +262,10 @@ public class RobotController {
 						e.printStackTrace();
 					}
 
-					DeepQLearning.saveNetwork(hunters[i].getNetwork(), i,
-							Integer.toString(env.getEpisode() - 1));
+					DeepQLearning.saveNetwork(hunters[i].getNetwork(), i, Integer.toString(env.getEpisode() - 1));
 
 				} else {
-					DeepQLearning.saveNetwork(hunters[i].getNetwork(), i,
-							Integer.toString(Env.TOTAL_EPISODES));
+					DeepQLearning.saveNetwork(hunters[i].getNetwork(), i, Integer.toString(Env.TOTAL_EPISODES));
 				}
 			}
 		}
@@ -290,8 +286,7 @@ public class RobotController {
 		env.resetGridToEmpty();
 
 		if (env.getEpisode() <= Env.TOTAL_EPISODES + env.getTrainedEpisodes()) {
-			env.updateTitle(
-					env.incrementEpisode() + " Captures " + (capture ? ++captures : captures));
+			env.updateTitle(env.incrementEpisode() + " Captures " + (capture ? ++captures : captures));
 			// TODO: add captures to the file name and retrieve
 			restartRobots();
 		} else if (env.getMode() == Mode.TRAIN || env.getMode() == Mode.TRAIN_ON) {

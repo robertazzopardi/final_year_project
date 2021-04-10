@@ -31,8 +31,8 @@ public class Maddpg {
     private final Integer[] ones = new Integer[NUM_AGENTS];
     private final Integer[] zeros = new Integer[NUM_AGENTS];
 
-    public Maddpg(final int cap, final Hunter[] agents, final RobotController controller,
-            final int maxEpisode, final int maxStep, final int batchSize) {
+    public Maddpg(final int cap, final Hunter[] agents, final RobotController controller, final int maxEpisode,
+            final int maxStep, final int batchSize) {
         this.replayBuffer = new ReplayBuffer(cap);
         this.agents = agents;
         this.robotController = controller;
@@ -61,33 +61,28 @@ public class Maddpg {
             final List<Boolean[]> obsBatchI = exp.obsBatch.get(i);
             final List<Action> indivActionBatchI = exp.indivActionBatch.get(i);
             final List<Double> indivRewardBatchI = exp.indivRewardBatch.get(i);
-            // final Boolean[][] nextObsBatchI =
-            // exp.nextObsBatch.get(i).stream().map(j -> j).toArray(Boolean[][]::new);
-            Boolean[][] nextObsBatchI = new Boolean[exp.nextObsBatch.get(i).size()][];
-            nextObsBatchI = exp.nextObsBatch.get(i).toArray(nextObsBatchI);
+            final List<Boolean[]> nextObsBatchI = exp.nextObsBatch.get(i);
 
-            INDArray[] nextGlobalActions = new INDArray[agents.length];
+            final List<INDArray> nextGlobalActions = new ArrayList<>();
             for (int j = 0; j < agents.length; j++) {
-                final INDArray nextObsBatch = Nd4j.createFromArray(nextObsBatchI);
-                final INDArray indivNextActionIND = agents[j].actor.forward(nextObsBatch);
+                Hunter hunter = agents[j];
+                INDArray arr = Nd4j.createFromArray(nextObsBatchI.toArray(new Boolean[][] {}));
+                final float[][] nobi = hunter.actor.forward(arr).toFloatMatrix();
+                INDArray n = Nd4j.createFromArray(
+                        Arrays.stream(nobi).map(x -> Float.valueOf(hunter.getMaxValueIndex(x))).toArray(Float[]::new));
+                n = Nd4j.stack(0, n);
 
-                // final Action[] indivNextAction =
-                // Arrays.stream(indivNextActionIND.toFloatMatrix())
-                // .map(x -> Action.getActionByIndex(agents[j].getMaxValueIndex(x)))
-                // .toArray(Action[]::new);
-
-                // System.out.println(Arrays.toString(indivNextAction));
-
-                nextGlobalActions[j] = indivNextActionIND;
+                nextGlobalActions.add(n);
             }
-            INDArray tmp = Nd4j.concat(1, nextGlobalActions);
+            final INDArray tmp = Nd4j.concat(0, nextGlobalActions.stream().map(x -> x).toArray(INDArray[]::new))
+                    .reshape(32, 4);
 
-            agents[i].update(indivRewardBatchI, obsBatchI, exp.globalStateBatch,
-                    exp.globalActionsBatch, exp.globalNextStateBatch, tmp);
+            agents[i].update(indivRewardBatchI, obsBatchI, exp.globalStateBatch, exp.globalActionsBatch,
+                    exp.globalNextStateBatch, tmp);
 
             agents[i].targetUpdate();
 
-            System.exit(0);
+            // System.exit(0);
         }
     }
 
@@ -109,14 +104,14 @@ public class Maddpg {
 
                 // System.out.println("one pass " + j);
 
-                epReward +=
-                        Arrays.stream(obs.rewards).mapToDouble(r -> r).average().orElse(Double.NaN);
+                epReward += Arrays.stream(obs.rewards).mapToDouble(r -> r).average().orElse(Double.NaN);
 
+                // TODO: dones are broken if prey is next to a wall
                 if (Arrays.stream(obs.dones).allMatch(d -> d) || j == maxStep - 1) {
                     replayBuffer.push(states, actions, obs.rewards, obs.nextStates, ones);
                     episodeRewards.add(epReward);
                     // System.out.println("episode: " + i + " reward: " + epReward);
-
+                    System.out.println("cap");
                     break;
                 } else {
                     replayBuffer.push(states, actions, obs.rewards, obs.nextStates, zeros);
