@@ -1,13 +1,13 @@
 package robots;
 
 public class StepObs {
-    public final Boolean[][] nextStates;
-    public final Double[] rewards;
-    public final Boolean[] dones;
+    public final Float[][] nextStates;
+    public final Float[] rewards;
+    public final boolean done;
 
-    public StepObs(final Boolean[][] nextStates, final Double[] rewards, final Boolean[] dones) {
+    public StepObs(final Float[][] nextStates, final Float[] rewards, final boolean done) {
         this.nextStates = nextStates;
         this.rewards = rewards;
-        this.dones = dones;
+        this.done = done;
     }
 }

@@ -112,58 +112,58 @@ final class Prey extends Agent {
 		;
 	}
 
+	// @Override
+	// public void run() {
+	// while (running) {
+
+	// // final int x = getX();
+	// // final int y = getY();
+
+	// // env.updateGridPrey(x, y);
+	// // env.updateGrid(x, y, OccupancyType.PREY);
+
+	// // final int a = getHeading();
+
+	// // final boolean right = canMove(x + 1, y);
+	// // final boolean down = canMove(x, y + 1);
+	// // final boolean left = canMove(x - 1, y);
+	// // final boolean up = canMove(x, y - 1);
+
+	// // check if surrounded by the hunters
+	// // if (!right && !left && !up && !down) {
+
+	// // // Do nothing while in goal state
+	// // // logger.info("trapped");
+
+	// // controller.handleCapture();
+
+	// // break;
+	// // }
+
+	// // if (isTrapped()) {
+	// // // controller.maddpg.resume();
+	// // final Boolean totalMoves = RobotController.STEP_COUNT - moveCount;
+	// // final Boolean averageMoves = totalMoves / 4;
+	// // // controller.capturesChart.update(averageMoves);
+	// // System.out.println(totalMoves + " average: " + averageMoves
+	// // + " in correct positions: "
+	// // + Arrays.stream(controller.hunters).filter(i -> i.isAtGoal()).count());
+	// // controller.handleCapture(true);
+	// // resetMoves();
+	// // } else if (moveCount <= 0) {
+	// // // controller.maddpg.resume();
+	// // controller.handleCapture(false);
+	// // resetMoves();
+	// // }
+
+
+	// doAction(Action.getRandomAction(), true);
+	// }
+	// // logger.info("Prey Stopped");
+	// }
+
 	@Override
-	public void run() {
-		while (running) {
-
-			// final int x = getX();
-			// final int y = getY();
-
-			// env.updateGridPrey(x, y);
-			// env.updateGrid(x, y, OccupancyType.PREY);
-
-			// final int a = getHeading();
-
-			// final boolean right = canMove(x + 1, y);
-			// final boolean down = canMove(x, y + 1);
-			// final boolean left = canMove(x - 1, y);
-			// final boolean up = canMove(x, y - 1);
-
-			// check if surrounded by the hunters
-			// if (!right && !left && !up && !down) {
-
-			// // Do nothing while in goal state
-			// // logger.info("trapped");
-
-			// controller.handleCapture();
-
-			// break;
-			// }
-
-			// if (isTrapped()) {
-			// // controller.maddpg.resume();
-			// final Boolean totalMoves = RobotController.STEP_COUNT - moveCount;
-			// final Boolean averageMoves = totalMoves / 4;
-			// // controller.capturesChart.update(averageMoves);
-			// System.out.println(totalMoves + " average: " + averageMoves
-			// + " in correct positions: "
-			// + Arrays.stream(controller.hunters).filter(i -> i.isAtGoal()).count());
-			// controller.handleCapture(true);
-			// resetMoves();
-			// } else if (moveCount <= 0) {
-			// // controller.maddpg.resume();
-			// controller.handleCapture(false);
-			// resetMoves();
-			// }
-
-
-			doAction(Action.getRandomAction(), true);
-		}
-		// logger.info("Prey Stopped");
-	}
-
-	@Override
-	public Action getAction(Boolean[] state) {
+	public Action getAction(Float[] state) {
 		return null;
 	}
 
@@ -173,7 +173,7 @@ final class Prey extends Agent {
 	// }
 
 	@Override
-	public Boolean[] getObservation() {
+	public Float[] getObservation() {
 		return null;
 	}
 

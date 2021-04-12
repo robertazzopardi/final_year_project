@@ -1,14 +1,19 @@
 package intelligence.Maddpg;
 
-import java.util.Arrays;
+import org.deeplearning4j.core.storage.StatsStorage;
 import org.deeplearning4j.nn.api.OptimizationAlgorithm;
 import org.deeplearning4j.nn.conf.BackpropType;
+import org.deeplearning4j.nn.conf.GradientNormalization;
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
+import org.deeplearning4j.nn.conf.WorkspaceMode;
 import org.deeplearning4j.nn.conf.layers.DenseLayer;
 import org.deeplearning4j.nn.conf.layers.OutputLayer;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.nn.weights.WeightInit;
+import org.deeplearning4j.ui.api.UIServer;
+import org.deeplearning4j.ui.model.stats.StatsListener;
+import org.deeplearning4j.ui.model.storage.InMemoryStatsStorage;
 import org.nd4j.linalg.activations.Activation;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
@@ -18,113 +23,76 @@ import robots.Action;
 import robots.RobotController;
 
 public class Actor {
-    public final MultiLayerNetwork net;
-    private static final int HIDDEN_NEURONS = 64;
-    private static final double LR_ACTOR = 1e-4;
+	public final MultiLayerNetwork net;
+	private static final int HIDDEN_NEURONS = 64;
+	private static final double LR_ACTOR = 1e-4;
 
-    private static final MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
-            .seed(12345).optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
-            .weightInit(WeightInit.RELU).updater(new Adam(LR_ACTOR))
-            .gradientNormalizationThreshold(0.5).miniBatch(true).dropOut(0.8).list()
-            .layer(0,
-                    new DenseLayer.Builder().nIn(RobotController.OBSERVATION_COUNT)
-                            .nOut(HIDDEN_NEURONS).dropOut(0.5).weightInit(WeightInit.RELU)
-                            .activation(Activation.RELU).build())
-            .layer(1,
-                    new DenseLayer.Builder().nIn(HIDDEN_NEURONS).nOut(HIDDEN_NEURONS).dropOut(0.5)
-                            .weightInit(WeightInit.RELU).activation(Activation.RELU).build())
-            .layer(2,
-                    new DenseLayer.Builder().nIn(HIDDEN_NEURONS).nOut(HIDDEN_NEURONS).dropOut(0.5)
-                            .weightInit(WeightInit.RELU).activation(Activation.RELU).build())
-            .layer(3,
-                    new OutputLayer.Builder(LossFunctions.LossFunction.MSE).nIn(HIDDEN_NEURONS)
-                            .nOut(Action.LENGTH).weightInit(WeightInit.RELU)
-                            .activation(Activation.TANH).weightInit(WeightInit.RELU).build())
-            .backpropType(BackpropType.Standard).build();
+	private static final MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
+			.seed(12345)
+			// Optimiser
+			.optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
+			// Workspace
+			.trainingWorkspaceMode(WorkspaceMode.ENABLED)
+			// Weight init
+			.weightInit(WeightInit.RELU)
+			// Updater
+			// .updater(new Adam(LR_ACTOR))
+			.updater(new Adam(0.001, 0.9, 0.999, 1e-08))
+			// .updater(new Adam(3e-4, 0.9, 0.999, 0.1))
+			// .updater(new Adam(0.0005, 0.9, 0.999, 0.1))
+			// .updater(new Sgd(LR_ACTOR))
+			// Gradient Notmalisation
+			.gradientNormalizationThreshold(0.5)
+			.gradientNormalization(GradientNormalization.ClipL2PerLayer)
+			// Drop out amount
+			.dropOut(0.8)
+			// Layers
+			.list()
+			.layer(0, new DenseLayer.Builder().nIn(RobotController.OBSERVATION_COUNT).nOut(512)
+					.dropOut(0.5).weightInit(WeightInit.RELU).activation(Activation.RELU).build())
+			.layer(1,
+					new DenseLayer.Builder().nIn(512).nOut(128).dropOut(0.5)
+							.weightInit(WeightInit.RELU).activation(Activation.RELU).build())
+			.layer(2,
+					new DenseLayer.Builder().nIn(HIDDEN_NEURONS).nOut(HIDDEN_NEURONS).dropOut(0.5)
+							.weightInit(WeightInit.RELU).activation(Activation.RELU).build())
+			.layer(3,
+					new OutputLayer.Builder(LossFunctions.LossFunction.MSE).nIn(HIDDEN_NEURONS)
+							.nOut(Action.LENGTH).weightInit(WeightInit.RELU)
+							.activation(Activation.TANH).weightInit(WeightInit.RELU).build())
+			.backpropType(BackpropType.Standard).build();
 
-    public Actor() {
-        this.net = new MultiLayerNetwork(conf);
-        this.net.init();
+	public Actor() {
+		this.net = new MultiLayerNetwork(conf);
+		this.net.init();
+	}
 
-    }
+	/**
+	 * Forward pass with given data
+	 */
+	public INDArray forward(final INDArray state) {
+		// INDArray x = this.net.getLayer(0).activate(toINDArray(state), false, null);
+		// x = this.net.getLayer(1).activate(x, false, null);
+		// x = this.net.getLayer(2).activate(x, false, null);
+		// return Action.getActionByIndex(
+		// getMaxValueIndex(this.net.getLayer(3).activate(x, false, null).toFloatVector()));
+		return this.net.output(state);
+	}
 
-    // public Action forward(final Boolean[] state) {
-    // // INDArray x = this.net.getLayer(0).activate(toINDArray(state), false, null);
-    // // x = this.net.getLayer(1).activate(x, false, null);
-    // // x = this.net.getLayer(2).activate(x, false, null);
-    // // return Action.getActionByIndex(
-    // // getMaxValueIndex(this.net.getLayer(3).activate(x, false, null).toFloatVector()));
-    // final var x = this.net.output(toINDArray(state));
-    // return Action.getActionByIndex(getMaxValueIndex(x.toFloatVector()));
-    // }
+	/**
+	 * Convert Array to INDArray and cast to int
+	 *
+	 * @param states
+	 * @return
+	 */
+	public INDArray toINDArray(final Float[] states) {
+		float[] arr = new float[states.length];
+		for (int i = 0; i < arr.length; i++) {
+			arr[i] = states[i];
+		}
 
-    public INDArray forward(final INDArray state) {
-        // INDArray x = this.net.getLayer(0).activate(toINDArray(state), false, null);
-        // x = this.net.getLayer(1).activate(x, false, null);
-        // x = this.net.getLayer(2).activate(x, false, null);
-        // return Action.getActionByIndex(
-        // getMaxValueIndex(this.net.getLayer(3).activate(x, false, null).toFloatVector()));
-        final INDArray x = this.net.output(state);
-        return x;
-    }
-
-    // public void update(final Boolean[] states, final Action action, final double score,
-    // final Boolean[] newObservations) {
-
-    // // Get max q score for next state
-    // final double maxQScore = getMaxQScore(newObservations);
-
-    // // Calculate target score
-    // final double targetScore = score + (0.9 * maxQScore);
-
-    // // Update the table with new score
-    // qTable.put(makeKey(Arrays.toString(states), action), targetScore);
-
-    // // Update network
-    // final INDArray stateObservation = toINDArray(states);
-    // final INDArray output = network.output(stateObservation);
-    // final INDArray updatedOutput = output.putScalar(action.getActionIndex(), targetScore);
-
-    // // System.out.println(stateObservation + " " + updatedOutput);
-
-    // network.fit(stateObservation, updatedOutput);
-    // }
-
-
-    // public void update(final Boolean[] state) {
-    // final INDArray data = toINDArray(state);
-    // this.net.fit(data, labels);
-    // }
-
-    // public INDArray forward(final Boolean[] state) {
-    // INDArray x = this.net.getLayer(0).activate(toINDArray(state), false, null);
-    // x = this.net.getLayer(1).activate(x, false, null);
-    // x = this.net.getLayer(2).activate(x, false, null);
-    // return this.net.getLayer(3).activate(x, false, null);
-    // }
-
-    // private int getMaxValueIndex(final float[] values) {
-    // int maxAt = 0;
-
-    // for (int i = 0; i < values.length; i++) {
-    // maxAt = values[i] > values[maxAt] ? i : maxAt;
-    // }
-
-    // return maxAt;
-    // }
-
-    public INDArray toINDArray(final Boolean[] states) {
-        return Nd4j.create(
-                new double[][] {Arrays.stream(states).mapToDouble(i -> i ? 1 : 0).toArray()});
-    }
-
-    public double[] fromINDArrayVector(final INDArray indArray) {
-        final double[] result = new double[Action.LENGTH];
-        for (int i = 0; i < Action.LENGTH; i++) {
-            result[i] = indArray.getDouble(i);
-        }
-        return result;
-    }
-
+		// double[] array = Arrays.stream(states).mapToDouble(i -> i).toArray();
+		return Nd4j.create(new float[][] {arr});
+	}
 
 }

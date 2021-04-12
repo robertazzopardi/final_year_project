@@ -5,6 +5,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import comp329robosim.SimulatedRobot;
@@ -30,7 +31,8 @@ public class RobotController {
 
 	// public static final int STEP_COUNT = 5000;
 
-	public static final int OBSERVATION_COUNT = 32;
+	// public static final int OBSERVATION_COUNT = 32;
+	public static final int OBSERVATION_COUNT = 10;
 	// public static final int OBSERVATION_COUNT = 14;
 
 	public static final int DELAY = 1000;
@@ -44,7 +46,7 @@ public class RobotController {
 	public final Env env;
 
 	private static final int CAPACITY = 1000000;
-	private static final int MAX_EPISODE = 50;
+	private static final int MAX_EPISODE = 100;
 	private static final int MAX_STEP = 300;
 	private static final int BATCH_SIZE = 32;
 
@@ -53,20 +55,16 @@ public class RobotController {
 	public RobotController(final Env env) {
 		this.env = env;
 
-		// this.capturesChart = new CapturesChart("Average Moves");
-		// CapturesChart.startChart(this.capturesChart);
-
-		// initRobots();
-
-		// prey.start();
-		// startRobots();
-
 		new Maddpg(CAPACITY, hunters, this, MAX_EPISODE, MAX_STEP, BATCH_SIZE).run();
 	}
 
-	public Boolean[][] reset() {
+	public Float[][] reset() {
 		initRobots();
-		return Arrays.stream(hunters).map(h -> h.getObservation()).toArray(Boolean[][]::new);
+		return Arrays.stream(hunters).map(h -> h.getObservation()).toArray(Float[][]::new);
+	}
+
+	public static void invokeCallables(final List<Callable<Void>> callables) throws Exception {
+		executor.invokeAll(callables);
 	}
 
 	/**
@@ -77,11 +75,10 @@ public class RobotController {
 	 */
 	public StepObs step(final Action[] actions) {
 		// Set up new callable hunters with their action
-		// TODO: could probably remove the need to create a new class
 		// and get the rewards for the action
-		final Double[] rewards = new Double[hunters.length];
+		final Float[] rewards = new Float[hunters.length];
 		for (int i = 0; i < actions.length; i++) {
-			hunters[i] = new Hunter(hunters[i], actions[i]);
+			hunters[i].setAction(actions[i]);
 			rewards[i] = hunters[i].getScoreForAction(actions[i]);
 		}
 
@@ -95,62 +92,84 @@ public class RobotController {
 		}
 
 		// Collect the states after the agents have moved
-		final Boolean[][] nextStates = new Boolean[hunters.length][];
-		final Boolean[] dones = new Boolean[hunters.length];
+		final Float[][] nextStates = new Float[hunters.length][];
 		for (int i = 0; i < hunters.length; i++) {
 			nextStates[i] = hunters[i].getObservation();
-			dones[i] = hunters[i].isAtGoal();
 		}
 
-		// System.out.println(Arrays.toString(dones));
-		return new StepObs(nextStates, rewards, dones);
+		return new StepObs(nextStates, rewards, prey.isTrapped());
 	}
+
+	// private void initRobots() {
+	// // initialise the robots from the environment
+	// final SimulatedRobot preyRobot = env.getAndSetPrey();
+	// prey = new Prey(preyRobot, DELAY, env, this);
+
+	// // final Mode mode = env.getMode();
+
+	// for (int i = 0; i < hunters.length; i++) {
+	// do {
+	// final SimulatedRobot simulatedRobot = env.getAndSetHunter(i);
+	// // Inteligence learning = null;
+	// // switch (mode) {
+	// // case EVAL:
+	// // if (env.getFiles().length == 0) {
+	// // learning = new DeepQLearning(true);
+	// // } else {
+	// // learning = DeepQLearning.loadNetwork(env.getFiles()[i], false, true);
+	// // }
+	// // break;
+
+	// // case TRAIN_ON:
+	// // if (env.getFiles().length < 4) {
+	// // learning = new DeepQLearning(false);
+
+	// // } else {
+	// // learning = DeepQLearning.loadNetwork(env.getFiles()[i], true, false);
+
+	// // }
+	// // break;
+
+	// // case TRAIN:
+	// // learning = new DeepQLearning(false);
+	// // break;
+
+	// // default:
+	// // break;
+	// // }
+	// // hunters[i] = new Hunter(simulatedRobot, DELAY, env, learning, this, prey, i);
+	// hunters[i] = new Hunter(simulatedRobot, DELAY, env, null, this, prey, i);
+	// } while (isSamePosition(i));
+	// }
+
+	// // for (final Hunter hunter : hunters) {
+	// // hunter.setOthers(hunters);
+	// // }
+	// }
 
 	private void initRobots() {
 		// initialise the robots from the environment
-		final SimulatedRobot preyRobot = env.getAndSetPrey();
-		prey = new Prey(preyRobot, DELAY, env, this);
-
-		// final Mode mode = env.getMode();
+		if (prey == null) {
+			prey = new Prey(env.getAndSetPrey(), DELAY, env, this);
+		} else {
+			prey.setPose(prey.getSimulatedRobot().getRandomPos(),
+					prey.getSimulatedRobot().getRandomPos(), 0);
+		}
 
 		for (int i = 0; i < hunters.length; i++) {
 			do {
-				final SimulatedRobot simulatedRobot = env.getAndSetHunter(i);
-				// Inteligence learning = null;
-				// switch (mode) {
-				// case EVAL:
-				// if (env.getFiles().length == 0) {
-				// learning = new DeepQLearning(true);
-				// } else {
-				// learning = DeepQLearning.loadNetwork(env.getFiles()[i], false, true);
-				// }
-				// break;
-
-				// case TRAIN_ON:
-				// if (env.getFiles().length < 4) {
-				// learning = new DeepQLearning(false);
-
-				// } else {
-				// learning = DeepQLearning.loadNetwork(env.getFiles()[i], true, false);
-
-				// }
-				// break;
-
-				// case TRAIN:
-				// learning = new DeepQLearning(false);
-				// break;
-
-				// default:
-				// break;
-				// }
-				// hunters[i] = new Hunter(simulatedRobot, DELAY, env, learning, this, prey, i);
-				hunters[i] = new Hunter(simulatedRobot, DELAY, env, null, this, prey, i);
+				if (hunters[i] == null) {
+					hunters[i] =
+							new Hunter(env.getAndSetHunter(i), DELAY, env, null, this, prey, i);
+				} else {
+					int randomPosX;
+					int randomPosY;
+					randomPosX = hunters[i].getSimulatedRobot().getRandomPos();
+					randomPosY = hunters[i].getSimulatedRobot().getRandomPos();
+					hunters[i].setPose(randomPosX, randomPosY, 0);
+				}
 			} while (isSamePosition(i));
 		}
-
-		// for (final Hunter hunter : hunters) {
-		// hunter.setOthers(hunters);
-		// }
 	}
 
 	private boolean isSamePosition(final int i) {
@@ -158,28 +177,47 @@ public class RobotController {
 			return true;
 		}
 
-		for (int j = 0; j < i; j++) {
-			if (hunters[i].getX() == hunters[j].getX() && hunters[i].getY() == hunters[j].getY()) {
-				return true;
+		for (int j = 0; j < hunters.length; j++) {
+			try {
+				if (j != i && hunters[i].getX() == hunters[j].getX()
+						&& hunters[i].getY() == hunters[j].getY()) {
+					return true;
+				}
+			} catch (NullPointerException npe) {
 			}
 		}
 
 		return false;
 	}
 
-	public void restartRobots() {
-		// final SimulatedRobot preyRobot = env.getAndSetPrey();
-		// prey = new Prey(preyRobot, DELAY, env, this);
+	// private boolean isSamePosition(final int i) {
+	// if (hunters[i].getX() == prey.getX() && hunters[i].getY() == prey.getY()) {
+	// return true;
+	// }
 
-		for (int i = 0; i < 4; i++) {
-			do {
-				final SimulatedRobot simulatedHunter = env.getAndSetHunter(i);
-				hunters[i] = new Hunter(simulatedHunter, DELAY, env, hunters[i].getLearning(), this, prey, i);
-			} while (isSamePosition(i));
-		}
+	// for (int j = 0; j < i; j++) {
+	// if (hunters[i].getX() == hunters[j].getX() && hunters[i].getY() == hunters[j].getY()) {
+	// return true;
+	// }
+	// }
 
-		startRobots();
-	}
+	// return false;
+	// }
+
+	// public void restartRobots() {
+	// // final SimulatedRobot preyRobot = env.getAndSetPrey();
+	// // prey = new Prey(preyRobot, DELAY, env, this);
+
+	// for (int i = 0; i < 4; i++) {
+	// do {
+	// final SimulatedRobot simulatedHunter = env.getAndSetHunter(i);
+	// hunters[i] = new Hunter(simulatedHunter, DELAY, env, hunters[i].getLearning(), this,
+	// prey, i);
+	// } while (isSamePosition(i));
+	// }
+
+	// startRobots();
+	// }
 
 	public void resumeHunters() {
 		for (final Hunter hunter : hunters) {
@@ -252,7 +290,8 @@ public class RobotController {
 	public void saveNetworks() {
 		for (int i = 0; i < hunters.length; i++) {
 			if (env.getMode() == Mode.TRAIN) {
-				DeepQLearning.saveNetwork(hunters[i].getNetwork(), i, Integer.toString(Env.TOTAL_EPISODES));
+				DeepQLearning.saveNetwork(hunters[i].getNetwork(), i,
+						Integer.toString(Env.TOTAL_EPISODES));
 			} else if (env.getMode() == Mode.TRAIN_ON) {
 				if (env.getFiles().length != 0) {
 					// final String fileName = env.getFiles()[i].getName();
@@ -262,39 +301,42 @@ public class RobotController {
 						e.printStackTrace();
 					}
 
-					DeepQLearning.saveNetwork(hunters[i].getNetwork(), i, Integer.toString(env.getEpisode() - 1));
+					DeepQLearning.saveNetwork(hunters[i].getNetwork(), i,
+							Integer.toString(env.getEpisode() - 1));
 
 				} else {
-					DeepQLearning.saveNetwork(hunters[i].getNetwork(), i, Integer.toString(Env.TOTAL_EPISODES));
+					DeepQLearning.saveNetwork(hunters[i].getNetwork(), i,
+							Integer.toString(Env.TOTAL_EPISODES));
 				}
 			}
 		}
 	}
 
-	public void handleCapture(final boolean capture) {
-		stopRobots();
+	// public void handleCapture(final boolean capture) {
+	// stopRobots();
 
-		// GridPrinter.printGrid(env.getGrid());
+	// // GridPrinter.printGrid(env.getGrid());
 
-		// Done with current episode, now we can restart the simulation
-		try {
-			Thread.sleep(2000);
-		} catch (final InterruptedException e) {
-			Thread.currentThread().interrupt();
-		}
+	// // Done with current episode, now we can restart the simulation
+	// try {
+	// Thread.sleep(2000);
+	// } catch (final InterruptedException e) {
+	// Thread.currentThread().interrupt();
+	// }
 
-		env.resetGridToEmpty();
+	// env.resetGridToEmpty();
 
-		if (env.getEpisode() <= Env.TOTAL_EPISODES + env.getTrainedEpisodes()) {
-			env.updateTitle(env.incrementEpisode() + " Captures " + (capture ? ++captures : captures));
-			// TODO: add captures to the file name and retrieve
-			restartRobots();
-		} else if (env.getMode() == Mode.TRAIN || env.getMode() == Mode.TRAIN_ON) {
-			// saveNetwork();
-			saveNetworks();
-			env.stopRunning();
-			executor.shutdown();
-			System.exit(0);
-		}
-	}
+	// if (env.getEpisode() <= Env.TOTAL_EPISODES + env.getTrainedEpisodes()) {
+	// env.updateTitle(
+	// env.incrementEpisode() + " Captures " + (capture ? ++captures : captures));
+	// // TODO: add captures to the file name and retrieve
+	// restartRobots();
+	// } else if (env.getMode() == Mode.TRAIN || env.getMode() == Mode.TRAIN_ON) {
+	// // saveNetwork();
+	// saveNetworks();
+	// env.stopRunning();
+	// executor.shutdown();
+	// System.exit(0);
+	// }
+	// }
 }

@@ -16,8 +16,6 @@ public abstract class Agent extends RobotMonitor implements Callable<Void> {
 	static final Direction RIGHT = Direction.RIGHT;
 	static final Direction DOWN = Direction.DOWN;
 
-	// static int moveCount = RobotController.STEP_COUNT;
-
 	final Env env;
 
 	Logger logger;
@@ -100,9 +98,9 @@ public abstract class Agent extends RobotMonitor implements Callable<Void> {
 	// return (int) ((((double) getUSenseRange() / Env.CELL_WIDTH) * 2) - 1) / 2;
 	// }
 
-	public abstract Action getAction(final Boolean[] state);
+	public abstract Action getAction(final Float[] state);
 
-	public abstract Boolean[] getObservation();
+	public abstract Float[] getObservation();
 
 	public Action getAction() {
 		return exeAction;
@@ -120,17 +118,16 @@ public abstract class Agent extends RobotMonitor implements Callable<Void> {
 		return (2 * ((float) (x - min) / (max - min))) - 1;
 	}
 
-	// static synchronized void incrementMoves() {
-	// moveCount--;
-	// }
-
-	// static void resetMoves() {
-	// moveCount = RobotController.STEP_COUNT;
-	// }
-
+	/**
+	 * Move Forward in given direction
+	 *
+	 * travels normally in evaluation mode
+	 *
+	 * "teleports" in training mode to speed up training somewhat
+	 *
+	 * @param direction
+	 */
 	final void moveDirection(final Direction direction) {
-		// final int x = getGridPosX();
-		// final int y = getGridPosY();
 		final int x = getX();
 		final int y = getY();
 
@@ -156,52 +153,32 @@ public abstract class Agent extends RobotMonitor implements Callable<Void> {
 	 */
 	void doAction(final Action action, final boolean isPrey) {
 		switch (action) {
-		case FORWARD:
-			moveDirection(Direction.fromDegree(getHeading()));
-			break;
+			case FORWARD:
+				moveDirection(Direction.fromDegree(getHeading()));
+				break;
 
-		case LEFT:
-			if (mode) {
-				rotate(-90);
-			} else {
-				setPose(getX(), getY(), getHeading() - 90);
-			}
-			break;
+			case LEFT:
+				if (mode) {
+					rotate(-90);
+				} else {
+					setPose(getX(), getY(), getHeading() - 90);
+				}
+				break;
 
-		case RIGHT:
-			if (mode) {
-				rotate(90);
-			} else {
-				setPose(getX(), getY(), getHeading() + 90);
-			}
-			break;
+			case RIGHT:
+				if (mode) {
+					rotate(90);
+				} else {
+					setPose(getX(), getY(), getHeading() + 90);
+				}
+				break;
 
-		case NOTHING:
-			break;
+			case NOTHING:
+				break;
 
-		default:
-			break;
+			default:
+				break;
 		}
-
-		// switch (action) {
-		// case UP:
-		// moveDirection(Direction.UP);
-		// break;
-		// case DOWN:
-		// moveDirection(Direction.DOWN);
-		// break;
-		// case LEFT:
-		// moveDirection(Direction.LEFT);
-		// break;
-		// case RIGHT:
-		// moveDirection(Direction.RIGHT);
-		// break;
-		// case NOTHING:
-		// break;
-
-		// default:
-		// break;
-		// }
 	}
 
 }

@@ -41,4 +41,5 @@ public enum Action {
     public int getActionIndex() {
         return Arrays.asList(ACTIONS).indexOf(this);
     }
+
 }
