@@ -37,7 +37,7 @@ public class Actor {
 			.weightInit(WeightInit.RELU)
 			// Updater
 			// .updater(new Adam(LR_ACTOR))
-			.updater(new Adam(0.001, 0.9, 0.999, 1e-08))
+			.updater(new Adam(1e-4, 0.9, 0.999, 1e-08))
 			// .updater(new Adam(3e-4, 0.9, 0.999, 0.1))
 			// .updater(new Adam(0.0005, 0.9, 0.999, 0.1))
 			// .updater(new Sgd(LR_ACTOR))
@@ -59,7 +59,7 @@ public class Actor {
 			.layer(3,
 					new OutputLayer.Builder(LossFunctions.LossFunction.MSE).nIn(HIDDEN_NEURONS)
 							.nOut(Action.LENGTH).weightInit(WeightInit.RELU)
-							.activation(Activation.TANH).weightInit(WeightInit.RELU).build())
+							.activation(Activation.TANH).build())
 			.backpropType(BackpropType.Standard).build();
 
 	public Actor() {

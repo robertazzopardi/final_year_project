@@ -49,6 +49,13 @@ public abstract class Agent extends RobotMonitor implements Callable<Void> {
 		mode = env.getMode() == Mode.EVAL;
 	}
 
+	@Override
+	public synchronized void setPose(int x, int y, int heading) {
+		super.setPose(x, y, heading);
+		gx = x;
+		gy = y;
+	}
+
 	// @Override
 	// public synchronized int getX() {
 	// return super.getX() - (Env.CELL_RADIUS);

@@ -17,18 +17,18 @@ class EnvTest {
         assertEquals(Mode.EVAL, simulationEnv.getMode());
     }
 
-    @Test
-    void incrementEpisodeTest() {
-        int episode = simulationEnv.getEpisode();
+    // @Test
+    // void incrementEpisodeTest() {
+    // int episode = simulationEnv.getEpisode();
 
-        simulationEnv.incrementEpisode();
-        assertEquals(episode + 1, simulationEnv.getEpisode());
+    // simulationEnv.incrementEpisode();
+    // assertEquals(episode + 1, simulationEnv.getEpisode());
 
-        episode = simulationEnv.getEpisode();
+    // episode = simulationEnv.getEpisode();
 
-        simulationEnv.incrementEpisode();
-        assertEquals(episode + 1, simulationEnv.getEpisode());
-    }
+    // simulationEnv.incrementEpisode();
+    // assertEquals(episode + 1, simulationEnv.getEpisode());
+    // }
 
     @Test
     void updateGridEmptyTest() {

@@ -10,14 +10,13 @@ public class Env extends EnvController {
     // public static final String CONFIG_FILE = "resources/defaultConfig.txt";
 
     public static final int TOTAL_EPISODES = 100;
-    private int episode = 1;
-
     public static final int CELL_WIDTH = 350;
     public static final int CELL_RADIUS = CELL_WIDTH / 2;
     public static final int GRID_SIZE = 6;
     public static final int ENV_SIZE = Env.GRID_SIZE * Env.CELL_WIDTH;
     public static final String OUTPUT_FOLDER = "src/main/resources/";
 
+    private int episode = 1;
     private Boolean isRunning = true;
 
     private final Mode mode;
@@ -60,28 +59,38 @@ public class Env extends EnvController {
         isRunning = false;
     }
 
+    /**
+     * Get the number of episodes trained
+     *
+     * @return
+     */
     public int getTrainedEpisodes() {
         return trainedEpisodes;
     }
 
+    /**
+     * Returns a list of pre-trained models if there are any
+     *
+     * @return
+     */
     public File[] getFiles() {
         return files;
     }
 
+    /**
+     * Initialise the robot controller
+     */
     public void startController() {
         new RobotController(this);
     }
 
+    /**
+     * Get the game mode
+     *
+     * @return
+     */
     public Mode getMode() {
         return mode;
-    }
-
-    public int getEpisode() {
-        return episode;
-    }
-
-    public int incrementEpisode() {
-        return episode++;
     }
 
     private void addBoundaries() {
@@ -94,7 +103,9 @@ public class Env extends EnvController {
         }
     }
 
-
+    /**
+     * Set all agent cells to empty
+     */
     public void resetGridToEmpty() {
         for (final MyGridCell[] myGridCells : grid) {
             for (final MyGridCell myGridCell : myGridCells) {

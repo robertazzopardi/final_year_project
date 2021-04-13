@@ -65,25 +65,27 @@ public class Maddpg {
         final List<Float[]> globalStateBatch;
         final List<Action[]> globalActionsBatch;
         final List<Float[]> globalNextStateBatch;
+        final List<Float[]> nextObsBatchI;
         final INDArray tmp;
 
         public AgentUpdate(final Hunter hunter, final List<Float> indivRewardBatchI,
                 final List<Float[]> obsBatchI, final List<Float[]> globalStateBatch,
                 final List<Action[]> globalActionsBatch, final List<Float[]> globalNextStateBatch,
-                final INDArray tmp) {
+                final List<Float[]> nextObsBatchI, final INDArray tmp) {
             this.hunter = hunter;
             this.indivRewardBatchI = indivRewardBatchI;
             this.obsBatchI = obsBatchI;
             this.globalStateBatch = globalStateBatch;
             this.globalActionsBatch = globalActionsBatch;
             this.globalNextStateBatch = globalNextStateBatch;
+            this.nextObsBatchI = nextObsBatchI;
             this.tmp = tmp;
         }
 
         @Override
         public Void call() throws Exception {
             hunter.update(indivRewardBatchI, obsBatchI, globalStateBatch, globalActionsBatch,
-                    globalNextStateBatch, tmp);
+                    globalNextStateBatch, nextObsBatchI, tmp);
 
             hunter.targetUpdate();
             return null;
@@ -113,15 +115,15 @@ public class Maddpg {
             }
             final INDArray tmp =
                     Nd4j.concat(0, nextGlobalActions.stream().map(x -> x).toArray(INDArray[]::new))
-                            .reshape(32, 4);
+                            .reshape(batchSize, 4);
 
             // agents[i].update(indivRewardBatchI, obsBatchI, exp.globalStateBatch,
             // exp.globalActionsBatch, exp.globalNextStateBatch, tmp);
             // agents[i].targetUpdate();
-            updaters.add(new AgentUpdate(agents[i], indivRewardBatchI, obsBatchI,
-                    exp.globalStateBatch, exp.globalActionsBatch, exp.globalNextStateBatch, tmp));
+            updaters.add(
+                    new AgentUpdate(agents[i], indivRewardBatchI, obsBatchI, exp.globalStateBatch,
+                            exp.globalActionsBatch, exp.globalNextStateBatch, nextObsBatchI, tmp));
         }
-
 
         try {
             executor.invokeAll(updaters);
@@ -176,7 +178,7 @@ public class Maddpg {
             System.out.println("episode: " + i + " steps: " + j + " episode reward: " + epReward);
         }
 
-        System.exit(0);
+        robotController.env.stopRunning();
     }
 
 }

@@ -14,7 +14,6 @@ import intelligence.Inteligence;
 import intelligence.Maddpg.Actor;
 import intelligence.Maddpg.Critic;
 import simulation.Env;
-import simulation.Mode;
 
 /**
  *
@@ -72,7 +71,8 @@ public final class Hunter extends Agent {
 
 	public void update(final List<Float> indivRewardBatchI, final List<Float[]> obsBatchI,
 			final List<Float[]> globalStateBatch, final List<Action[]> globalActionsBatch,
-			final List<Float[]> globalNextStateBatch, final INDArray nextGlobalActions) {
+			final List<Float[]> globalNextStateBatch, final List<Float[]> nextObsBatchI,
+			final INDArray nextGlobalActions) {
 
 		INDArray irb = Nd4j.createFromArray(indivRewardBatchI.toArray(Float[]::new));
 		irb = irb.reshape(irb.size(0), 1);
@@ -89,31 +89,24 @@ public final class Hunter extends Agent {
 				.map(x -> Arrays.stream(x).map(y -> y).toArray(Float[]::new))
 				.toArray(Float[][]::new));
 		final INDArray nga = nextGlobalActions;
-
-		// nfbguydgkfds
-		// final INDArray nextState = (INDArray) rbTuple.getValue4();
-		// final double outAction = this.actorTarget.net.output(nextState).toDoubleVector()[0];
-		// final INDArray inputCriticFeatures = getCriticInput(nextState, outAction);
-		// final double qVal =
-		// this.criticTarget.net.output(inputCriticFeatures).toDoubleVector()[0];
-		// final double q2 = (double) rbTuple.getValue1() + (qVal * GAMMA); // rewards + gamma *
-		// nextQ
-		// yTrain.putScalar(new int[] {counter}, q2);
-		// xTrain.putRow(counter, inputCriticFeatures);
-		// this.critic.net.fit(xTrain, yTrain);
+		final INDArray obsn = Nd4j.createFromArray(nextObsBatchI.toArray(Float[][]::new));
 
 		// Critic Model
-		final double currQ = this.critic.forward(gsb, gab).toDoubleVector()[0];
-		final double nextQ = this.criticTarget.forward(gnsb, nga).toDoubleVector()[0];
-		final INDArray estimatedQ = irb.add(GAMMA * nextQ); // rewards + gamma * nextQ
+		final INDArray currQ = this.critic.forward(gsb, gab);
+		final INDArray nextQ = this.criticTarget.forward(gnsb, nga);
+		final INDArray estimatedQ = irb.add(nextQ.mul(GAMMA)); // rewards + gamma * nextQ
 		final INDArray xCat = Nd4j.concat(1, gsb, gab);
 		this.critic.net.fit(xCat, estimatedQ);
 
+		// final double currQ = this.critic.forward(gsb, gab).toDoubleVector()[0];
+		// final double nextQ = this.criticTarget.forward(gnsb, nga).toDoubleVector()[0];
+		// final INDArray estimatedQ = irb.add(GAMMA * nextQ); // rewards + gamma * nextQ
+		// final INDArray xCat = Nd4j.concat(1, gsb, gab);
+		// this.critic.net.fit(xCat, estimatedQ);
+
 		// Actor Model
 		final Gradient gradient = this.critic.net.gradient();
-		final int iteration = 0;
-		final int epoch = 0;
-		this.actor.net.getUpdater().update(this.actor.net, gradient, iteration, epoch, 1,
+		this.actor.net.getUpdater().update(this.actor.net, gradient, 0, 0, 1,
 				LayerWorkspaceMgr.noWorkspaces());
 	}
 
@@ -177,19 +170,16 @@ public final class Hunter extends Agent {
 		// System.out.println("true");
 		// }
 
-		// if (Arrays.stream(otherHunters).anyMatch(i -> i.gx == x && i.gy == y)) {
 		if (Arrays.stream(controller.hunters)
-				.anyMatch(i -> (i != this) && i.gx == x && i.gy == y)) {
+				.anyMatch(i -> (i != this) && (i.gx == x && i.gy == y))) {
 			return false;
 		} else if (x == prey.gx && y == prey.gy) {
 			return false;
 		}
 
 		return (x < Env.ENV_SIZE - Env.CELL_WIDTH && x > Env.CELL_WIDTH)
-				&& (y < Env.ENV_SIZE - Env.CELL_WIDTH && y > Env.CELL_WIDTH)
-		// && Arrays.stream(otherHunters).noneMatch(i -> i.getX() == x && i.getY() == y)
-		// && (x != prey.getX() || y != prey.getY())
-		;
+				&& (y < Env.ENV_SIZE - Env.CELL_WIDTH && y > Env.CELL_WIDTH);
+
 	}
 
 	public Inteligence getLearning() {
@@ -410,61 +400,78 @@ public final class Hunter extends Agent {
 	}
 
 	public float getScoreForAction(final Action action) {
-		float score = 0;
+		// float score = 0;
+		float score = -1;
 
 		final int x = getX();
 		final int y = getY();
 		final int px = prey.getX();
 		final int py = prey.getY();
 
-		// final Boolean[] preyObservations = getPreyObservations(x, y, px, py);
-
-
-		Direction direction;
 		switch (action) {
 			case FORWARD:
-				direction = Direction.fromDegree(getHeading());
-				if (getManhattenDistance(direction.px(x), direction.py(y), prey.getX(),
-						prey.getY()) < getManhattenDistance(x, y, prey.getX(), prey.getY())) {
-					score = 1f;
-				} else if (isAtGoal(direction.px(x), direction.py(y))) {
-					score = 2f;
-				} else {
-					score = -1;
-				}
+
 				break;
 			case LEFT:
-				direction = Direction.fromDegree(getHeading() - 90);
-				if (getManhattenDistance(direction.px(x), direction.py(y), prey.getX(),
-						prey.getY()) < getManhattenDistance(x, y, prey.getX(), prey.getY())) {
-					score = 1f;
-				} else if (isAtGoal(direction.px(x), direction.py(y))) {
-					score = 2f;
-				} else {
-					score = -1;
-				}
+
 				break;
 			case RIGHT:
-				direction = Direction.fromDegree(getHeading() + 90);
-				if (getManhattenDistance(direction.px(x), direction.py(y), prey.getX(),
-						prey.getY()) < getManhattenDistance(x, y, prey.getX(), prey.getY())) {
-					score = 1f;
-				} else if (isAtGoal(direction.px(x), direction.py(y))) {
-					score = 2f;
-				} else {
-					score = -1;
-				}
+
 				break;
 			case NOTHING:
-				if (isAtGoal()) {
-					score = 0.5f;
-				} else {
-					score = -1;
-				}
+				score = 1;
 				break;
 			default:
 				break;
 		}
+
+		final Boolean[] preyObservations = getPreyObservations(x, y, px, py);
+
+		Direction direction;
+		// switch (action) {
+		// case FORWARD:
+		// direction = Direction.fromDegree(getHeading());
+		// if (getManhattenDistance(direction.px(x), direction.py(y), prey.getX(),
+		// prey.getY()) < getManhattenDistance(x, y, prey.getX(), prey.getY())) {
+		// score = 1f;
+		// } else if (isAtGoal(direction.px(x), direction.py(y))) {
+		// score = 2f;
+		// } else {
+		// score = -1;
+		// }
+		// break;
+		// case LEFT:
+		// direction = Direction.fromDegree(getHeading() - 90);
+		// if (getManhattenDistance(direction.px(x), direction.py(y), prey.getX(),
+		// prey.getY()) < getManhattenDistance(x, y, prey.getX(), prey.getY())) {
+		// score = 1f;
+		// } else if (isAtGoal(direction.px(x), direction.py(y))) {
+		// score = 2f;
+		// } else {
+		// score = -1;
+		// }
+		// break;
+		// case RIGHT:
+		// direction = Direction.fromDegree(getHeading() + 90);
+		// if (getManhattenDistance(direction.px(x), direction.py(y), prey.getX(),
+		// prey.getY()) < getManhattenDistance(x, y, prey.getX(), prey.getY())) {
+		// score = 1f;
+		// } else if (isAtGoal(direction.px(x), direction.py(y))) {
+		// score = 2f;
+		// } else {
+		// score = -1;
+		// }
+		// break;
+		// case NOTHING:
+		// if (isAtGoal()) {
+		// score = 0.5f;
+		// } else {
+		// score = -1;
+		// }
+		// break;
+		// default:
+		// break;
+		// }
 
 
 		// switch (action) {

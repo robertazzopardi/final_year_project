@@ -18,6 +18,7 @@ import org.nd4j.linalg.activations.Activation;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.learning.config.Adam;
+import org.nd4j.linalg.learning.config.Sgd;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
 import robots.Action;
 import robots.RobotController;
@@ -39,8 +40,8 @@ public class Critic {
 			.weightInit(WeightInit.RELU)
 			// Updater
 			// .updater(new Adam(LR_CRITIC))
-			// .updater(new Adam(0.001, 0.9, 0.999, 1e-08))
-			.updater(new Adam(3e-3, 0.9, 0.999, 0.1))
+			// .updater(new Adam(0.006, 0.9, 0.999, 1e-08))
+			.updater(new Adam(6e-3, 0.9, 0.999, 0.1))
 			// .updater(new Adam(0.0005, 0.9, 0.999, 0.1))
 			// .updater(new Sgd(LR_CRITIC))
 			// Gradient Normaliser
@@ -56,18 +57,16 @@ public class Critic {
 							.weightInit(WeightInit.RELU).activation(Activation.RELU).build())
 			.layer(2,
 					new OutputLayer.Builder(LossFunctions.LossFunction.MSE).nIn(150).nOut(1)
-							.weightInit(WeightInit.RELU).activation(Activation.IDENTITY)
-							.weightInit(WeightInit.RELU).build())
+							.weightInit(WeightInit.RELU).activation(Activation.IDENTITY).build())
 			.backpropType(BackpropType.Standard).build();
 
 	public Critic(final String type) {
 		this.net = new MultiLayerNetwork(conf);
 		this.net.init();
 
-		System.out.println("made network");
-
-		if (type != "TARGET")
+		if (type != "TARGET") {
 			enableUIServer();
+		}
 	}
 
 	private void enableUIServer() {

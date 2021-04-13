@@ -69,8 +69,6 @@ public class ReplayBuffer {
                 final Float rewardI = reward[i];
                 final Float[] nextObsI = nextState[i];
 
-                // System.out.println(obsI.length);
-
                 obsBatch.get(i).add(obsI);
                 indivActionBatch.get(i).add(actionI);
                 indivRewardBatch.get(i).add(rewardI);
@@ -82,7 +80,6 @@ public class ReplayBuffer {
             globalNextStateBatch
                     .add(Stream.of(nextState).flatMap(Stream::of).toArray(Float[]::new));
             doneBatch.addAll(Arrays.asList(done));
-
         }
 
         return new Sample(obsBatch, indivActionBatch, indivRewardBatch, nextObsBatch,

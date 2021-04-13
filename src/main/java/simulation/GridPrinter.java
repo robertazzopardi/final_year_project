@@ -3,7 +3,7 @@ package simulation;
 import java.util.Arrays;
 import java.util.logging.Logger;
 
-public class GridPrinter<T> extends Thread {
+public class GridPrinter<T> implements Runnable {
     private static final Logger LOGGER = Logger.getLogger(GridPrinter.class.getName());
 
     private final T[][] grid;
