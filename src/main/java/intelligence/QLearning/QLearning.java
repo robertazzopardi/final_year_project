@@ -1,19 +1,20 @@
-package intelligence.QLearning;
+package intelligence.qlearning;
 
 import java.util.ArrayList;
 import java.util.Random;
+import org.deeplearning4j.nn.gradient.Gradient;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
+import org.nd4j.linalg.api.ndarray.INDArray;
 import comp329robosim.MyGridCell;
 import comp329robosim.OccupancyType;
-import intelligence.Inteligence;
-import robots.Action;
+import intelligence.Network;
 import simulation.Env;
 
 /**
  * @author rob
  *
  */
-final class QLearning implements Inteligence {
+final class QLearning implements Network {
 	private static final double ALPHA = 0.1; // Learning rate
 	private static final int EPOCH = 1000;
 
@@ -33,7 +34,7 @@ final class QLearning implements Inteligence {
 
 	private int[][] rValues;
 
-	QLearning(final MyGridCell[][] grid) {
+	public QLearning(final MyGridCell[][] grid) {
 		this.maze = grid;
 	}
 
@@ -145,8 +146,8 @@ final class QLearning implements Inteligence {
 			// for (int j = 0; j < STATESCOUNT; j++) {
 			// qValues[i][j] = rValues[i][j];
 			// }
-			int[] aMatrix = rValues[i];
-			int aLength = aMatrix.length;
+			final int[] aMatrix = rValues[i];
+			final int aLength = aMatrix.length;
 			qValues[i] = new double[aLength];
 			System.arraycopy(aMatrix, 0, qValues[i], 0, aLength);
 		}
@@ -320,19 +321,25 @@ final class QLearning implements Inteligence {
 	}
 
 	@Override
-	public Action getAction(Boolean[] state) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
 	public MultiLayerNetwork getNetwork() {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public void update(Boolean[] state, Action action, double score, Boolean[] newObservation) {
+	public Gradient getGradient() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public INDArray predict(INDArray inputs) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void update(INDArray inputs, INDArray outputs) {
 		// TODO Auto-generated method stub
 
 	}

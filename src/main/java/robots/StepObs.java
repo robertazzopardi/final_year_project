@@ -1,13 +1,25 @@
 package robots;
 
 public class StepObs {
-    public final Float[][] nextStates;
-    public final Float[] rewards;
-    public final boolean done;
+    private final Float[][] nextStates;
+    private final Float[] rewards;
+    private final boolean done;
 
     public StepObs(final Float[][] nextStates, final Float[] rewards, final boolean done) {
         this.nextStates = nextStates;
         this.rewards = rewards;
         this.done = done;
+    }
+
+    public boolean isDone() {
+        return done;
+    }
+
+    public Float[] getRewards() {
+        return rewards;
+    }
+
+    public Float[][] getNextStates() {
+        return nextStates;
     }
 }

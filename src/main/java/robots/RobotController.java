@@ -1,42 +1,32 @@
 package robots;
 
-import java.io.IOException;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import comp329robosim.SimulatedRobot;
-import intelligence.DeepQLearning.DeepQLearning;
 import intelligence.Maddpg.Maddpg;
 import simulation.Env;
-import simulation.Mode;
 
 /**
  * Main utility class to handle the agents
  */
 public class RobotController {
 	public static final int AGENT_COUNT = 4;
-
 	public static final int OBSERVATION_COUNT = 10;
+	private static final int DELAY = 1000;
+	private static final int CAPACITY = 1000000;
+	private static final int MAX_EPISODE = 500;
+	private static final int MAX_STEP = 320;
+	// private static final int BATCH_SIZE = 64;
+	private static final int BATCH_SIZE = 32;
+	private static final ExecutorService executor = Executors.newFixedThreadPool(AGENT_COUNT + 1);
 
-	public static final int DELAY = 1000;
-
-	public final Hunter[] hunters = new Hunter[AGENT_COUNT];
+	private final Hunter[] hunters = new Hunter[AGENT_COUNT];
 
 	private Prey prey;
 
-	public final Env env;
-
-	private static final int CAPACITY = 1000000;
-	private static final int MAX_EPISODE = 500;
-	private static final int MAX_STEP = 300;
-	private static final int BATCH_SIZE = 32 * 2;
-
-	private static final ExecutorService executor = Executors.newFixedThreadPool(AGENT_COUNT + 1);
+	private final Env env;
 
 	public RobotController(final Env env) {
 		this.env = env;
@@ -44,9 +34,26 @@ public class RobotController {
 		new Maddpg(CAPACITY, hunters, this, MAX_EPISODE, MAX_STEP, BATCH_SIZE).run();
 	}
 
+	public Env getEnv() {
+		return env;
+	}
+
+	public Hunter[] getHunters() {
+		return hunters;
+	}
+
+	public Prey getPrey() {
+		return prey;
+	}
+
+	/**
+	 * Reset environment and get hunter observations
+	 *
+	 * @return
+	 */
 	public Float[][] reset() {
 		initRobots();
-		return Arrays.stream(hunters).map(h -> h.getObservation()).toArray(Float[][]::new);
+		return Arrays.stream(hunters).map(Hunter::getObservation).toArray(Float[][]::new);
 	}
 
 	// public static <T> void invokeCallables(final List<T> callables) throws Exception {
@@ -60,38 +67,56 @@ public class RobotController {
 	 * @return
 	 */
 	public StepObs step(final Action[] actions) {
-		// Set up new callable hunters with their action
-		// and get the rewards for the action
+		Float[] rewards = new Float[hunters.length];
+		final Float[][] nextStates = new Float[hunters.length][];
+
+		// Set next action
 		for (int i = 0; i < hunters.length; i++) {
 			hunters[i].setAction(actions[i]);
 			// rewards[i] = hunters[i].getScoreForAction(actions[i]);
 		}
 
-
-		// Step each agent through the world
-		try {
-			final List<Agent> agents = new ArrayList<>(Arrays.asList(hunters));
-			// agents.add(prey);
-			executor.invokeAll(agents);
-		} catch (final Exception e) {
-			e.printStackTrace();
-		}
+		executeAction();
 
 		// Collect the states after the agents have moved
-		final Float[][] nextStates = new Float[hunters.length][];
-		final Float[] rewards = new Float[hunters.length];
 		for (int i = 0; i < hunters.length; i++) {
 			nextStates[i] = hunters[i].getObservation();
-			rewards[i] = hunters[i].isAtGoal() ? 1f : -.5f;
+			// rewards[i] = hunters[i].isAtGoal() ? 1f : -1f;
+			rewards[i] = getReward(hunters[i]);
 		}
 
-		// Agents get combined reward
 		final double sum = Arrays.stream(rewards).mapToDouble(a -> a).sum();
 		Arrays.fill(rewards, (float) sum);
 
 		// System.out.println(Arrays.toString(rewards));
 
 		return new StepObs(nextStates, rewards, prey.isTrapped());
+	}
+
+	private void executeAction() {
+		// Step each agent through the world
+		try {
+			final List<Agent> agents = new ArrayList<>(Arrays.asList(hunters));
+			agents.add(prey);
+			executor.invokeAll(agents);
+		} catch (final Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	private Float getReward(final Hunter hunter) {
+		Float reward = 0f;
+
+		if (hunter.isAtGoal()) {
+			for (Hunter h : hunters) {
+				if (h.isAtGoal()) {
+					// reward += 0.125f;
+					reward += 1f;
+				}
+			}
+		}
+
+		return reward;
 	}
 
 	// private void initRobots() {
@@ -176,6 +201,7 @@ public class RobotController {
 					return true;
 				}
 			} catch (NullPointerException npe) {
+				//
 			}
 		}
 
@@ -211,31 +237,31 @@ public class RobotController {
 	// startRobots();
 	// }
 
-	public void resumeHunters() {
-		for (final Hunter hunter : hunters) {
-			hunter.resumeRobot();
-		}
-	}
+	// public void resumeHunters() {
+	// for (final Hunter hunter : hunters) {
+	// hunter.resumeRobot();
+	// }
+	// }
 
-	private void startRobots() {
-		// prey.start();
-		for (final Hunter hunter : hunters) {
-			hunter.start();
-		}
-	}
+	// private void startRobots() {
+	// // prey.start();
+	// for (final Hunter hunter : hunters) {
+	// hunter.start();
+	// }
+	// }
 
-	public void pauseRobots() {
-		for (final Hunter hunter : hunters) {
-			hunter.pauseRobot();
-		}
-	}
+	// public void pauseRobots() {
+	// for (final Hunter hunter : hunters) {
+	// hunter.pauseRobot();
+	// }
+	// }
 
-	public void stopRobots() {
-		// prey.stopRobot();
-		for (final Hunter hunter : hunters) {
-			hunter.stopRobot();
-		}
-	}
+	// public void stopRobots() {
+	// // prey.stopRobot();
+	// for (final Hunter hunter : hunters) {
+	// hunter.stopRobot();
+	// }
+	// }
 
 	// public void saveNetworks() {
 	// for (int i = 0; i < hunters.length; i++) {

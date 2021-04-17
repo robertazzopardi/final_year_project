@@ -11,9 +11,9 @@ import simulation.Env;
  */
 final class Prey extends Agent {
 
-	volatile boolean running = true;
-	volatile boolean paused = false;
-	final Object pauseLock = new Object();
+	// volatile boolean running = true;
+	// volatile boolean paused = false;
+	// final Object pauseLock = new Object();
 
 	public Prey(final SimulatedRobot r, final int d, final Env env,
 			final RobotController controller) {
@@ -48,7 +48,7 @@ final class Prey extends Agent {
 
 		// System.out
 		// .println(
-		count += Arrays.stream(controller.hunters).filter(Hunter::isAtGoal).count();
+		count += Arrays.stream(controller.getHunters()).filter(Hunter::isAtGoal).count();
 		// + " ");
 		// if (count >= 4)
 		// System.out.println(count);
@@ -102,7 +102,7 @@ final class Prey extends Agent {
 
 		// System.out.println("x: " + x + " y: " + y + " gx: " + gx + " gy: " + gy);
 
-		if (Arrays.stream(controller.hunters).anyMatch(i -> i.gx == x && i.gy == y)) {
+		if (Arrays.stream(controller.getHunters()).anyMatch(i -> i.gx == x && i.gy == y)) {
 			return false;
 		}
 

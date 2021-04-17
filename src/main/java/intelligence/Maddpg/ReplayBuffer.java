@@ -90,7 +90,6 @@ public class ReplayBuffer {
         return buffer.size();
     }
 
-
     /**
      * Generate a random sample from a list
      *

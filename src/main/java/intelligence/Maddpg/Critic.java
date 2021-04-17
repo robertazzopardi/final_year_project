@@ -9,6 +9,7 @@ import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
 import org.deeplearning4j.nn.conf.WorkspaceMode;
 import org.deeplearning4j.nn.conf.layers.DenseLayer;
 import org.deeplearning4j.nn.conf.layers.OutputLayer;
+import org.deeplearning4j.nn.gradient.Gradient;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.nn.weights.WeightInit;
 import org.deeplearning4j.ui.api.UIServer;
@@ -18,20 +19,19 @@ import org.nd4j.linalg.activations.Activation;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.learning.config.Adam;
-import org.nd4j.linalg.learning.config.Sgd;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
+import intelligence.Network;
 import robots.Action;
 import robots.RobotController;
 
 /**
  * Defines the Critic Neural Network
  */
-public class Critic {
-	public final MultiLayerNetwork net;
-	private static final double LR_CRITIC = 3e-4;
+public class Critic implements Network {
+	private final MultiLayerNetwork net;
+	private static final double LR_CRITIC = 1e-3;
 
-	private static final MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
-			.seed(12345)
+	private final MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder().seed(12345)
 			// Optimiser
 			.optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
 			// Workspace
@@ -41,8 +41,7 @@ public class Critic {
 			// Updater
 			// .updater(new Adam(LR_CRITIC))
 			// .updater(new Adam(0.006, 0.9, 0.999, 1e-08))
-			.updater(new Adam(6e-3, 0.9, 0.999, 0.1))
-			// .updater(new Adam(0.0005, 0.9, 0.999, 0.1))
+			.updater(new Adam(LR_CRITIC, 0.9, 0.999, 0.1))
 			// .updater(new Sgd(LR_CRITIC))
 			// Gradient Normaliser
 			.gradientNormalization(GradientNormalization.ClipL2PerLayer)
@@ -50,14 +49,17 @@ public class Critic {
 			// Dropout amount
 			.dropOut(0.8).list()
 			.layer(0, new DenseLayer.Builder()
-					.nIn((RobotController.OBSERVATION_COUNT * 4) + Action.LENGTH).nOut(512)
+					.nIn((RobotController.OBSERVATION_COUNT * 4) + Action.LENGTH).nOut(1024)
 					.dropOut(0.5).weightInit(WeightInit.RELU).activation(Activation.RELU).build())
 			.layer(1,
-					new DenseLayer.Builder().nIn(512).nOut(256).dropOut(0.5)
+					new DenseLayer.Builder().nIn(1024).nOut(512).dropOut(0.5)
 							.weightInit(WeightInit.RELU).activation(Activation.RELU).build())
 			.layer(2,
-					new OutputLayer.Builder(LossFunctions.LossFunction.MSE).nIn(150).nOut(1)
-							.weightInit(WeightInit.RELU).activation(Activation.IDENTITY).build())
+					new DenseLayer.Builder().nIn(512).nOut(300).dropOut(0.5)
+							.weightInit(WeightInit.RELU).activation(Activation.RELU).build())
+			.layer(3,
+					new OutputLayer.Builder(LossFunctions.LossFunction.MSE).nIn(300).nOut(1)
+							.weightInit(WeightInit.RELU).activation(Activation.RELU).build())
 			.backpropType(BackpropType.Standard).build();
 
 	public Critic(final String type) {
@@ -65,16 +67,16 @@ public class Critic {
 		this.net.init();
 
 		if (type != "TARGET") {
-			enableUIServer();
+			enableUIServer(this.net);
 		}
 	}
 
-	private void enableUIServer() {
+	private static void enableUIServer(final MultiLayerNetwork net) {
 		// Initialize the user interface backend
 		final UIServer uiServer = UIServer.getInstance();
 		final StatsStorage statsStorage = new InMemoryStatsStorage();
 		uiServer.attach(statsStorage);
-		this.net.setListeners(new StatsListener(statsStorage));
+		net.setListeners(new StatsListener(statsStorage));
 
 		// this will limit frequency of gc calls to 5000 milliseconds
 		Nd4j.getMemoryManager().togglePeriodicGc(false);
@@ -87,8 +89,25 @@ public class Critic {
 	 * @param actions
 	 * @return QValue
 	 */
-	public INDArray forward(final INDArray states, final INDArray actions) {
-		return this.net.output(Nd4j.concat(1, states, actions));
+	@Override
+	public INDArray predict(final INDArray inputs) {
+		return this.net.output(inputs);
 	}
+
+	@Override
+	public MultiLayerNetwork getNetwork() {
+		return this.net;
+	}
+
+	@Override
+	public void update(final INDArray inputs, final INDArray outputs) {
+		this.net.fit(inputs, outputs);
+	}
+
+	@Override
+	public Gradient getGradient() {
+		return this.net.gradient();
+	}
+
 
 }

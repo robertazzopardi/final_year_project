@@ -14,6 +14,7 @@ import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
 import org.deeplearning4j.nn.conf.layers.DenseLayer;
 import org.deeplearning4j.nn.conf.layers.OutputLayer;
+import org.deeplearning4j.nn.gradient.Gradient;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.nn.weights.WeightInit;
 import org.deeplearning4j.ui.api.UIServer;
@@ -26,12 +27,12 @@ import org.nd4j.linalg.learning.config.Adam;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import intelligence.Inteligence;
+import intelligence.Network;
 import robots.Action;
 import robots.RobotController;
 import simulation.Env;
 
-public class DeepQLearning implements Inteligence {
+public class DeepQLearning implements Network {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(DeepQLearning.class);
 	private static final String FILE_NAME_PREFIX = Env.OUTPUT_FOLDER + "network_";
@@ -52,7 +53,7 @@ public class DeepQLearning implements Inteligence {
 
 	// 0.001
 	// private static final double LEARNING_RATE = 0.0006;
-	private static final double LEARNING_RATE = 0.006;
+	// private static final double LEARNING_RATE = 0.006;
 
 	// Just make sure the number of inputs of the next layer equals to the number of
 	// outputs in the previous layer.
@@ -205,13 +206,11 @@ public class DeepQLearning implements Inteligence {
 		final String FORWARD = makeKey(gameObservationString, Action.FORWARD);
 		final String LEFT = makeKey(gameObservationString, Action.LEFT);
 		final String RIGHT = makeKey(gameObservationString, Action.RIGHT);
-		// final String DOWN = makeKey(gameObservationString, Action.DOWN);
 		final String NOTHING = makeKey(gameObservationString, Action.NOTHING);
 
 		qTable.putIfAbsent(FORWARD, 0.0);
 		qTable.putIfAbsent(LEFT, 0.0);
 		qTable.putIfAbsent(RIGHT, 0.0);
-		// qTable.putIfAbsent(DOWN, 0.0);
 		qTable.putIfAbsent(NOTHING, 0.0);
 
 		double score = qTable.getOrDefault(NOTHING, 0.0);
@@ -230,11 +229,6 @@ public class DeepQLearning implements Inteligence {
 		if (scoreFORWARD > score) {
 			score = scoreFORWARD;
 		}
-
-		// final Double scoreNOTHING = qTable.getOrDefault(NOTHING, 0.0);
-		// if (scoreNOTHING > score) {
-		// score = scoreNOTHING;
-		// }
 
 		return score;
 	}
@@ -263,5 +257,23 @@ public class DeepQLearning implements Inteligence {
 
 		LOGGER.info("Making new Network");
 		return new DeepQLearning(eval);
+	}
+
+	@Override
+	public INDArray predict(INDArray inputs) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void update(INDArray inputs, INDArray outputs) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public Gradient getGradient() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

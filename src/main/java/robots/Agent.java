@@ -105,11 +105,11 @@ public abstract class Agent extends RobotMonitor implements Callable<Void> {
 	// return (int) ((((double) getUSenseRange() / Env.CELL_WIDTH) * 2) - 1) / 2;
 	// }
 
-	public abstract Action getAction(final Float[] state);
+	abstract Action getAction(final Float[] state);
 
-	public abstract Float[] getObservation();
+	abstract Float[] getObservation();
 
-	public Action getAction() {
+	Action getAction() {
 		return exeAction;
 	}
 

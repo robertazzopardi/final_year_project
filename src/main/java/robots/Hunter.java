@@ -8,9 +8,11 @@ import org.deeplearning4j.nn.gradient.Gradient;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.nn.workspace.LayerWorkspaceMgr;
 import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.api.ops.impl.loss.MeanSquaredErrorLoss;
 import org.nd4j.linalg.factory.Nd4j;
+import org.nd4j.linalg.lossfunctions.impl.LossMSE;
 import comp329robosim.SimulatedRobot;
-import intelligence.Inteligence;
+import intelligence.Network;
 import intelligence.Maddpg.Actor;
 import intelligence.Maddpg.Critic;
 import simulation.Env;
@@ -19,10 +21,6 @@ import simulation.Env;
  *
  */
 public final class Hunter extends Agent {
-	volatile boolean running = true;
-	volatile boolean paused = false;
-	final Object pauseLock = new Object();
-
 	private static final int VIEW_DISTANCE = 5;
 
 	private static final double GAMMA = 0.99;
@@ -32,7 +30,7 @@ public final class Hunter extends Agent {
 	private final Critic criticTarget;
 
 	public final Actor actor;
-	private final Actor actorTarget;
+	public final Actor actorTarget;
 
 	private static final float REWARD = 1;
 
@@ -40,13 +38,13 @@ public final class Hunter extends Agent {
 
 	private static int hunterCount = 1;
 
-	private final Inteligence learning;
+	private final Network learning;
 
 	private final int number;
 
-	private static Prey prey;
+	private final Prey prey;
 
-	public Hunter(final SimulatedRobot r, final int d, final Env env, final Inteligence learning,
+	public Hunter(final SimulatedRobot r, final int d, final Env env, final Network learning,
 			final RobotController controller, final Prey prey, final int num) {
 		super(r, d, env, controller);
 
@@ -58,7 +56,7 @@ public final class Hunter extends Agent {
 
 		this.learning = learning;
 
-		Hunter.prey = prey;
+		this.prey = prey;
 
 		this.actor = new Actor();
 		this.actorTarget = new Actor();
@@ -71,8 +69,7 @@ public final class Hunter extends Agent {
 
 	public void update(final List<Float> indivRewardBatchI, final List<Float[]> obsBatchI,
 			final List<Float[]> globalStateBatch, final List<Action[]> globalActionsBatch,
-			final List<Float[]> globalNextStateBatch, final List<Float[]> nextObsBatchI,
-			final INDArray nextGlobalActions) {
+			final List<Float[]> globalNextStateBatch, final INDArray nextGlobalActions) {
 
 		INDArray irb = Nd4j.createFromArray(indivRewardBatchI.toArray(Float[]::new));
 		irb = irb.reshape(irb.size(0), 1);
@@ -89,30 +86,22 @@ public final class Hunter extends Agent {
 				.map(x -> Arrays.stream(x).map(y -> y).toArray(Float[]::new))
 				.toArray(Float[][]::new));
 		final INDArray nga = nextGlobalActions;
-		final INDArray obsn = Nd4j.createFromArray(nextObsBatchI.toArray(Float[][]::new));
 
 		// Critic Model
-		final INDArray currQ = this.critic.forward(gsb, gab);
-		final INDArray nextQ = this.criticTarget.forward(gnsb, nga);
+		final INDArray nextQ = this.criticTarget.predict(Nd4j.concat(1, gnsb, nga));
 		final INDArray estimatedQ = irb.add(nextQ.mul(GAMMA)); // rewards + gamma * nextQ
-		final INDArray xCat = Nd4j.concat(1, gsb, gab);
-		this.critic.net.fit(xCat, estimatedQ);
+		this.critic.update(Nd4j.concat(1, gsb, gab), estimatedQ);
 
-		// final double currQ = this.critic.forward(gsb, gab).toDoubleVector()[0];
-		// final double nextQ = this.criticTarget.forward(gnsb, nga).toDoubleVector()[0];
-		// final INDArray estimatedQ = irb.add(GAMMA * nextQ); // rewards + gamma * nextQ
-		// final INDArray xCat = Nd4j.concat(1, gsb, gab);
-		// this.critic.net.fit(xCat, estimatedQ);
+		// new LossMSE().computeScore(labels, preOutput, activationFn, mask, average);
 
 		// Actor Model
-		final Gradient gradient = this.critic.net.gradient();
-		this.actor.net.getUpdater().update(this.actor.net, gradient, 0, 0, 1,
-				LayerWorkspaceMgr.noWorkspaces());
+		final Gradient gradient = this.critic.getGradient();
+		this.actor.setGradient(gradient);
 	}
 
 	public void targetUpdate() {
-		updateTargetModel(this.actor.net, this.actorTarget.net);
-		updateTargetModel(this.critic.net, this.criticTarget.net);
+		updateTargetModel(this.actor.getNetwork(), this.actorTarget.getNetwork());
+		updateTargetModel(this.critic.getNetwork(), this.criticTarget.getNetwork());
 	}
 
 	public void updateTargetModel(final MultiLayerNetwork main, final MultiLayerNetwork target) {
@@ -132,7 +121,7 @@ public final class Hunter extends Agent {
 	@Override
 	public Action getAction(final Float[] state) {
 		return Action.getActionByIndex(
-				getMaxValueIndex(this.actor.forward(this.actor.toINDArray(state)).toFloatVector()));
+				getMaxValueIndex(this.actor.predict(this.actor.toINDArray(state)).toFloatVector()));
 	}
 
 	public int getMaxValueIndex(final float[] values) {
@@ -170,7 +159,7 @@ public final class Hunter extends Agent {
 		// System.out.println("true");
 		// }
 
-		if (Arrays.stream(controller.hunters)
+		if (Arrays.stream(controller.getHunters())
 				.anyMatch(i -> (i != this) && (i.gx == x && i.gy == y))) {
 			return false;
 		} else if (x == prey.gx && y == prey.gy) {
@@ -182,7 +171,7 @@ public final class Hunter extends Agent {
 
 	}
 
-	public Inteligence getLearning() {
+	public Network getLearning() {
 		return learning;
 	}
 
@@ -311,26 +300,6 @@ public final class Hunter extends Agent {
 	// }
 	// }
 
-	public synchronized void stopRobot() {
-		running = false;
-		// you might also want to interrupt() the Thread that is
-		// running this Runnable, too, or perhaps call:
-		resumeRobot();
-		// to unblock
-	}
-
-	public synchronized void pauseRobot() {
-		// you may want to throw an IllegalStateException if !running
-		paused = true;
-	}
-
-	public synchronized void resumeRobot() {
-		synchronized (pauseLock) {
-			paused = false;
-			pauseLock.notifyAll(); // Unblocks thread
-		}
-	}
-
 	// private void deepLearningRunning() {
 	// // float[] currObservation = getObservations();
 	// // float[] newObservation = null;
@@ -408,22 +377,22 @@ public final class Hunter extends Agent {
 		final int px = prey.getX();
 		final int py = prey.getY();
 
-		switch (action) {
-			case FORWARD:
+		// switch (action) {
+		// case FORWARD:
 
-				break;
-			case LEFT:
+		// break;
+		// case LEFT:
 
-				break;
-			case RIGHT:
+		// break;
+		// case RIGHT:
 
-				break;
-			case NOTHING:
-				score = 1;
-				break;
-			default:
-				break;
-		}
+		// break;
+		// case NOTHING:
+		// score = 1;
+		// break;
+		// default:
+		// break;
+		// }
 
 		final Boolean[] preyObservations = getPreyObservations(x, y, px, py);
 
@@ -474,46 +443,46 @@ public final class Hunter extends Agent {
 		// }
 
 
-		// switch (action) {
-		// case FORWARD:
-		// direction = Direction.fromDegree(getHeading());
+		switch (action) {
+			case FORWARD:
+				direction = Direction.fromDegree(getHeading());
 
-		// score = getScoreForAction(score, preyObservations, direction, x, y);
+				score = getScoreForAction(score, preyObservations, direction, x, y);
 
-		// if (isAtGoal()) {
-		// score -= 1f;
-		// }
+				if (isAtGoal()) {
+					score -= 1f;
+				}
 
-		// if (getManhattenDistance(direction.px(x), direction.py(y), prey.getX(),
-		// prey.getY()) < getManhattenDistance(x, y, prey.getX(), prey.getY())) {
-		// score = 1f;
-		// }
+				if (getManhattenDistance(direction.px(x), direction.py(y), prey.getX(),
+						prey.getY()) < getManhattenDistance(x, y, prey.getX(), prey.getY())) {
+					score = 1f;
+				}
 
-		// break;
+				break;
 
-		// case LEFT:
-		// direction = Direction.fromDegree(getHeading() - 90);
+			case LEFT:
+				direction = Direction.fromDegree(getHeading() - 90);
 
-		// score = getScoreForAction(score, preyObservations, direction, x, y);
-		// break;
+				score = getScoreForAction(score, preyObservations, direction, x, y);
+				break;
 
-		// case RIGHT:
-		// direction = Direction.fromDegree(getHeading() + 90);
+			case RIGHT:
+				direction = Direction.fromDegree(getHeading() + 90);
 
-		// score = getScoreForAction(score, preyObservations, direction, x, y);
-		// break;
+				score = getScoreForAction(score, preyObservations, direction, x, y);
+				break;
 
-		// case NOTHING:
-		// if (isAtGoal()) {
-		// score = 1f;
-		// } else if (!isAtGoal()) {
-		// score = -REWARD;
-		// }
-		// break;
+			case NOTHING:
+				if (isAtGoal()) {
+					score = 1f;
+				} else if (!isAtGoal()) {
+					score = -REWARD;
+				}
+				break;
 
-		// default:
-		// break;
-		// }
+			default:
+				break;
+		}
 
 		// System.out.println(score);
 		return score;
@@ -770,17 +739,16 @@ public final class Hunter extends Agent {
 		// .map(j -> getPreyObservations(x, y, j.getX(), j.getY())).flatMap(Stream::of)
 		// .toArray(Boolean[]::new));
 
-
 		// final Hunter[] others =
 		// Arrays.stream(controller.hunters).filter(h -> h != this).toArray(Hunter[]::new);
 		final Float[] states = new Float[RobotController.OBSERVATION_COUNT];
 		int count = 0;
-		for (final Hunter hunter : controller.hunters) {
+		for (final Hunter hunter : controller.getHunters()) {
 			states[count++] = normalise(hunter.getX(), 0, Env.ENV_SIZE);
 			states[count++] = normalise(hunter.getY(), 0, Env.ENV_SIZE);
 		}
 		states[count++] = normalise(prey.getX(), 0, Env.ENV_SIZE);
-		states[count++] = normalise(prey.getY(), 0, Env.ENV_SIZE);
+		states[count] = normalise(prey.getY(), 0, Env.ENV_SIZE);
 
 		shuffle(states);
 
@@ -864,5 +832,13 @@ public final class Hunter extends Agent {
 
 		return states;
 	}
+
+	public double getDistanceFrom() {
+		double dx = (double) getX() - prey.getX();
+		double dy = (double) getY() - prey.getY();
+
+		return Math.sqrt(dx * dx + dy * dy);
+	}
+
 
 }

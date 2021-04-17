@@ -1,6 +1,5 @@
 package intelligence.Maddpg;
 
-import org.deeplearning4j.core.storage.StatsStorage;
 import org.deeplearning4j.nn.api.OptimizationAlgorithm;
 import org.deeplearning4j.nn.conf.BackpropType;
 import org.deeplearning4j.nn.conf.GradientNormalization;
@@ -9,26 +8,25 @@ import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
 import org.deeplearning4j.nn.conf.WorkspaceMode;
 import org.deeplearning4j.nn.conf.layers.DenseLayer;
 import org.deeplearning4j.nn.conf.layers.OutputLayer;
+import org.deeplearning4j.nn.gradient.Gradient;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.nn.weights.WeightInit;
-import org.deeplearning4j.ui.api.UIServer;
-import org.deeplearning4j.ui.model.stats.StatsListener;
-import org.deeplearning4j.ui.model.storage.InMemoryStatsStorage;
+import org.deeplearning4j.nn.workspace.LayerWorkspaceMgr;
 import org.nd4j.linalg.activations.Activation;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.learning.config.Adam;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
+import intelligence.Network;
 import robots.Action;
 import robots.RobotController;
 
-public class Actor {
-	public final MultiLayerNetwork net;
+public class Actor implements Network {
+	private final MultiLayerNetwork net;
 	private static final int HIDDEN_NEURONS = 64;
 	private static final double LR_ACTOR = 1e-4;
 
-	private static final MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
-			.seed(12345)
+	private final MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder().seed(12345)
 			// Optimiser
 			.optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
 			// Workspace
@@ -37,9 +35,8 @@ public class Actor {
 			.weightInit(WeightInit.RELU)
 			// Updater
 			// .updater(new Adam(LR_ACTOR))
-			.updater(new Adam(1e-4, 0.9, 0.999, 1e-08))
-			// .updater(new Adam(3e-4, 0.9, 0.999, 0.1))
-			// .updater(new Adam(0.0005, 0.9, 0.999, 0.1))
+			// .updater(new Adam(LR_ACTOR, 0.9, 0.999, 1e-08))
+			.updater(new Adam(LR_ACTOR, 0.9, 0.999, 0.1))
 			// .updater(new Sgd(LR_ACTOR))
 			// Gradient Notmalisation
 			.gradientNormalizationThreshold(0.5)
@@ -70,7 +67,8 @@ public class Actor {
 	/**
 	 * Forward pass with given data
 	 */
-	public INDArray forward(final INDArray state) {
+	@Override
+	public INDArray predict(final INDArray state) {
 		// INDArray x = this.net.getLayer(0).activate(toINDArray(state), false, null);
 		// x = this.net.getLayer(1).activate(x, false, null);
 		// x = this.net.getLayer(2).activate(x, false, null);
@@ -86,7 +84,7 @@ public class Actor {
 	 * @return
 	 */
 	public INDArray toINDArray(final Float[] states) {
-		float[] arr = new float[states.length];
+		final float[] arr = new float[states.length];
 		for (int i = 0; i < arr.length; i++) {
 			arr[i] = states[i];
 		}
@@ -94,5 +92,37 @@ public class Actor {
 		// double[] array = Arrays.stream(states).mapToDouble(i -> i).toArray();
 		return Nd4j.create(new float[][] {arr});
 	}
+
+	public void setGradient(final Gradient gradient) {
+		this.net.getUpdater().update(this.net, gradient, 0, 0, 1, LayerWorkspaceMgr.noWorkspaces());
+	}
+
+	@Override
+	public MultiLayerNetwork getNetwork() {
+		return this.net;
+	}
+
+	@Override
+	public void update(final INDArray inputs, final INDArray outputs) {
+		// Not needed for this model, as gradient is updated from critic method
+	}
+
+	@Override
+	public Gradient getGradient() {
+		return this.net.gradient();
+	}
+
+	// private double get_OUnoise(double thresholdUtility) {
+	// // https://towardsdatascience.com/deep-deterministic-policy-gradients-explained-2d94655a9b7b
+	// double low = 0.85;
+	// double high = 1.0;
+	// double ouNoise = 0.3 * Math.random(); // random num between 0.0 and 1.0
+	// double result = thresholdUtility + ouNoise;
+	// if (result < low)
+	// result = low;
+	// if (result > high)
+	// result = high;
+	// return result;
+	// }
 
 }
