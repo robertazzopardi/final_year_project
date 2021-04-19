@@ -32,46 +32,6 @@ public enum Direction {
         }
     }
 
-    // /**
-    // * Get new x position
-    // *
-    // * @param x
-    // * @return
-    // */
-    // public int x(final int x) {
-    // switch (this) {
-    // case UP:
-    // case DOWN:
-    // return x;
-    // case LEFT:
-    // return x - 1;
-    // case RIGHT:
-    // return x + 1;
-    // default:
-    // return 0;
-    // }
-    // }
-
-    // /**
-    // * Get new y position
-    // *
-    // * @param y
-    // * @return
-    // */
-    // public int y(final int y) {
-    // switch (this) {
-    // case UP:
-    // return y - 1;
-    // case DOWN:
-    // return y + 1;
-    // case LEFT:
-    // case RIGHT:
-    // return y;
-    // default:
-    // return 0;
-    // }
-    // }
-
     /**
      * Get new x position based on actual environment dimensions
      *

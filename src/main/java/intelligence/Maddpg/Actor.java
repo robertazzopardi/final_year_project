@@ -1,5 +1,8 @@
 package intelligence.Maddpg;
 
+import java.io.File;
+import java.io.IOException;
+import org.deeplearning4j.core.storage.StatsStorage;
 import org.deeplearning4j.nn.api.OptimizationAlgorithm;
 import org.deeplearning4j.nn.conf.BackpropType;
 import org.deeplearning4j.nn.conf.GradientNormalization;
@@ -11,7 +14,9 @@ import org.deeplearning4j.nn.conf.layers.OutputLayer;
 import org.deeplearning4j.nn.gradient.Gradient;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.nn.weights.WeightInit;
-import org.deeplearning4j.nn.workspace.LayerWorkspaceMgr;
+import org.deeplearning4j.ui.api.UIServer;
+import org.deeplearning4j.ui.model.stats.StatsListener;
+import org.deeplearning4j.ui.model.storage.InMemoryStatsStorage;
 import org.nd4j.linalg.activations.Activation;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
@@ -19,12 +24,12 @@ import org.nd4j.linalg.learning.config.Adam;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
 import intelligence.Network;
 import robots.Action;
-import robots.RobotController;
+import robots.Hunter;
 
 public class Actor implements Network {
 	private final MultiLayerNetwork net;
 	private static final int HIDDEN_NEURONS = 64;
-	private static final double LR_ACTOR = 1e-4;
+	private static final double LR_ACTOR = 6e-3;
 
 	private final MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder().seed(12345)
 			// Optimiser
@@ -39,14 +44,29 @@ public class Actor implements Network {
 			.updater(new Adam(LR_ACTOR, 0.9, 0.999, 0.1))
 			// .updater(new Sgd(LR_ACTOR))
 			// Gradient Notmalisation
-			.gradientNormalizationThreshold(0.5)
+			// .gradientNormalizationThreshold(0.5)
 			.gradientNormalization(GradientNormalization.ClipL2PerLayer)
 			// Drop out amount
 			.dropOut(0.8)
 			// Layers
 			.list()
-			.layer(0, new DenseLayer.Builder().nIn(RobotController.OBSERVATION_COUNT).nOut(512)
-					.dropOut(0.5).weightInit(WeightInit.RELU).activation(Activation.RELU).build())
+			// .layer(0,
+			// new DenseLayer.Builder().nIn(Hunter.OBSERVATION_COUNT).nOut(512).dropOut(0.5)
+			// .weightInit(WeightInit.RELU).activation(Activation.RELU).build())
+			// .layer(1,
+			// new DenseLayer.Builder().nIn(512).nOut(128).dropOut(0.5)
+			// .weightInit(WeightInit.RELU).activation(Activation.RELU).build())
+			// .layer(2,
+			// new DenseLayer.Builder().nIn(HIDDEN_NEURONS).nOut(HIDDEN_NEURONS).dropOut(0.5)
+			// .weightInit(WeightInit.RELU).activation(Activation.RELU).build())
+			// .layer(3,
+			// new OutputLayer.Builder(LossFunctions.LossFunction.MSE).nIn(HIDDEN_NEURONS)
+			// .nOut(Action.LENGTH).weightInit(WeightInit.RELU)
+			// .activation(Activation.TANH).build())
+
+			.layer(0,
+					new DenseLayer.Builder().nIn(Hunter.OBSERVATION_COUNT).nOut(512).dropOut(0.5)
+							.weightInit(WeightInit.RELU).activation(Activation.RELU).build())
 			.layer(1,
 					new DenseLayer.Builder().nIn(512).nOut(128).dropOut(0.5)
 							.weightInit(WeightInit.RELU).activation(Activation.RELU).build())
@@ -56,12 +76,33 @@ public class Actor implements Network {
 			.layer(3,
 					new OutputLayer.Builder(LossFunctions.LossFunction.MSE).nIn(HIDDEN_NEURONS)
 							.nOut(Action.LENGTH).weightInit(WeightInit.RELU)
-							.activation(Activation.TANH).build())
+							.activation(Activation.IDENTITY).build())
+
 			.backpropType(BackpropType.Standard).build();
 
-	public Actor() {
+	public Actor(final String type) {
 		this.net = new MultiLayerNetwork(conf);
 		this.net.init();
+
+		// if (type != "TARGET") {
+		// enableUIServer(this.net);
+		// }
+	}
+
+	public Actor(final File fileName) {
+		this.net = loadNetwork(fileName, false);
+		this.net.init();
+	}
+
+	private static void enableUIServer(final MultiLayerNetwork net) {
+		// Initialize the user interface backend
+		final UIServer uiServer = UIServer.getInstance();
+		final StatsStorage statsStorage = new InMemoryStatsStorage();
+		uiServer.attach(statsStorage);
+		net.setListeners(new StatsListener(statsStorage));
+
+		// this will limit frequency of gc calls to 5000 milliseconds
+		Nd4j.getMemoryManager().togglePeriodicGc(false);
 	}
 
 	/**
@@ -69,11 +110,6 @@ public class Actor implements Network {
 	 */
 	@Override
 	public INDArray predict(final INDArray state) {
-		// INDArray x = this.net.getLayer(0).activate(toINDArray(state), false, null);
-		// x = this.net.getLayer(1).activate(x, false, null);
-		// x = this.net.getLayer(2).activate(x, false, null);
-		// return Action.getActionByIndex(
-		// getMaxValueIndex(this.net.getLayer(3).activate(x, false, null).toFloatVector()));
 		return this.net.output(state);
 	}
 
@@ -93,8 +129,12 @@ public class Actor implements Network {
 		return Nd4j.create(new float[][] {arr});
 	}
 
-	public void setGradient(final Gradient gradient) {
-		this.net.getUpdater().update(this.net, gradient, 0, 0, 1, LayerWorkspaceMgr.noWorkspaces());
+	public void updateGradient(final Gradient gradient) {
+		// this.net.getUpdater().update(this.net, gradient, 0, 0, 1,
+		// LayerWorkspaceMgr.noWorkspaces());
+		// this.net.update(gradient);
+		this.net.computeGradientAndScore();
+		this.net.params().subi(gradient.gradient());
 	}
 
 	@Override
@@ -108,7 +148,10 @@ public class Actor implements Network {
 	}
 
 	@Override
-	public Gradient getGradient() {
+	public Gradient getGradient(final INDArray inputs, final INDArray labels) {
+		this.net.setInput(inputs);
+		this.net.setLabels(labels);
+		this.net.computeGradientAndScore();
 		return this.net.gradient();
 	}
 
@@ -124,5 +167,37 @@ public class Actor implements Network {
 	// result = high;
 	// return result;
 	// }
+
+	/**
+	 * Saves Actor the network
+	 *
+	 * @param fileName
+	 */
+	@Override
+	public void saveNetwork(final String fileName) {
+		try {
+			this.net.save(new File(fileName), true);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * Loads network
+	 *
+	 * @param fileName
+	 * @return Multi Layered Network
+	 */
+	@Override
+	public MultiLayerNetwork loadNetwork(final File file, final boolean moreTraining) {
+		try {
+			System.out.println("Loading Network: " + file.getName());
+			return MultiLayerNetwork.load(file, true);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		return null;
+	}
 
 }

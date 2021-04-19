@@ -1,7 +1,6 @@
 package robots;
 
 import java.util.concurrent.Callable;
-import java.util.logging.Logger;
 import comp329robosim.RobotMonitor;
 import comp329robosim.SimulatedRobot;
 import simulation.Env;
@@ -17,8 +16,6 @@ public abstract class Agent extends RobotMonitor implements Callable<Void> {
 	static final Direction DOWN = Direction.DOWN;
 
 	final Env env;
-
-	Logger logger;
 
 	Action exeAction;
 
@@ -44,8 +41,6 @@ public abstract class Agent extends RobotMonitor implements Callable<Void> {
 
 		this.controller = controller;
 
-		// this.grid = env.getGrid();
-
 		mode = env.getMode() == Mode.EVAL;
 	}
 
@@ -56,16 +51,6 @@ public abstract class Agent extends RobotMonitor implements Callable<Void> {
 		gy = y;
 	}
 
-	// @Override
-	// public synchronized int getX() {
-	// return super.getX() - (Env.CELL_RADIUS);
-	// }
-
-	// @Override
-	// public synchronized int getY() {
-	// return super.getY() - (Env.CELL_RADIUS);
-	// }
-
 	/**
 	 * Get whether the robot can move into the x and y position
 	 *
@@ -74,14 +59,6 @@ public abstract class Agent extends RobotMonitor implements Callable<Void> {
 	 * @return
 	 */
 	abstract boolean canMove(int x, int y);
-
-	/**
-	 * Set the cell at the x and y position with the value of the robot
-	 *
-	 * @param x
-	 * @param y
-	 */
-	// abstract void updateGrid(final int x, final int y);
 
 	// /**
 	// * get x position on the grid from the robots location
@@ -101,14 +78,26 @@ public abstract class Agent extends RobotMonitor implements Callable<Void> {
 	// return (int) ((((double) getY() / Env.CELL_WIDTH) * 2) - 1) / 2;
 	// }
 
-	// final int getDistanceAhead() {
-	// return (int) ((((double) getUSenseRange() / Env.CELL_WIDTH) * 2) - 1) / 2;
-	// }
-
+	/**
+	 * Get action for the agent to execute
+	 *
+	 * @param state
+	 * @return
+	 */
 	abstract Action getAction(final Float[] state);
 
+	/**
+	 * Get the agents current local observations
+	 *
+	 * @return
+	 */
 	abstract Float[] getObservation();
 
+	/**
+	 * Get the current actions being executed
+	 *
+	 * @return
+	 */
 	Action getAction() {
 		return exeAction;
 	}
@@ -158,7 +147,7 @@ public abstract class Agent extends RobotMonitor implements Callable<Void> {
 	 *
 	 * @param action
 	 */
-	void doAction(final Action action, final boolean isPrey) {
+	void doAction(final Action action) {
 		switch (action) {
 			case FORWARD:
 				moveDirection(Direction.fromDegree(getHeading()));

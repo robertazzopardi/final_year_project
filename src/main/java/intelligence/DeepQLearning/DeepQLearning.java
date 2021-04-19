@@ -29,13 +29,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import intelligence.Network;
 import robots.Action;
+import robots.Hunter;
 import robots.RobotController;
-import simulation.Env;
 
 public class DeepQLearning implements Network {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(DeepQLearning.class);
-	private static final String FILE_NAME_PREFIX = Env.OUTPUT_FOLDER + "network_";
+	private static final String FILE_NAME_PREFIX = RobotController.OUTPUT_FOLDER + "network_";
 
 	private static final int HIDDEN_NEURONS = 150;
 
@@ -77,10 +77,8 @@ public class DeepQLearning implements Network {
 			//
 			.list()
 			//
-			.layer(0,
-					new DenseLayer.Builder().nIn(RobotController.OBSERVATION_COUNT)
-							.nOut(HIDDEN_NEURONS).dropOut(0.5).weightInit(WeightInit.RELU)
-							.activation(Activation.RELU).build())
+			.layer(0, new DenseLayer.Builder().nIn(Hunter.OBSERVATION_COUNT).nOut(HIDDEN_NEURONS)
+					.dropOut(0.5).weightInit(WeightInit.RELU).activation(Activation.RELU).build())
 			.layer(1,
 					new DenseLayer.Builder().nIn(HIDDEN_NEURONS).nOut(HIDDEN_NEURONS).dropOut(0.5)
 							.weightInit(WeightInit.RELU).activation(Activation.RELU).build())
@@ -260,19 +258,31 @@ public class DeepQLearning implements Network {
 	}
 
 	@Override
-	public INDArray predict(INDArray inputs) {
+	public INDArray predict(final INDArray inputs) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public void update(INDArray inputs, INDArray outputs) {
+	public void update(final INDArray inputs, final INDArray outputs) {
 		// TODO Auto-generated method stub
 
 	}
 
 	@Override
-	public Gradient getGradient() {
+	public Gradient getGradient(INDArray inputs, INDArray labels) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void saveNetwork(String fileName) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public MultiLayerNetwork loadNetwork(final File file, boolean moreTraining) {
 		// TODO Auto-generated method stub
 		return null;
 	}

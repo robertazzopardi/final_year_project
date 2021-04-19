@@ -8,12 +8,17 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import robots.Action;
 import robots.Hunter;
 import robots.RobotController;
 import robots.StepObs;
+import simulation.Mode;
 
 public class Maddpg {
+    private static final Logger LOG = LoggerFactory.getLogger(Maddpg.class.getSimpleName());
+
     private static final int NUM_AGENTS = 4;
 
     private static final ExecutorService executor = Executors.newFixedThreadPool(NUM_AGENTS);
@@ -49,9 +54,7 @@ public class Maddpg {
 
         for (int i = 0; i < NUM_AGENTS; i++) {
             actions[i] = agents[i].getAction(states[i]);
-            // System.out.print(actions[i] + " ");
         }
-        // System.out.println();
 
         return actions;
     }
@@ -64,21 +67,147 @@ public class Maddpg {
         final Hunter hunter;
         final Data data;
         final INDArray tmp;
+        final int num;
 
-        public AgentUpdate(final Hunter hunter, final Data data, final INDArray tmp) {
+        public AgentUpdate(final Hunter hunter, final Data data, final INDArray tmp,
+                final int num) {
             this.hunter = hunter;
             this.data = data;
             this.tmp = tmp;
+            this.num = num;
         }
 
         @Override
         public Void call() throws Exception {
             hunter.update(data.indivRewardBatchI, data.obsBatchI, data.globalStateBatch,
-                    data.globalActionsBatch, data.globalNextStateBatch, tmp);
+                    data.globalActionsBatch, data.globalNextStateBatch, tmp, num);
 
-            hunter.targetUpdate();
+            hunter.updateTarget();
             return null;
         }
+    }
+
+    public void update(final int batchSize) {
+        final Sample exp = replayBuffer.sample(batchSize);
+
+        final List<AgentUpdate> updaters = new ArrayList<>();
+        for (int i = 0; i < NUM_AGENTS; i++) {
+            final List<Float[]> obsBatchI = exp.obsBatch.get(i);
+            final List<Action> indivActionBatchI = exp.indivActionBatch.get(i);
+            final List<Float> indivRewardBatchI = exp.indivRewardBatch.get(i);
+            final List<Float[]> nextObsBatchI = exp.nextObsBatch.get(i);
+
+            final List<INDArray> nextGlobalActions = new ArrayList<>();
+            for (int j = 0; j < agents.length; j++) {
+                final Hunter hunter = agents[j];
+                final INDArray arr = Nd4j.createFromArray(nextObsBatchI.toArray(new Float[][] {}));
+                final float[][] nobi = hunter.getActorTarget().predict(arr).toFloatMatrix();
+                INDArray n = Nd4j.createFromArray(Arrays.stream(nobi)
+                        .map(x -> Float.valueOf(hunter.getMaxValueIndex(x))).toArray(Float[]::new));
+                n = Nd4j.stack(0, n);
+
+                nextGlobalActions.add(n);
+            }
+            final INDArray tmp =
+                    Nd4j.concat(0, nextGlobalActions.stream().map(x -> x).toArray(INDArray[]::new))
+                            .reshape(batchSize, 4);
+
+            updaters.add(new AgentUpdate(agents[i], new Data(indivRewardBatchI, obsBatchI,
+                    exp.globalStateBatch, exp.globalActionsBatch, exp.globalNextStateBatch), tmp,
+                    i));
+        }
+
+        try {
+            executor.invokeAll(updaters);
+        } catch (final Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Runs the training for specified episodes x max steps
+     */
+    public void run() {
+        final List<Double> episodeRewards = new ArrayList<>();
+        final List<Integer> steps = new ArrayList<>();
+
+        for (int i = 1; i <= maxEpisode; i++) {
+            Float[][] states = robotController.reset();
+
+            double epReward = 0;
+
+            int j = 0;
+            for (; j < maxStep; j++) {
+                final Action[] actions = getActions(states);
+
+                // Simulate one step in the environment
+                // Blocks until all hunters have moved in the environment
+                final StepObs observation = robotController.step(actions, j);
+
+                epReward += Arrays.stream(observation.getRewards()).mapToDouble(r -> r).average()
+                        .orElse(Double.NaN);
+
+                if (robotController.getEnv().getMode() == Mode.EVAL) {
+                    states = observation.getNextStates();
+                } else {
+                    if (observation.isDone() || j == maxStep - 1) {
+                        replayBuffer.push(states, actions, observation.getRewards(),
+                                observation.getNextStates(), ones);
+                        episodeRewards.add(epReward);
+                        break;
+                    } else {
+                        replayBuffer.push(states, actions, observation.getRewards(),
+                                observation.getNextStates(), zeros);
+                        states = observation.getNextStates();
+
+                        if (replayBuffer.getLength() > batchSize && j % batchSize * 2 == 0) {
+                            update(batchSize);
+                        }
+                    }
+                }
+            }
+
+            steps.add(j);
+
+            // System.out.println(String.valueOf(epReward));
+            logEpisodeInformation(episodeRewards, i, epReward, j, steps);
+        }
+
+        cleanUp();
+    }
+
+    private void cleanUp() {
+        robotController.getEnv().stopRunning();
+
+        // Save the networks
+        for (int i = 0; i < 4; i++) {
+            agents[i].getActor().saveNetwork(
+                    RobotController.OUTPUT_FOLDER + maxEpisode + "_" + (i + 1) + ".zip");
+        }
+
+        System.exit(0);
+    }
+
+    private void logEpisodeInformation(final List<Double> episodeRewards, int i, double epReward,
+            int j, final List<Integer> steps) {
+        final String log =
+                String.format("Episode: %s | Step: %s | Average: %s | Reward: %s | Average: %s",
+                        fixedLengthString(String.valueOf(i), String.valueOf(maxEpisode).length()),
+                        fixedLengthString(String.valueOf(j), String.valueOf(maxStep).length()),
+                        fixedLengthString(
+                                String.format("%.2f",
+                                        steps.stream().mapToDouble(r -> r).average().orElse(0)),
+                                String.valueOf(maxStep).length() + 3),
+                        fixedLengthString(String.format("%.2f", epReward), 7),
+                        fixedLengthString(String.format("%.2f",
+                                episodeRewards.stream().mapToDouble(r -> r).average().orElse(0)),
+                                7));
+        LOG.info(log);
+    }
+
+    public static String fixedLengthString(final String string, final int length) {
+        final String format = "%1$" + length + "s";
+        return String.format(format, string);
     }
 
     class Data {
@@ -97,90 +226,6 @@ public class Maddpg {
             this.globalActionsBatch = globalActionsBatch;
             this.globalNextStateBatch = globalNextStateBatch;
         }
-    }
-
-    public void update(final int batchSize) {
-        final Sample exp = replayBuffer.sample(batchSize);
-
-        final List<AgentUpdate> updaters = new ArrayList<>();
-        for (int i = 0; i < NUM_AGENTS; i++) {
-            final List<Float[]> obsBatchI = exp.obsBatch.get(i);
-            final List<Action> indivActionBatchI = exp.indivActionBatch.get(i);
-            final List<Float> indivRewardBatchI = exp.indivRewardBatch.get(i);
-            final List<Float[]> nextObsBatchI = exp.nextObsBatch.get(i);
-
-            final List<INDArray> nextGlobalActions = new ArrayList<>();
-            for (int j = 0; j < agents.length; j++) {
-                final Hunter hunter = agents[j];
-                final INDArray arr = Nd4j.createFromArray(nextObsBatchI.toArray(new Float[][] {}));
-                final float[][] nobi = hunter.actorTarget.predict(arr).toFloatMatrix();
-                INDArray n = Nd4j.createFromArray(Arrays.stream(nobi)
-                        .map(x -> Float.valueOf(hunter.getMaxValueIndex(x))).toArray(Float[]::new));
-                n = Nd4j.stack(0, n);
-
-                nextGlobalActions.add(n);
-            }
-            final INDArray tmp =
-                    Nd4j.concat(0, nextGlobalActions.stream().map(x -> x).toArray(INDArray[]::new))
-                            .reshape(batchSize, 4);
-
-            updaters.add(new AgentUpdate(agents[i], new Data(indivRewardBatchI, obsBatchI,
-                    exp.globalStateBatch, exp.globalActionsBatch, exp.globalNextStateBatch), tmp));
-        }
-
-        try {
-            executor.invokeAll(updaters);
-        } catch (final Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * Runs the training for specified episodes x max steps
-     */
-    public void run() {
-        final List<Double> episodeRewards = new ArrayList<>();
-
-        for (int i = 1; i <= maxEpisode; i++) {
-            Float[][] states = robotController.reset();
-
-            double epReward = 0;
-
-            int j = 0;
-            for (; j < maxStep; j++) {
-                final Action[] actions = getActions(states);
-
-                // Simulate one step in the environment
-                // Blocks until all hunters have moved in the environment
-                final StepObs observation = robotController.step(actions);
-
-                epReward += Arrays.stream(observation.getRewards()).mapToDouble(r -> r).average()
-                        .orElse(Double.NaN);
-
-                if (observation.isDone() || j == maxStep - 1) {
-                    replayBuffer.push(states, actions, observation.getRewards(),
-                            observation.getNextStates(), ones);
-                    episodeRewards.add(epReward);
-                    // System.out.println("episode: " + i + " reward: " + epReward);
-                    break;
-                } else {
-                    replayBuffer.push(states, actions, observation.getRewards(),
-                            observation.getNextStates(), zeros);
-                    states = observation.getNextStates();
-
-                    if (replayBuffer.getLength() > batchSize) {
-                        update(batchSize);
-                    }
-                }
-
-                // System.out.println("step done");
-            }
-
-            // robotController.env.updateTitle(String.valueOf(i));
-            System.out.println("episode: " + i + " steps: " + j + " episode reward: " + epReward);
-        }
-
-        robotController.getEnv().stopRunning();
     }
 
 }

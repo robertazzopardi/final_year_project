@@ -1,5 +1,6 @@
 package intelligence.Maddpg;
 
+import java.io.File;
 import org.deeplearning4j.core.storage.StatsStorage;
 import org.deeplearning4j.nn.api.OptimizationAlgorithm;
 import org.deeplearning4j.nn.conf.BackpropType;
@@ -22,14 +23,14 @@ import org.nd4j.linalg.learning.config.Adam;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
 import intelligence.Network;
 import robots.Action;
-import robots.RobotController;
+import robots.Hunter;
 
 /**
  * Defines the Critic Neural Network
  */
 public class Critic implements Network {
 	private final MultiLayerNetwork net;
-	private static final double LR_CRITIC = 1e-3;
+	private static final double LR_CRITIC = 6e-3;
 
 	private final MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder().seed(12345)
 			// Optimiser
@@ -40,17 +41,17 @@ public class Critic implements Network {
 			.weightInit(WeightInit.RELU)
 			// Updater
 			// .updater(new Adam(LR_CRITIC))
-			// .updater(new Adam(0.006, 0.9, 0.999, 1e-08))
+			// .updater(new Adam(LR_CRITIC, 0.9, 0.999, 1e-08))
 			.updater(new Adam(LR_CRITIC, 0.9, 0.999, 0.1))
 			// .updater(new Sgd(LR_CRITIC))
 			// Gradient Normaliser
 			.gradientNormalization(GradientNormalization.ClipL2PerLayer)
-			.gradientNormalizationThreshold(0.5)
-			// Dropout amount
-			.dropOut(0.8).list()
-			.layer(0, new DenseLayer.Builder()
-					.nIn((RobotController.OBSERVATION_COUNT * 4) + Action.LENGTH).nOut(1024)
-					.dropOut(0.5).weightInit(WeightInit.RELU).activation(Activation.RELU).build())
+			// .gradientNormalizationThreshold(0.5)
+			.l2(0.00001).dropOut(0.8).list()
+			.layer(0,
+					new DenseLayer.Builder().nIn((Hunter.OBSERVATION_COUNT * 4) + Action.LENGTH)
+							.nOut(1024).dropOut(0.5).weightInit(WeightInit.RELU)
+							.activation(Activation.RELU).build())
 			.layer(1,
 					new DenseLayer.Builder().nIn(1024).nOut(512).dropOut(0.5)
 							.weightInit(WeightInit.RELU).activation(Activation.RELU).build())
@@ -59,7 +60,7 @@ public class Critic implements Network {
 							.weightInit(WeightInit.RELU).activation(Activation.RELU).build())
 			.layer(3,
 					new OutputLayer.Builder(LossFunctions.LossFunction.MSE).nIn(300).nOut(1)
-							.weightInit(WeightInit.RELU).activation(Activation.RELU).build())
+							.weightInit(WeightInit.RELU).activation(Activation.IDENTITY).build())
 			.backpropType(BackpropType.Standard).build();
 
 	public Critic(final String type) {
@@ -105,9 +106,22 @@ public class Critic implements Network {
 	}
 
 	@Override
-	public Gradient getGradient() {
+	public Gradient getGradient(final INDArray inputs, final INDArray labels) {
+		// this.net.setInput(inputs);
+		// this.net.setLabels(labels);
+		this.net.computeGradientAndScore();
 		return this.net.gradient();
 	}
 
+	@Override
+	public void saveNetwork(final String fileName) {
+		// Don't need to save the network
+	}
+
+	@Override
+	public MultiLayerNetwork loadNetwork(final File file, final boolean moreTraining) {
+		// Dont need the critic to evaluate
+		return null;
+	}
 
 }

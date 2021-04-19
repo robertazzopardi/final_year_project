@@ -1,5 +1,6 @@
 package intelligence;
 
+import java.io.File;
 import org.deeplearning4j.nn.gradient.Gradient;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.nd4j.linalg.api.ndarray.INDArray;
@@ -35,8 +36,25 @@ public interface Network {
     /**
      * Update the networks gradient
      *
+     * @param inputs
+     * @param labels
      * @return
      */
-    public Gradient getGradient();
+    public Gradient getGradient(final INDArray inputs, final INDArray labels);
 
+    /**
+     * Saves the network
+     *
+     * @param fileName
+     */
+    public void saveNetwork(final String fileName);
+
+    /**
+     * Loads the network
+     *
+     * @param fileName
+     * @param moreTraining
+     * @return
+     */
+    public MultiLayerNetwork loadNetwork(final File fileName, final boolean moreTraining);
 }
