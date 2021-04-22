@@ -49,13 +49,13 @@ final class Prey extends Agent {
 	}
 
 	@Override
-	public Action getAction(Float[] state) {
+	public Action getAction(Boolean[] state) {
 		return null;
 	}
 
 	@Override
-	public Float[] getObservation() {
-		return new Float[] {};
+	public Boolean[] getObservation() {
+		return new Boolean[] {};
 	}
 
 	@Override

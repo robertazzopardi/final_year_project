@@ -28,8 +28,8 @@ public class ReplayBuffer {
      * @param nextState
      * @param dones
      */
-    public void push(final Float[][] state, final Action[] action, final Float[] rewards,
-            final Float[][] nextState, final Integer[] dones) {
+    public void push(final Boolean[][] state, final Action[] action, final Float[] rewards,
+            final Boolean[][] nextState, final Integer[] dones) {
         buffer.add(new Experience(state, action, rewards, nextState, dones));
     }
 
@@ -40,34 +40,34 @@ public class ReplayBuffer {
      * @return Sample
      */
     public Sample sample(final int batchSize) {
-        final List<List<Float[]>> obsBatch = new ArrayList<>(Arrays.asList(new ArrayList<>(),
+        final List<List<Boolean[]>> obsBatch = new ArrayList<>(Arrays.asList(new ArrayList<>(),
                 new ArrayList<>(), new ArrayList<>(), new ArrayList<>()));
         final List<List<Action>> indivActionBatch = new ArrayList<>(Arrays.asList(new ArrayList<>(),
                 new ArrayList<>(), new ArrayList<>(), new ArrayList<>()));
         final List<List<Float>> indivRewardBatch = new ArrayList<>(Arrays.asList(new ArrayList<>(),
                 new ArrayList<>(), new ArrayList<>(), new ArrayList<>()));
-        final List<List<Float[]>> nextObsBatch = new ArrayList<>(Arrays.asList(new ArrayList<>(),
+        final List<List<Boolean[]>> nextObsBatch = new ArrayList<>(Arrays.asList(new ArrayList<>(),
                 new ArrayList<>(), new ArrayList<>(), new ArrayList<>()));
 
-        final List<Float[]> globalStateBatch = new ArrayList<>();
-        final List<Float[]> globalNextStateBatch = new ArrayList<>();
+        final List<Boolean[]> globalStateBatch = new ArrayList<>();
+        final List<Boolean[]> globalNextStateBatch = new ArrayList<>();
         final List<Action[]> globalActionsBatch = new ArrayList<>();
         final List<Integer> doneBatch = new ArrayList<>();
 
         final List<Experience> batch = randomSample(batchSize);
 
         for (final Experience experience : batch) {
-            final Float[][] state = experience.state;
+            final Boolean[][] state = experience.state;
             final Action[] action = experience.action;
             final Float[] reward = experience.reward;
-            final Float[][] nextState = experience.nextState;
+            final Boolean[][] nextState = experience.nextState;
             final Integer[] done = experience.dones;
 
             for (int i = 0; i < NUM_AGENTS; i++) {
-                final Float[] obsI = state[i];
+                final Boolean[] obsI = state[i];
                 final Action actionI = action[i];
                 final Float rewardI = reward[i];
-                final Float[] nextObsI = nextState[i];
+                final Boolean[] nextObsI = nextState[i];
 
                 obsBatch.get(i).add(obsI);
                 indivActionBatch.get(i).add(actionI);
@@ -75,10 +75,10 @@ public class ReplayBuffer {
                 nextObsBatch.get(i).add(nextObsI);
             }
 
-            globalStateBatch.add(Stream.of(state).flatMap(Stream::of).toArray(Float[]::new));
+            globalStateBatch.add(Stream.of(state).flatMap(Stream::of).toArray(Boolean[]::new));
             globalActionsBatch.add(action);
             globalNextStateBatch
-                    .add(Stream.of(nextState).flatMap(Stream::of).toArray(Float[]::new));
+                    .add(Stream.of(nextState).flatMap(Stream::of).toArray(Boolean[]::new));
             doneBatch.addAll(Arrays.asList(done));
         }
 

@@ -2,6 +2,7 @@ package intelligence.Maddpg;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import org.deeplearning4j.core.storage.StatsStorage;
 import org.deeplearning4j.nn.api.OptimizationAlgorithm;
 import org.deeplearning4j.nn.conf.BackpropType;
@@ -22,14 +23,19 @@ import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.learning.config.Adam;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
+import org.nd4j.shade.guava.primitives.Booleans;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import intelligence.Network;
 import robots.Action;
 import robots.Hunter;
+import simulation.Env;
 
 public class Actor implements Network {
+	private static final Logger LOG = LoggerFactory.getLogger(Actor.class.getName());
 	private final MultiLayerNetwork net;
 	private static final int HIDDEN_NEURONS = 64;
-	private static final double LR_ACTOR = 6e-3;
+	private static final double LR_ACTOR = 1e-2;
 
 	private final MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder().seed(12345)
 			// Optimiser
@@ -41,7 +47,7 @@ public class Actor implements Network {
 			// Updater
 			// .updater(new Adam(LR_ACTOR))
 			// .updater(new Adam(LR_ACTOR, 0.9, 0.999, 1e-08))
-			.updater(new Adam(LR_ACTOR, 0.9, 0.999, 0.1))
+			.updater(new Adam(LR_ACTOR, 0.9, 0.999, 1))
 			// .updater(new Sgd(LR_ACTOR))
 			// Gradient Notmalisation
 			// .gradientNormalizationThreshold(0.5)
@@ -76,7 +82,7 @@ public class Actor implements Network {
 			.layer(3,
 					new OutputLayer.Builder(LossFunctions.LossFunction.MSE).nIn(HIDDEN_NEURONS)
 							.nOut(Action.LENGTH).weightInit(WeightInit.RELU)
-							.activation(Activation.IDENTITY).build())
+							.activation(Activation.TANH).build())
 
 			.backpropType(BackpropType.Standard).build();
 
@@ -84,9 +90,9 @@ public class Actor implements Network {
 		this.net = new MultiLayerNetwork(conf);
 		this.net.init();
 
-		// if (type != "TARGET") {
-		// enableUIServer(this.net);
-		// }
+		if (!type.equals("TARGET")) {
+			enableUIServer(this.net);
+		}
 	}
 
 	public Actor(final File fileName) {
@@ -119,14 +125,15 @@ public class Actor implements Network {
 	 * @param states
 	 * @return
 	 */
-	public INDArray toINDArray(final Float[] states) {
-		final float[] arr = new float[states.length];
-		for (int i = 0; i < arr.length; i++) {
-			arr[i] = states[i];
-		}
+	public INDArray toINDArray(final Boolean[] states) {
+		// final float[] arr = new float[states.length];
+		// for (int i = 0; i < arr.length; i++) {
+		// arr[i] = states[i];
+		// }
 
-		// double[] array = Arrays.stream(states).mapToDouble(i -> i).toArray();
-		return Nd4j.create(new float[][] {arr});
+		// // double[] array = Arrays.stream(states).mapToDouble(i -> i).toArray();
+		// return Nd4j.create(new float[][] {arr});
+		return Nd4j.create(new boolean[][] {Booleans.toArray(Arrays.asList(states))});
 	}
 
 	public void updateGradient(final Gradient gradient) {
@@ -155,6 +162,14 @@ public class Actor implements Network {
 		return this.net.gradient();
 	}
 
+	public void applyGradient(final Gradient gradient) {
+		this.net.params().subi(gradient.gradient());
+	}
+
+	public void applyGradient(final INDArray gradient) {
+		this.net.params().subi(gradient);
+	}
+
 	// private double get_OUnoise(double thresholdUtility) {
 	// // https://towardsdatascience.com/deep-deterministic-policy-gradients-explained-2d94655a9b7b
 	// double low = 0.85;
@@ -177,7 +192,7 @@ public class Actor implements Network {
 	public void saveNetwork(final String fileName) {
 		try {
 			this.net.save(new File(fileName), true);
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			e.printStackTrace();
 		}
 	}
@@ -191,9 +206,10 @@ public class Actor implements Network {
 	@Override
 	public MultiLayerNetwork loadNetwork(final File file, final boolean moreTraining) {
 		try {
-			System.out.println("Loading Network: " + file.getName());
+			final String msg = "Loading Network: " + file.getName();
+			LOG.info(msg);
 			return MultiLayerNetwork.load(file, true);
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			e.printStackTrace();
 		}
 

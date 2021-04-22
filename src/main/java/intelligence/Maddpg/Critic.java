@@ -22,15 +22,16 @@ import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.learning.config.Adam;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
 import intelligence.Network;
-import robots.Action;
 import robots.Hunter;
+import robots.RobotController;
+import simulation.Env;
 
 /**
  * Defines the Critic Neural Network
  */
 public class Critic implements Network {
 	private final MultiLayerNetwork net;
-	private static final double LR_CRITIC = 6e-3;
+	private static final double LR_CRITIC = 1e-3;
 
 	private final MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder().seed(12345)
 			// Optimiser
@@ -49,7 +50,11 @@ public class Critic implements Network {
 			// .gradientNormalizationThreshold(0.5)
 			.l2(0.00001).dropOut(0.8).list()
 			.layer(0,
-					new DenseLayer.Builder().nIn((Hunter.OBSERVATION_COUNT * 4) + Action.LENGTH)
+					new DenseLayer.Builder()
+							.nIn((Hunter.OBSERVATION_COUNT * RobotController.AGENT_COUNT)
+									// .nIn((Env.GRID_SIZE * Env.GRID_SIZE *
+									// RobotController.AGENT_COUNT)
+									+ RobotController.AGENT_COUNT)
 							.nOut(1024).dropOut(0.5).weightInit(WeightInit.RELU)
 							.activation(Activation.RELU).build())
 			.layer(1,
@@ -107,8 +112,8 @@ public class Critic implements Network {
 
 	@Override
 	public Gradient getGradient(final INDArray inputs, final INDArray labels) {
-		// this.net.setInput(inputs);
-		// this.net.setLabels(labels);
+		this.net.setInput(inputs);
+		this.net.setLabels(labels);
 		this.net.computeGradientAndScore();
 		return this.net.gradient();
 	}

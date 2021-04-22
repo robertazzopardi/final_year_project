@@ -60,23 +60,23 @@ public abstract class Agent extends RobotMonitor implements Callable<Void> {
 	 */
 	abstract boolean canMove(int x, int y);
 
-	// /**
-	// * get x position on the grid from the robots location
-	// *
-	// * @return
-	// */
-	// final int getGridPosX() {
-	// return (int) ((((double) getX() / Env.CELL_WIDTH) * 2) - 1) / 2;
-	// }
+	/**
+	 * get x position on the grid from the robots location
+	 *
+	 * @return
+	 */
+	final int getGridPosX() {
+		return (int) ((((double) getX() / Env.CELL_WIDTH) * 2) - 1) / 2;
+	}
 
-	// /**
-	// * get y position on the grid from the robots location
-	// *
-	// * @return
-	// */
-	// final int getGridPosY() {
-	// return (int) ((((double) getY() / Env.CELL_WIDTH) * 2) - 1) / 2;
-	// }
+	/**
+	 * get y position on the grid from the robots location
+	 *
+	 * @return
+	 */
+	final int getGridPosY() {
+		return (int) ((((double) getY() / Env.CELL_WIDTH) * 2) - 1) / 2;
+	}
 
 	/**
 	 * Get action for the agent to execute
@@ -84,14 +84,14 @@ public abstract class Agent extends RobotMonitor implements Callable<Void> {
 	 * @param state
 	 * @return
 	 */
-	abstract Action getAction(final Float[] state);
+	abstract Action getAction(final Boolean[] state);
 
 	/**
 	 * Get the agents current local observations
 	 *
 	 * @return
 	 */
-	abstract Float[] getObservation();
+	abstract Boolean[] getObservation();
 
 	/**
 	 * Get the current actions being executed

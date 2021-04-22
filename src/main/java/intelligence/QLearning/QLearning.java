@@ -1,5 +1,6 @@
 package intelligence.qlearning;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Random;
 import org.deeplearning4j.nn.gradient.Gradient;
@@ -327,12 +328,6 @@ final class QLearning implements Network {
 	}
 
 	@Override
-	public Gradient getGradient() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
 	public INDArray predict(INDArray inputs) {
 		// TODO Auto-generated method stub
 		return null;
@@ -342,5 +337,23 @@ final class QLearning implements Network {
 	public void update(INDArray inputs, INDArray outputs) {
 		// TODO Auto-generated method stub
 
+	}
+
+	@Override
+	public Gradient getGradient(INDArray inputs, INDArray labels) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void saveNetwork(String fileName) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public MultiLayerNetwork loadNetwork(File fileName, boolean moreTraining) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

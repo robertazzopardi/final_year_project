@@ -7,7 +7,7 @@ import java.util.concurrent.ThreadLocalRandom;
  * Represents a possible action the robots can make
  */
 public enum Action {
-    LEFT, RIGHT, FORWARD, NOTHING;
+    FORWARD, LEFT, RIGHT, NOTHING;
 
     private static final Action[] ACTIONS = values();
 

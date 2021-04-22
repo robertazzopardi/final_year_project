@@ -1,5 +1,6 @@
 package intelligence.Maddpg;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -17,6 +18,8 @@ import robots.StepObs;
 import simulation.Mode;
 
 public class Maddpg {
+    private static final boolean STEP = false;
+
     private static final Logger LOG = LoggerFactory.getLogger(Maddpg.class.getSimpleName());
 
     private static final int NUM_AGENTS = 4;
@@ -49,7 +52,7 @@ public class Maddpg {
         Arrays.fill(zeros, 0);
     }
 
-    public Action[] getActions(final Float[][] states) {
+    public Action[] getActions(final Boolean[][] states) {
         final Action[] actions = new Action[NUM_AGENTS];
 
         for (int i = 0; i < NUM_AGENTS; i++) {
@@ -67,20 +70,22 @@ public class Maddpg {
         final Hunter hunter;
         final Data data;
         final INDArray tmp;
+        final List<Action> indivAction;
         final int num;
 
         public AgentUpdate(final Hunter hunter, final Data data, final INDArray tmp,
-                final int num) {
+                final List<Action> indivAction, final int num) {
             this.hunter = hunter;
             this.data = data;
             this.tmp = tmp;
+            this.indivAction = indivAction;
             this.num = num;
         }
 
         @Override
         public Void call() throws Exception {
             hunter.update(data.indivRewardBatchI, data.obsBatchI, data.globalStateBatch,
-                    data.globalActionsBatch, data.globalNextStateBatch, tmp, num);
+                    data.globalActionsBatch, data.globalNextStateBatch, tmp, indivAction, num);
 
             hunter.updateTarget();
             return null;
@@ -92,16 +97,19 @@ public class Maddpg {
 
         final List<AgentUpdate> updaters = new ArrayList<>();
         for (int i = 0; i < NUM_AGENTS; i++) {
-            final List<Float[]> obsBatchI = exp.obsBatch.get(i);
+            final List<Boolean[]> obsBatchI = exp.obsBatch.get(i);
             final List<Action> indivActionBatchI = exp.indivActionBatch.get(i);
             final List<Float> indivRewardBatchI = exp.indivRewardBatch.get(i);
-            final List<Float[]> nextObsBatchI = exp.nextObsBatch.get(i);
+            final List<Boolean[]> nextObsBatchI = exp.nextObsBatch.get(i);
 
             final List<INDArray> nextGlobalActions = new ArrayList<>();
             for (int j = 0; j < agents.length; j++) {
                 final Hunter hunter = agents[j];
-                final INDArray arr = Nd4j.createFromArray(nextObsBatchI.toArray(new Float[][] {}));
+                final INDArray arr =
+                        Nd4j.createFromArray(nextObsBatchI.toArray(new Boolean[][] {}));
                 final float[][] nobi = hunter.getActorTarget().predict(arr).toFloatMatrix();
+                // INDArray n = Nd4j.createFromArray(Arrays.stream(nobi)
+                // .map(x -> Float.valueOf(hunter.getMaxValueIndex(x))).toArray(Float[]::new));
                 INDArray n = Nd4j.createFromArray(Arrays.stream(nobi)
                         .map(x -> Float.valueOf(hunter.getMaxValueIndex(x))).toArray(Float[]::new));
                 n = Nd4j.stack(0, n);
@@ -112,9 +120,10 @@ public class Maddpg {
                     Nd4j.concat(0, nextGlobalActions.stream().map(x -> x).toArray(INDArray[]::new))
                             .reshape(batchSize, 4);
 
-            updaters.add(new AgentUpdate(agents[i], new Data(indivRewardBatchI, obsBatchI,
-                    exp.globalStateBatch, exp.globalActionsBatch, exp.globalNextStateBatch), tmp,
-                    i));
+            updaters.add(new AgentUpdate(agents[i],
+                    new Data(indivRewardBatchI, obsBatchI, exp.globalStateBatch,
+                            exp.globalActionsBatch, exp.globalNextStateBatch),
+                    tmp, indivActionBatchI, i));
         }
 
         try {
@@ -131,8 +140,8 @@ public class Maddpg {
         final List<Double> episodeRewards = new ArrayList<>();
         final List<Integer> steps = new ArrayList<>();
 
-        for (int i = 1; i <= maxEpisode; i++) {
-            Float[][] states = robotController.reset();
+        for (int i = 0; i < maxEpisode; i++) {
+            Boolean[][] states = robotController.reset();
 
             double epReward = 0;
 
@@ -153,7 +162,6 @@ public class Maddpg {
                     if (observation.isDone() || j == maxStep - 1) {
                         replayBuffer.push(states, actions, observation.getRewards(),
                                 observation.getNextStates(), ones);
-                        episodeRewards.add(epReward);
                         break;
                     } else {
                         replayBuffer.push(states, actions, observation.getRewards(),
@@ -165,9 +173,19 @@ public class Maddpg {
                         }
                     }
                 }
+
+                if (STEP) {
+                    try {
+                        System.in.read();
+                    } catch (IOException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
+                }
             }
 
             steps.add(j);
+            episodeRewards.add(epReward);
 
             // System.out.println(String.valueOf(epReward));
             logEpisodeInformation(episodeRewards, i, epReward, j, steps);
@@ -190,18 +208,18 @@ public class Maddpg {
 
     private void logEpisodeInformation(final List<Double> episodeRewards, int i, double epReward,
             int j, final List<Integer> steps) {
-        final String log =
-                String.format("Episode: %s | Step: %s | Average: %s | Reward: %s | Average: %s",
-                        fixedLengthString(String.valueOf(i), String.valueOf(maxEpisode).length()),
-                        fixedLengthString(String.valueOf(j), String.valueOf(maxStep).length()),
-                        fixedLengthString(
-                                String.format("%.2f",
-                                        steps.stream().mapToDouble(r -> r).average().orElse(0)),
-                                String.valueOf(maxStep).length() + 3),
-                        fixedLengthString(String.format("%.2f", epReward), 7),
-                        fixedLengthString(String.format("%.2f",
+        final String log = String.format(
+                "Episode: %s | Step: %s | Average: %s | Reward: %s | Average: %s",
+                fixedLengthString(String.valueOf(i), String.valueOf(maxEpisode).length()),
+                fixedLengthString(String.valueOf(j), String.valueOf(maxStep).length()),
+                fixedLengthString(
+                        String.format("%.2f", steps.stream().mapToLong(r -> r).average().orElse(0)),
+                        String.valueOf(maxStep).length() + 3),
+                fixedLengthString(String.format("%.2f", epReward), 7),
+                fixedLengthString(
+                        String.format("%.2f",
                                 episodeRewards.stream().mapToDouble(r -> r).average().orElse(0)),
-                                7));
+                        7));
         LOG.info(log);
     }
 
@@ -212,14 +230,14 @@ public class Maddpg {
 
     class Data {
         final List<Float> indivRewardBatchI;
-        final List<Float[]> obsBatchI;
-        final List<Float[]> globalStateBatch;
+        final List<Boolean[]> obsBatchI;
+        final List<Boolean[]> globalStateBatch;
         final List<Action[]> globalActionsBatch;
-        final List<Float[]> globalNextStateBatch;
+        final List<Boolean[]> globalNextStateBatch;
 
-        public Data(final List<Float> indivRewardBatchI, final List<Float[]> obsBatchI,
-                final List<Float[]> globalStateBatch, final List<Action[]> globalActionsBatch,
-                final List<Float[]> globalNextStateBatch) {
+        public Data(final List<Float> indivRewardBatchI, final List<Boolean[]> obsBatchI,
+                final List<Boolean[]> globalStateBatch, final List<Action[]> globalActionsBatch,
+                final List<Boolean[]> globalNextStateBatch) {
             this.indivRewardBatchI = indivRewardBatchI;
             this.obsBatchI = obsBatchI;
             this.globalStateBatch = globalStateBatch;
@@ -227,5 +245,52 @@ public class Maddpg {
             this.globalNextStateBatch = globalNextStateBatch;
         }
     }
+
+    // class OUNoise {
+    // double mu = 0.0;
+    // double theta = 0.15;
+    // double sigma = 0.3;
+    // double max_sigma = 0.3;
+    // double min_sigma = 0.3;
+    // int decay_period = 100000;
+    // int action_dim = action_space.shape[0];
+    // int low = action_space.low;
+    // int high = action_space.high;
+    // double[] state;
+
+    // public OUNoise() {
+    // state = new double[Action.LENGTH];
+    // reset();
+    // }
+
+    // public void reset() {
+    // // self.state = np.ones(self.action_dim) * mu
+    // Arrays.fill(state, mu);
+    // }
+
+    // private void increment() {
+    // // x = self.state
+    // // dx = self.theta * (self.mu - x) + self.sigma * np.random.randn(self.action_dim)
+    // state = Arrays.stream(state).map(i -> i + process(i)).toArray();
+    // // self.state = x + dx
+    // // return self.state
+    // }
+
+    // private double process(double val) {
+    // return theta * (mu - val) + sigma * Math.random();
+    // }
+
+    // public Action get_action(float action, int step) {
+    // ou_state = increment();
+    // sigma = max_sigma - (max_sigma - min_sigma) * Math.min(1.0, step / decay_period);
+    // return np.clip(action + ou_state, self.low, self.high);
+    // if (result < low)
+    // result = low;
+    // if (result > high)
+    // result = high;
+    // }
+    // }
+
+
 
 }
