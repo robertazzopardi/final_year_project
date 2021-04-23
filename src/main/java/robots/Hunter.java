@@ -5,9 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Stream;
-import org.deeplearning4j.nn.gradient.Gradient;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
-import org.deeplearning4j.nn.workspace.LayerWorkspaceMgr;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.exception.ND4JIllegalStateException;
 import org.nd4j.linalg.factory.Nd4j;
@@ -114,16 +112,15 @@ public final class Hunter extends Agent {
 			// // this.actor.getGradient(iob, tab);
 			// this.actor.getNetwork().fit(iob, tab.sub(estimatedQ));
 
-			// // final Gradient gradient = this.critic.getNetwork().gradient();
-			// // this.actor.getNetwork().getUpdater().update(this.actor.getNetwork(), gradient, 0,
-			// 0,
-			// // 1,
-			// // LayerWorkspaceMgr.noWorkspaces());
+			// final Gradient gradient = this.critic.getNetwork().gradient();
+			// this.actor.getNetwork().getUpdater().update(this.actor.getNetwork(), gradient, 0, 0,
+			// 1,
+			// LayerWorkspaceMgr.noWorkspaces());
 
 			final INDArray output = this.actorTarget.predict(iob);
 			for (int i = 0; i < output.rows(); i++) {
-				int a = (int) iab.getFloat(i);
-				float q = estimatedQ.getFloat(i);
+				final int a = (int) iab.getFloat(i);
+				final float q = estimatedQ.getFloat(i);
 
 				output.getRow(i).putScalar(new int[] {a}, q);
 			}
@@ -131,9 +128,8 @@ public final class Hunter extends Agent {
 			this.actor.getNetwork().fit(iob, output);
 
 
-		} catch (ND4JIllegalStateException nd4je) {
-			var tmp = nd4je;
-		} catch (Exception e) {
+		} catch (final ND4JIllegalStateException nd4je) {
+		} catch (final Exception e) {
 			e.printStackTrace();
 		}
 	}
@@ -157,13 +153,13 @@ public final class Hunter extends Agent {
 		target.setParameters(newTargetWeights);
 	}
 
-	private double addOUNoise(double thresholdUtility) {
-		// TODO Auto-generated method stub
+	private double addOUNoise(final double thresholdUtility) {
 		// https://towardsdatascience.com/deep-deterministic-policy-gradients-explained-2d94655a9b7b
 		// double low = 0.85;
-		double low = 0;
-		double high = 1.0;
-		double ouNoise = 0.3 * Math.random(); // random num between 0.0 and 1.0
+		final double low = -.5;
+		final double high = .5;
+
+		final double ouNoise = 0.3 * Math.random(); // random num between 0.0 and 1.0
 		double result = thresholdUtility + ouNoise;
 		if (result < low)
 			result = low;
@@ -173,24 +169,65 @@ public final class Hunter extends Agent {
 	}
 
 	@Override
-	public Action getAction(final Boolean[] state) {
-		float[] prediction = this.actor.predict(this.actor.toINDArray(state)).toFloatVector();
+	public Action getAction(final Boolean[] state, final int episode) {
+		final INDArray output = this.actor.predict(this.actor.toINDArray(state));
+		// float[] prediction = output.toFloatVector();
+
+		final double[] prediction = output.toDoubleVector();
+
+		// if (episode < 200)
 		// for (int i = 0; i < prediction.length; i++) {
 		// prediction[i] = (float) addOUNoise(prediction[i]);
+		// // prediction[i] *= RANDOM.nextGaussian();
+		// // prediction[i] += RANDOM.nextGaussian();
 		// }
-		int maxValueIndex = getMaxValueIndex(prediction);
-		return Action.getActionByIndex(maxValueIndex);
+
+		// int maxValueIndex = getMaxValueIndex(prediction);
+		// return Action.getActionByIndex(maxValueIndex);
+		return Action.getActionByIndex(boltzmanDistribution(prediction));
 	}
 
-	public int getMaxValueIndex(final float[] values) {
-		int maxAt = 0;
+	public int boltzmanDistribution(final double[] values) {
+		final double beta = 1.0;
+		// p_a_s = np.exp(beta * q_values) / np.sum(np.exp(beta * q_values));
+		final double[] exp = Arrays.stream(values).map(i -> Math.exp(beta * i)).toArray();
+		final double sum = Arrays.stream(exp).sum();
+		final double[] done = Arrays.stream(exp).map(i -> i / sum).toArray();
 
-		for (int i = 0; i < values.length; i++) {
-			maxAt = values[i] > values[maxAt] ? i : maxAt;
+
+		// action_key = np.random.choice(a = num_act, p = p_as);
+		// int index = Arrays.binarySearch(done, RANDOM.nextDouble());
+		// return (index >= 0) ? index : (-index - 1);
+		return sample(done);
+	}
+
+	private int sample(final double[] pdf) {
+		double r = RANDOM.nextDouble();
+		for (int i = 0; i < pdf.length; i++) {
+			if (r < pdf[i])
+				return i;
+			r -= pdf[i];
 		}
-
-		return maxAt;
+		return pdf.length - 1; // should not happen
 	}
+
+	// public double sumArray(final double[] sum) {
+	// double add = 0;
+	// for (int i = 0; i < sum.length; i++) {
+	// add += sum[i];
+	// }
+	// return add;
+	// }
+
+	// public int getMaxValueIndex(final float[] values) {
+	// int maxAt = 0;
+
+	// for (int i = 0; i < values.length; i++) {
+	// maxAt = values[i] > values[maxAt] ? i : maxAt;
+	// }
+
+	// return maxAt;
+	// }
 
 	public void setAction(final Action action) {
 		this.exeAction = action;
@@ -437,16 +474,16 @@ public final class Hunter extends Agent {
 
 
 		final Boolean[][] states = new Boolean[Env.GRID_SIZE][Env.GRID_SIZE];
-		for (Boolean[] arr1 : states)
+		for (final Boolean[] arr1 : states)
 			Arrays.fill(arr1, false);
 
 		Arrays.stream(controller.getHunters())
 				.forEach(i -> states[i.getGridPosY()][i.getGridPosX()] = true);
 		states[prey.getGridPosY()][prey.getGridPosX()] = true;
 
+
 		// final int x = getX();
 		// final int y = getY();
-
 
 		// final Direction dir = Direction.fromDegree(getHeading());
 
@@ -457,14 +494,16 @@ public final class Hunter extends Agent {
 		// dir == Direction.RIGHT ? getNegativeObservations() : getStatsForDirectionLeft(x, y),
 		// getPreyObservations(x, y, prey.getX(), prey.getY()));
 
+
 		// shuffle(states);
+
 
 		// return states;
 		return Arrays.stream(states).flatMap(Stream::of).toArray(Boolean[]::new);
 		// return states;
 	}
 
-	private static Boolean[] mergeStates(Boolean[]... stateArrays) {
+	private static Boolean[] mergeStates(final Boolean[]... stateArrays) {
 		return Stream.of(stateArrays).flatMap(Stream::of).toArray(Boolean[]::new);
 	}
 

@@ -19,7 +19,7 @@ public class RobotController {
 	private static final int MAX_EPISODE = 250;
 	private static final int MAX_STEP = 100 * Env.GRID_SIZE;
 	// private static final int BATCH_SIZE = 32;
-	private static final int BATCH_SIZE = 32;
+	private static final int BATCH_SIZE = 64;
 	private static final ExecutorService executor = Executors.newFixedThreadPool(AGENT_COUNT + 1);
 
 	public static final String OUTPUT_FOLDER = "src/main/resources/";
@@ -95,26 +95,30 @@ public class RobotController {
 
 		executeAction();
 
-		// final long count = Arrays.stream(hunters).filter(Hunter::isAtGoal).count();
+		final long count = Arrays.stream(hunters).filter(Hunter::isAtGoal).count();
 
 		// Collect the states after the agents have moved
 		for (int i = 0; i < hunters.length; i++) {
 			nextStates[i] = hunters[i].getObservation();
 			// rewards[i] += getReward(hunters[i], oldDistances[i], i, actions[i]);
-			// rewards[i] = actions[i] != Action.RIGHT ? -10f : 0f;
+			// rewards[i] = actions[i] != Action.FORWARD ? -10f : 0f;
 
-			// rewards[i] += hunters[i].isAtGoal() ? 1f : -1f;
+			// rewards[i] += hunters[i].isAtGoal() ? 1f : 0f;
+			// rewards[i] -= hunters[i].isAtGoal() ? 0f : .1f;
+
 
 			// rewards[i] -= hunters[i].getDistanceFrom() >= oldDistances[i] ? 1f : 0f;
-			// rewards[i] += hunters[i].getDistanceFrom() < oldDistances[i] ? .1f : 0f;
+
+			// rewards[i] += hunters[i].getDistanceFrom() < oldDistances[i] ? 1f : 0f;
 
 			// rewards[i] += hunters[i].isAtGoal() ? 1 / (float) count : -.1f;
+
+			rewards[i] += hunters[i].isAtGoal() ? (float) count : 0f;
 		}
 		// 0.000101
 		// System.out.println(Arrays.toString(actions));
 
 		// final long count = Arrays.stream(hunters).filter(Hunter::isAtGoal).count();
-		// final int correctedStep = step == 0 ? 1 : step;
 		// Arrays.fill(rewards,
 		// prey.isTrapped() ? (MAX_STEP / (float) (Math.pow(step + 0.000101, 2))) + count :
 		// // -(step / (float) Math.pow(MAX_STEP, 1.5)));
@@ -128,8 +132,15 @@ public class RobotController {
 		// rewards = Arrays.stream(rewards).map(i -> i - (1 / (float) (AGENT_COUNT - count)))
 		// .toArray(Float[]::new);
 
+		// if (prey.isTrapped()) {
+		// final long count = Arrays.stream(hunters).filter(Hunter::isAtGoal).count();
+		// Arrays.fill(rewards, count / (float) (step + 0.000101));
+		// }
 
 		// System.out.println(Arrays.toString(rewards));
+
+		// if (prey.isTrapped())
+		// Arrays.fill(rewards, 10f);
 
 		return new StepObs(nextStates, rewards, prey.isTrapped());
 	}
@@ -176,44 +187,43 @@ public class RobotController {
 
 	private Float getReward(final Hunter hunter, final Double oldDistance, final int i,
 			final Action action) {
-		// Float reward = 0f;
-		Float reward = -.1f;
+		Float reward = 0f;
 
-		// if (hunter.isAtGoal()) {
-		// for (final Hunter h : hunters) {
-		// if (h.isAtGoal()) {
-		// // reward += 0.125f;
-		// // reward += 1f;
-		// } else {
-		// reward -= 1f;
-		// }
-		// }
-		// }
-
-		switch (action) {
-			case FORWARD:
-				if (hunter.isAtGoal()) {
-					reward = 1f;
+		if (hunter.isAtGoal()) {
+			for (final Hunter h : hunters) {
+				if (h.isAtGoal()) {
+					// reward += 0.125f;
+					reward += 1f;
+				} else {
+					// reward -= 1f;
 				}
-				break;
-
-			case LEFT:
-
-				break;
-
-			case RIGHT:
-
-				break;
-
-			case NOTHING:
-				if (hunter.isAtGoal()) {
-					reward = 1f;
-				}
-				break;
-
-			default:
-				break;
+			}
 		}
+
+		// switch (action) {
+		// case FORWARD:
+		// if (hunter.isAtGoal()) {
+		// reward = 1f;
+		// }
+		// break;
+
+		// case LEFT:
+
+		// break;
+
+		// case RIGHT:
+
+		// break;
+
+		// case NOTHING:
+		// if (hunter.isAtGoal()) {
+		// reward = 1f;
+		// }
+		// break;
+
+		// default:
+		// break;
+		// }
 
 		return reward;
 	}
@@ -222,7 +232,7 @@ public class RobotController {
 		// Step each agent through the world
 		try {
 			final List<Agent> agents = new ArrayList<>(Arrays.asList(hunters));
-			agents.add(prey);
+			// agents.add(prey);
 			executor.invokeAll(agents);
 		} catch (final Exception e) {
 			e.printStackTrace();

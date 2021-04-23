@@ -52,11 +52,11 @@ public class Maddpg {
         Arrays.fill(zeros, 0);
     }
 
-    public Action[] getActions(final Boolean[][] states) {
+    public Action[] getActions(final Boolean[][] states, final int episode) {
         final Action[] actions = new Action[NUM_AGENTS];
 
         for (int i = 0; i < NUM_AGENTS; i++) {
-            actions[i] = agents[i].getAction(states[i]);
+            actions[i] = agents[i].getAction(states[i], episode);
         }
 
         return actions;
@@ -107,11 +107,13 @@ public class Maddpg {
                 final Hunter hunter = agents[j];
                 final INDArray arr =
                         Nd4j.createFromArray(nextObsBatchI.toArray(new Boolean[][] {}));
-                final float[][] nobi = hunter.getActorTarget().predict(arr).toFloatMatrix();
+                final double[][] nobi = hunter.getActorTarget().predict(arr).toDoubleMatrix();
                 // INDArray n = Nd4j.createFromArray(Arrays.stream(nobi)
                 // .map(x -> Float.valueOf(hunter.getMaxValueIndex(x))).toArray(Float[]::new));
-                INDArray n = Nd4j.createFromArray(Arrays.stream(nobi)
-                        .map(x -> Float.valueOf(hunter.getMaxValueIndex(x))).toArray(Float[]::new));
+                INDArray n = Nd4j.createFromArray(
+                        Arrays.stream(nobi).map(x -> Float.valueOf(hunter.boltzmanDistribution(x)))
+                                .toArray(Float[]::new));
+
                 n = Nd4j.stack(0, n);
 
                 nextGlobalActions.add(n);
@@ -147,7 +149,7 @@ public class Maddpg {
 
             int j = 0;
             for (; j < maxStep; j++) {
-                final Action[] actions = getActions(states);
+                final Action[] actions = getActions(states, i);
 
                 // Simulate one step in the environment
                 // Blocks until all hunters have moved in the environment

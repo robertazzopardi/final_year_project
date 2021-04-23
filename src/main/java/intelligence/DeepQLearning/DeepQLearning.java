@@ -201,32 +201,32 @@ public class DeepQLearning implements Network {
 	private double getMaxQScore(final Boolean[] states) {
 		final String gameObservationString = Arrays.toString(states);
 
-		final String FORWARD = makeKey(gameObservationString, Action.FORWARD);
-		final String LEFT = makeKey(gameObservationString, Action.LEFT);
-		final String RIGHT = makeKey(gameObservationString, Action.RIGHT);
-		final String NOTHING = makeKey(gameObservationString, Action.NOTHING);
+		// final String FORWARD = makeKey(gameObservationString, Action.FORWARD);
+		// final String LEFT = makeKey(gameObservationString, Action.LEFT);
+		// final String RIGHT = makeKey(gameObservationString, Action.RIGHT);
+		// final String NOTHING = makeKey(gameObservationString, Action.NOTHING);
 
-		qTable.putIfAbsent(FORWARD, 0.0);
-		qTable.putIfAbsent(LEFT, 0.0);
-		qTable.putIfAbsent(RIGHT, 0.0);
-		qTable.putIfAbsent(NOTHING, 0.0);
+		// qTable.putIfAbsent(FORWARD, 0.0);
+		// qTable.putIfAbsent(LEFT, 0.0);
+		// qTable.putIfAbsent(RIGHT, 0.0);
+		// qTable.putIfAbsent(NOTHING, 0.0);
 
-		double score = qTable.getOrDefault(NOTHING, 0.0);
+		// double score = qTable.getOrDefault(NOTHING, 0.0);
+		double score = 0;
+		// final Double scoreRight = qTable.getOrDefault(RIGHT, 0.0);
+		// if (scoreRight > score) {
+		// score = scoreRight;
+		// }
 
-		final Double scoreRight = qTable.getOrDefault(RIGHT, 0.0);
-		if (scoreRight > score) {
-			score = scoreRight;
-		}
+		// final Double scoreLeft = qTable.getOrDefault(LEFT, 0.0);
+		// if (scoreLeft > score) {
+		// score = scoreLeft;
+		// }
 
-		final Double scoreLeft = qTable.getOrDefault(LEFT, 0.0);
-		if (scoreLeft > score) {
-			score = scoreLeft;
-		}
-
-		final Double scoreFORWARD = qTable.getOrDefault(FORWARD, 0.0);
-		if (scoreFORWARD > score) {
-			score = scoreFORWARD;
-		}
+		// final Double scoreFORWARD = qTable.getOrDefault(FORWARD, 0.0);
+		// if (scoreFORWARD > score) {
+		// score = scoreFORWARD;
+		// }
 
 		return score;
 	}

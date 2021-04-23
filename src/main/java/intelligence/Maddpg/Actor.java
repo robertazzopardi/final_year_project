@@ -54,22 +54,9 @@ public class Actor implements Network {
 			.gradientNormalization(GradientNormalization.ClipL2PerLayer)
 			// Drop out amount
 			.dropOut(0.8)
+			// .l2(0.001)
 			// Layers
 			.list()
-			// .layer(0,
-			// new DenseLayer.Builder().nIn(Hunter.OBSERVATION_COUNT).nOut(512).dropOut(0.5)
-			// .weightInit(WeightInit.RELU).activation(Activation.RELU).build())
-			// .layer(1,
-			// new DenseLayer.Builder().nIn(512).nOut(128).dropOut(0.5)
-			// .weightInit(WeightInit.RELU).activation(Activation.RELU).build())
-			// .layer(2,
-			// new DenseLayer.Builder().nIn(HIDDEN_NEURONS).nOut(HIDDEN_NEURONS).dropOut(0.5)
-			// .weightInit(WeightInit.RELU).activation(Activation.RELU).build())
-			// .layer(3,
-			// new OutputLayer.Builder(LossFunctions.LossFunction.MSE).nIn(HIDDEN_NEURONS)
-			// .nOut(Action.LENGTH).weightInit(WeightInit.RELU)
-			// .activation(Activation.TANH).build())
-
 			.layer(0,
 					new DenseLayer.Builder().nIn(Hunter.OBSERVATION_COUNT).nOut(512).dropOut(0.5)
 							.weightInit(WeightInit.RELU).activation(Activation.RELU).build())
@@ -77,10 +64,7 @@ public class Actor implements Network {
 					new DenseLayer.Builder().nIn(512).nOut(128).dropOut(0.5)
 							.weightInit(WeightInit.RELU).activation(Activation.RELU).build())
 			.layer(2,
-					new DenseLayer.Builder().nIn(HIDDEN_NEURONS).nOut(HIDDEN_NEURONS).dropOut(0.5)
-							.weightInit(WeightInit.RELU).activation(Activation.RELU).build())
-			.layer(3,
-					new OutputLayer.Builder(LossFunctions.LossFunction.MSE).nIn(HIDDEN_NEURONS)
+					new OutputLayer.Builder(LossFunctions.LossFunction.MSE).nIn(128)
 							.nOut(Action.LENGTH).weightInit(WeightInit.RELU)
 							.activation(Activation.TANH).build())
 

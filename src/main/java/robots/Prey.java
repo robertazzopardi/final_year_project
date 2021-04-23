@@ -49,7 +49,7 @@ final class Prey extends Agent {
 	}
 
 	@Override
-	public Action getAction(Boolean[] state) {
+	public Action getAction(Boolean[] state, final int episode) {
 		return null;
 	}
 

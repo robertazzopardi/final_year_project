@@ -84,7 +84,7 @@ public abstract class Agent extends RobotMonitor implements Callable<Void> {
 	 * @param state
 	 * @return
 	 */
-	abstract Action getAction(final Boolean[] state);
+	abstract Action getAction(final Boolean[] state, final int episode);
 
 	/**
 	 * Get the agents current local observations

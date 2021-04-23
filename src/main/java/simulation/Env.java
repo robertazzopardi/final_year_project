@@ -12,7 +12,7 @@ public class Env extends EnvController {
     public static final int TOTAL_EPISODES = 100;
     public static final int CELL_WIDTH = 350;
     public static final int CELL_RADIUS = CELL_WIDTH / 2;
-    public static final int GRID_SIZE = 7;
+    public static final int GRID_SIZE = 10;
     public static final int ENV_SIZE = Env.GRID_SIZE * Env.CELL_WIDTH;
 
     private int episode = 1;
