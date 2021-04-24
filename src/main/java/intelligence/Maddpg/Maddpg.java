@@ -9,6 +9,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
+import org.nd4j.linalg.indexing.NDArrayIndex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import robots.Action;
@@ -105,18 +106,28 @@ public class Maddpg {
             final List<INDArray> nextGlobalActions = new ArrayList<>();
             for (int j = 0; j < agents.length; j++) {
                 final Hunter hunter = agents[j];
-                final INDArray arr =
-                        Nd4j.createFromArray(nextObsBatchI.toArray(new Boolean[][] {}));
-                final double[][] nobi = hunter.getActorTarget().predict(arr).toDoubleMatrix();
-                // INDArray n = Nd4j.createFromArray(Arrays.stream(nobi)
-                // .map(x -> Float.valueOf(hunter.getMaxValueIndex(x))).toArray(Float[]::new));
-                INDArray n = Nd4j.createFromArray(
-                        Arrays.stream(nobi).map(x -> Float.valueOf(hunter.boltzmanDistribution(x)))
-                                .toArray(Float[]::new));
+                final INDArray arr = hunter.getActorTarget()
+                        .predict(Nd4j.createFromArray(nextObsBatchI.toArray(new Boolean[][] {})));
+                // final double[][] nobi = hunter.getActorTarget().predict(arr).toDoubleMatrix();
 
+                // INDArray n = Nd4j.createFromArray(
+                // Arrays.stream(nobi).map(x -> Float.valueOf(hunter.boltzmanDistribution(x)))
+                // .toArray(Float[]::new));
+
+                // n = Nd4j.stack(0, n);
+
+                // nextGlobalActions.add(n);
+
+                Float[] indexes = new Float[RobotController.BATCH_SIZE];
+                for (int row = 0; row < arr.rows(); row++) {
+                    INDArray y = arr.get(NDArrayIndex.point(row), NDArrayIndex.all());
+                    // System.out.println();
+                    indexes[row] = Float.valueOf(hunter.boltzmanNextAction(y, 0));
+                }
+                INDArray n = Nd4j.createFromArray(indexes);
                 n = Nd4j.stack(0, n);
-
                 nextGlobalActions.add(n);
+
             }
             final INDArray tmp =
                     Nd4j.concat(0, nextGlobalActions.stream().map(x -> x).toArray(INDArray[]::new))

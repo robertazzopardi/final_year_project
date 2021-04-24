@@ -12,17 +12,24 @@ import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
 import org.deeplearning4j.nn.conf.WorkspaceMode;
 import org.deeplearning4j.nn.conf.layers.DenseLayer;
 import org.deeplearning4j.nn.conf.layers.OutputLayer;
+import org.deeplearning4j.nn.conf.layers.RnnOutputLayer;
 import org.deeplearning4j.nn.gradient.Gradient;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.nn.weights.WeightInit;
+// import org.deeplearning4j.rl4j.network.ac.ActorCriticLoss;
 import org.deeplearning4j.ui.api.UIServer;
 import org.deeplearning4j.ui.model.stats.StatsListener;
 import org.deeplearning4j.ui.model.storage.InMemoryStatsStorage;
+import org.nd4j.common.primitives.Pair;
 import org.nd4j.linalg.activations.Activation;
+import org.nd4j.linalg.activations.IActivation;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.learning.config.Adam;
+import org.nd4j.linalg.lossfunctions.ILossFunction;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
+import org.nd4j.linalg.lossfunctions.LossUtil;
+import org.nd4j.linalg.ops.transforms.Transforms;
 import org.nd4j.shade.guava.primitives.Booleans;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,7 +42,7 @@ public class Actor implements Network {
 	private static final Logger LOG = LoggerFactory.getLogger(Actor.class.getName());
 	private final MultiLayerNetwork net;
 	private static final int HIDDEN_NEURONS = 64;
-	private static final double LR_ACTOR = 1e-2;
+	private static final double LR_ACTOR = 5e-2;
 
 	private final MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder().seed(12345)
 			// Optimiser
@@ -64,9 +71,13 @@ public class Actor implements Network {
 					new DenseLayer.Builder().nIn(512).nOut(128).dropOut(0.5)
 							.weightInit(WeightInit.RELU).activation(Activation.RELU).build())
 			.layer(2,
-					new OutputLayer.Builder(LossFunctions.LossFunction.MSE).nIn(128)
-							.nOut(Action.LENGTH).weightInit(WeightInit.RELU)
-							.activation(Activation.TANH).build())
+					new DenseLayer.Builder().nIn(128).nOut(32).dropOut(0.5)
+							.weightInit(WeightInit.RELU).activation(Activation.RELU).build())
+			.layer(3, new OutputLayer.Builder(LossFunctions.LossFunction.MSE).nIn(32)
+					// new OutputLayer.Builder(new ActorCriticLoss()).nIn(32)
+					.nOut(Action.LENGTH).weightInit(WeightInit.RELU).activation(Activation.IDENTITY)
+					// .activation(Activation.SOFTMAX)
+					.build())
 
 			.backpropType(BackpropType.Standard).build();
 
@@ -200,4 +211,68 @@ public class Actor implements Network {
 		return null;
 	}
 
+	// class ActorCriticLoss implements ILossFunction {
+
+	// public static final double BETA = 0.01;
+
+	// private INDArray scoreArray(INDArray labels, INDArray preOutput, IActivation activationFn,
+	// INDArray mask) {
+	// INDArray output = activationFn.getActivation(preOutput.dup(), true).addi(1e-5);
+	// INDArray logOutput = Transforms.log(output, true);
+	// INDArray entropy = output.muli(logOutput);
+	// INDArray scoreArr = logOutput.muli(labels).subi(entropy.muli(BETA));
+
+	// if (mask != null) {
+	// LossUtil.applyMask(scoreArr, mask);
+	// }
+	// return scoreArr;
+	// }
+
+	// @Override
+	// public double computeScore(INDArray labels, INDArray preOutput, IActivation activationFn,
+	// INDArray mask, boolean average) {
+	// INDArray scoreArr = scoreArray(labels, preOutput, activationFn, mask);
+	// double score = -scoreArr.sumNumber().doubleValue();
+	// return average ? score / scoreArr.size(0) : score;
+	// }
+
+	// @Override
+	// public INDArray computeScoreArray(INDArray labels, INDArray preOutput,
+	// IActivation activationFn, INDArray mask) {
+	// INDArray scoreArr = scoreArray(labels, preOutput, activationFn, mask);
+	// return scoreArr.sum(1).muli(-1);
+	// }
+
+	// @Override
+	// public INDArray computeGradient(INDArray labels, INDArray preOutput,
+	// IActivation activationFn, INDArray mask) {
+	// INDArray output = activationFn.getActivation(preOutput.dup(), true).addi(1e-5);
+	// INDArray logOutput = Transforms.log(output, true);
+	// INDArray entropyDev = logOutput.addi(1);
+	// INDArray dLda = output.rdivi(labels).subi(entropyDev.muli(BETA)).negi();
+	// INDArray grad = activationFn.backprop(preOutput, dLda).getFirst();
+
+	// if (mask != null) {
+	// LossUtil.applyMask(grad, mask);
+	// }
+	// return grad;
+	// }
+
+	// @Override
+	// public Pair<Double, INDArray> computeGradientAndScore(INDArray labels, INDArray preOutput,
+	// IActivation activationFn, INDArray mask, boolean average) {
+	// return new Pair<>(computeScore(labels, preOutput, activationFn, mask, average),
+	// computeGradient(labels, preOutput, activationFn, mask));
+	// }
+
+	// @Override
+	// public String toString() {
+	// return "ActorCriticLoss()";
+	// }
+
+	// @Override
+	// public String name() {
+	// return toString();
+	// }
+	// }
 }

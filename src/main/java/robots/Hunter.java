@@ -2,10 +2,15 @@ package robots;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Stream;
+import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
+import org.deeplearning4j.nn.gradient.Gradient;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
+import org.deeplearning4j.nn.workspace.LayerWorkspaceMgr;
+import org.deeplearning4j.optimize.api.TrainingListener;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.exception.ND4JIllegalStateException;
 import org.nd4j.linalg.factory.Nd4j;
@@ -15,6 +20,7 @@ import intelligence.Maddpg.Actor;
 import intelligence.Maddpg.Critic;
 import simulation.Env;
 import simulation.Mode;
+import static org.nd4j.linalg.ops.transforms.Transforms.exp;
 
 /**
  *
@@ -25,12 +31,18 @@ public final class Hunter extends Agent {
 	// public static final int OBSERVATION_COUNT = 28;
 	public static final int OBSERVATION_COUNT = Env.GRID_SIZE * Env.GRID_SIZE;
 
-
 	private static final int VIEW_DISTANCE = 5;
 	private static final double TAU = 1e-3;
 	private static final double GAMMA = 0.99;
 	private static final float REWARD = 1;
-	private static final Random RANDOM = new Random();
+	private static final Random RANDOM = new Random(12345);
+
+	// private double beta = 1;
+	// private static final double BETA_DECAY = 0.99975;
+	// // private static final double BETA_DECAY = 0.9;
+	// // private static final double MIN_BETA = 0.001;
+	// private static final double MIN_BETA = 0.000001;
+
 
 	private Critic critic;
 	private Critic criticTarget;
@@ -107,17 +119,15 @@ public final class Hunter extends Agent {
 			this.critic.update(Nd4j.concat(1, gsb, gab), estimatedQ);
 
 			// Actor Model
-			// INDArray tab = this.actorTarget.predict(iob);
-			// // this.actor.getNetwork().fit(iob, tob);
-			// // this.actor.getGradient(iob, tab);
-			// this.actor.getNetwork().fit(iob, tab.sub(estimatedQ));
-
 			// final Gradient gradient = this.critic.getNetwork().gradient();
-			// this.actor.getNetwork().getUpdater().update(this.actor.getNetwork(), gradient, 0, 0,
-			// 1,
-			// LayerWorkspaceMgr.noWorkspaces());
+			// final Gradient gradient =
+			// this.critic.getGradient(Nd4j.concat(1, gnsb, nga), estimatedQ);
+			// final int iteration = 0;
+			// final int epoch = 0;
+			// this.actor.getNetwork().getUpdater().update(this.actor.getNetwork(), gradient,
+			// iteration, epoch, 1, LayerWorkspaceMgr.noWorkspaces());
 
-			final INDArray output = this.actorTarget.predict(iob);
+			final INDArray output = this.actor.predict(iob);
 			for (int i = 0; i < output.rows(); i++) {
 				final int a = (int) iab.getFloat(i);
 				final float q = estimatedQ.getFloat(i);
@@ -127,11 +137,83 @@ public final class Hunter extends Agent {
 
 			this.actor.getNetwork().fit(iob, output);
 
+			final Gradient[] gradients =
+					gradient(Nd4j.concat(1, gnsb, nga), estimatedQ, iob, output);
+			applyGradient(gradients, RobotController.BATCH_SIZE);
 
 		} catch (final ND4JIllegalStateException nd4je) {
 		} catch (final Exception e) {
 			e.printStackTrace();
 		}
+	}
+
+	public Gradient[] gradient(final INDArray inputCritic, final INDArray labelsCritic,
+			final INDArray inputActor, final INDArray labelsActor) {
+		this.critic.getNetwork().setInput(inputCritic);
+		this.critic.getNetwork().setLabels(labelsCritic);
+		this.critic.getNetwork().computeGradientAndScore();
+		final Collection<TrainingListener> valueIterationListeners =
+				this.critic.getNetwork().getListeners();
+		// if (valueIterationListeners != null && valueIterationListeners.size() > 0) {
+		if (valueIterationListeners != null && !valueIterationListeners.isEmpty()) {
+			for (final TrainingListener l : valueIterationListeners) {
+				l.onGradientCalculation(this.critic.getNetwork());
+			}
+		}
+
+		this.actor.getNetwork().setInput(inputActor);
+		this.actor.getNetwork().setLabels(labelsActor);
+		this.actor.getNetwork().computeGradientAndScore();
+		final Collection<TrainingListener> policyIterationListeners =
+				this.actor.getNetwork().getListeners();
+		// if (policyIterationListeners != null && policyIterationListeners.size() > 0) {
+		if (policyIterationListeners != null && !policyIterationListeners.isEmpty()) {
+			for (final TrainingListener l : policyIterationListeners) {
+				l.onGradientCalculation(this.actor.getNetwork());
+			}
+		}
+		return new Gradient[] {this.critic.getNetwork().gradient(),
+				this.actor.getNetwork().gradient()};
+	}
+
+
+	public void applyGradient(final Gradient[] gradient, final int batchSize) {
+		final MultiLayerConfiguration valueConf =
+				this.critic.getNetwork().getLayerWiseConfigurations();
+		final int valueIterationCount = valueConf.getIterationCount();
+		final int valueEpochCount = valueConf.getEpochCount();
+		this.critic.getNetwork().getUpdater().update(this.critic.getNetwork(), gradient[0],
+				valueIterationCount, valueEpochCount, batchSize, LayerWorkspaceMgr.noWorkspaces());
+		this.critic.getNetwork().params().subi(gradient[0].gradient());
+		final Collection<TrainingListener> valueIterationListeners =
+				this.critic.getNetwork().getListeners();
+		// if (valueIterationListeners != null && valueIterationListeners.size() > 0) {
+		if (valueIterationListeners != null && !valueIterationListeners.isEmpty()) {
+			for (final TrainingListener listener : valueIterationListeners) {
+				listener.iterationDone(this.critic.getNetwork(), valueIterationCount,
+						valueEpochCount);
+			}
+		}
+		valueConf.setIterationCount(valueIterationCount + 1);
+
+		final MultiLayerConfiguration policyConf =
+				this.actor.getNetwork().getLayerWiseConfigurations();
+		final int policyIterationCount = policyConf.getIterationCount();
+		final int policyEpochCount = policyConf.getEpochCount();
+		this.actor.getNetwork().getUpdater().update(this.actor.getNetwork(), gradient[1],
+				policyIterationCount, policyEpochCount, batchSize,
+				LayerWorkspaceMgr.noWorkspaces());
+		this.actor.getNetwork().params().subi(gradient[1].gradient());
+		final Collection<TrainingListener> policyIterationListeners =
+				this.actor.getNetwork().getListeners();
+		// if (policyIterationListeners != null && policyIterationListeners.size() > 0) {
+		if (policyIterationListeners != null && !policyIterationListeners.isEmpty()) {
+			for (final TrainingListener listener : policyIterationListeners) {
+				listener.iterationDone(this.actor.getNetwork(), policyIterationCount,
+						policyEpochCount);
+			}
+		}
+		policyConf.setIterationCount(policyIterationCount + 1);
 	}
 
 	public void updateTarget() {
@@ -153,63 +235,89 @@ public final class Hunter extends Agent {
 		target.setParameters(newTargetWeights);
 	}
 
-	private double addOUNoise(final double thresholdUtility) {
-		// https://towardsdatascience.com/deep-deterministic-policy-gradients-explained-2d94655a9b7b
-		// double low = 0.85;
-		final double low = -.5;
-		final double high = .5;
+	// private double addOUNoise(final double thresholdUtility) {
+	// // https://towardsdatascience.com/deep-deterministic-policy-gradients-explained-2d94655a9b7b
+	// // double low = 0.85;
+	// final double low = -.5;
+	// final double high = .5;
 
-		final double ouNoise = 0.3 * Math.random(); // random num between 0.0 and 1.0
-		double result = thresholdUtility + ouNoise;
-		if (result < low)
-			result = low;
-		if (result > high)
-			result = high;
-		return result;
-	}
+	// final double ouNoise = 0.3 * Math.random(); // random num between 0.0 and 1.0
+	// double result = thresholdUtility + ouNoise;
+	// if (result < low)
+	// result = low;
+	// if (result > high)
+	// result = high;
+	// return result;
+	// }
+
+
 
 	@Override
 	public Action getAction(final Boolean[] state, final int episode) {
 		final INDArray output = this.actor.predict(this.actor.toINDArray(state));
 		// float[] prediction = output.toFloatVector();
 
-		final double[] prediction = output.toDoubleVector();
+		// final double[] prediction = output.toDoubleVector();
 
-		// if (episode < 200)
-		// for (int i = 0; i < prediction.length; i++) {
-		// prediction[i] = (float) addOUNoise(prediction[i]);
-		// // prediction[i] *= RANDOM.nextGaussian();
-		// // prediction[i] += RANDOM.nextGaussian();
+		return Action.getActionByIndex(boltzmanNextAction(output, 1));
+	}
+
+	/**
+	 * epsilon reduction strategy from sendtex, renamed to beta for the boltzman distribution
+	 * https://pythonprogramming.net/training-deep-q-learning-dqn-reinforcement-learning-python-tutorial/?completed=/deep-q-learning-dqn-reinforcement-learning-python-tutorial/
+	 */
+	// public void updateBeta() {
+	// if (beta > MIN_BETA) {
+	// beta *= BETA_DECAY;
+	// beta = Math.max(MIN_BETA, beta);
+	// }
+	// }
+
+	// public int boltzmanDistribution(final double[] in) {
+	// final double max = Arrays.stream(in).max().orElse(0);
+	// final double[] values = Arrays.stream(in).map(i -> i - max).toArray();
+
+	// // p_a_s = np.exp(beta * q_values) / np.sum(np.exp(beta * q_values));
+	// final double[] exp = Arrays.stream(values).map(i -> Math.exp(beta * i)).toArray();
+	// final double sum = Arrays.stream(exp).sum();
+	// final double[] done = Arrays.stream(exp).map(i -> i / sum).toArray();
+
+	// // action_key = np.random.choice(a = num_act, p = p_as);
+	// // int index = Arrays.binarySearch(done, RANDOM.nextDouble());
+	// // return (index >= 0) ? index : (-index - 1);
+	// updateBeta();
+	// return sample(done);
+	// }
+
+	public int boltzmanNextAction(INDArray output, int shape) {
+		INDArray exp = exp(output);
+
+		// double sum = exp.sum(1).getDouble(0);
+		double sum = exp.sum(shape).getDouble(0);
+
+		double picked = RANDOM.nextDouble() * sum;
+		// for (int i = 0; i < exp.columns(); i++) {
+		// if (picked < exp.getDouble(i))
+		// return i;
 		// }
-
-		// int maxValueIndex = getMaxValueIndex(prediction);
-		// return Action.getActionByIndex(maxValueIndex);
-		return Action.getActionByIndex(boltzmanDistribution(prediction));
-	}
-
-	public int boltzmanDistribution(final double[] values) {
-		final double beta = 1.0;
-		// p_a_s = np.exp(beta * q_values) / np.sum(np.exp(beta * q_values));
-		final double[] exp = Arrays.stream(values).map(i -> Math.exp(beta * i)).toArray();
-		final double sum = Arrays.stream(exp).sum();
-		final double[] done = Arrays.stream(exp).map(i -> i / sum).toArray();
-
-
-		// action_key = np.random.choice(a = num_act, p = p_as);
-		// int index = Arrays.binarySearch(done, RANDOM.nextDouble());
-		// return (index >= 0) ? index : (-index - 1);
-		return sample(done);
-	}
-
-	private int sample(final double[] pdf) {
-		double r = RANDOM.nextDouble();
-		for (int i = 0; i < pdf.length; i++) {
-			if (r < pdf[i])
+		for (int i = 0; i < exp.columns(); i++) {
+			if (picked < exp.getDouble(i))
 				return i;
-			r -= pdf[i];
+			picked -= exp.getDouble(i);
 		}
-		return pdf.length - 1; // should not happen
+		return (int) output.length() - 1;
+
 	}
+
+	// private int sample(final double[] pdf) {
+	// double r = RANDOM.nextDouble();
+	// for (int i = 0; i < pdf.length; i++) {
+	// if (r < pdf[i])
+	// return i;
+	// r -= pdf[i];
+	// }
+	// return pdf.length - 1; // should not happen
+	// }
 
 	// public double sumArray(final double[] sum) {
 	// double add = 0;

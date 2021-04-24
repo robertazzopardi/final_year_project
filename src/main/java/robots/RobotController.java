@@ -19,7 +19,7 @@ public class RobotController {
 	private static final int MAX_EPISODE = 250;
 	private static final int MAX_STEP = 100 * Env.GRID_SIZE;
 	// private static final int BATCH_SIZE = 32;
-	private static final int BATCH_SIZE = 64;
+	public static final int BATCH_SIZE = 64;
 	private static final ExecutorService executor = Executors.newFixedThreadPool(AGENT_COUNT + 1);
 
 	public static final String OUTPUT_FOLDER = "src/main/resources/";
@@ -87,34 +87,32 @@ public class RobotController {
 		for (int i = 0; i < hunters.length; i++) {
 			hunters[i].setAction(actions[i]);
 			oldDistances[i] = hunters[i].getDistanceFrom();
-			// rewards[i] = hunters[i].getScoreForAction(actions[i]);
 			// rewards[i] -= hunters[i].canMove() && actions[i] == Action.FORWARD ? 0f : 1f;
-			// rewards[i] -= hunters[i].isAtGoal() && actions[i] == Action.FORWARD ? 0f : 1f;
-			// rewards[i] -= hunters[i].isAtGoal() && actions[i] == Action.NOTHING ? 0f : 1f;
 		}
 
 		executeAction();
 
-		final long count = Arrays.stream(hunters).filter(Hunter::isAtGoal).count();
+		// final long count = Arrays.stream(hunters).filter(Hunter::isAtGoal).count();
 
 		// Collect the states after the agents have moved
 		for (int i = 0; i < hunters.length; i++) {
 			nextStates[i] = hunters[i].getObservation();
-			// rewards[i] += getReward(hunters[i], oldDistances[i], i, actions[i]);
-			// rewards[i] = actions[i] != Action.FORWARD ? -10f : 0f;
 
-			// rewards[i] += hunters[i].isAtGoal() ? 1f : 0f;
-			// rewards[i] -= hunters[i].isAtGoal() ? 0f : .1f;
+			// rewards[i] += actions[i] == Action.NOTHING && hunters[i].isAtGoal() ? .1f : -.1f;
+			// rewards[i] += actions[i] == Action.FORWARD && hunters[i].isAtGoal() ? -.1f : 0f;
+			// rewards[i] += actions[i] == Action.FORWARD && !hunters[i].canMove() ? -.1f : 0f;
+			// rewards[i] +=
+			// actions[i] == Action.FORWARD && (hunters[i].getDistanceFrom() < oldDistances[i])
+			// ? 1f
+			// : 0f;
+			// rewards[i] +=
+			// actions[i] == Action.RIGHT || actions[i] == Action.LEFT && canSeePrey(i) ? .1f
+			// : -.1f;
 
-
-			// rewards[i] -= hunters[i].getDistanceFrom() >= oldDistances[i] ? 1f : 0f;
-
-			// rewards[i] += hunters[i].getDistanceFrom() < oldDistances[i] ? 1f : 0f;
-
-			// rewards[i] += hunters[i].isAtGoal() ? 1 / (float) count : -.1f;
-
-			rewards[i] += hunters[i].isAtGoal() ? (float) count : 0f;
+			rewards[i] = hunters[i].isAtGoal() ? 10f : -1f;
+			// rewards[i] += hunters[i].isAtGoal() && actions[i] == Action.NOTHING ? 10f : 0f;
 		}
+
 		// 0.000101
 		// System.out.println(Arrays.toString(actions));
 
@@ -133,14 +131,24 @@ public class RobotController {
 		// .toArray(Float[]::new);
 
 		// if (prey.isTrapped()) {
-		// final long count = Arrays.stream(hunters).filter(Hunter::isAtGoal).count();
-		// Arrays.fill(rewards, count / (float) (step + 0.000101));
+		// // final long count = Arrays.stream(hunters).filter(Hunter::isAtGoal).count();
+		// // Arrays.fill(rewards, count / (float) (step + 0.000101));
+		// Arrays.fill(rewards, (float) count);
 		// }
 
 		// System.out.println(Arrays.toString(rewards));
 
 		// if (prey.isTrapped())
-		// Arrays.fill(rewards, 10f);
+		// Arrays.fill(rewards, 2f);
+
+		// if (prey.isTrapped()) {
+		// rewards = Arrays.stream(rewards).map(i -> i + 5).toArray(Float[]::new);
+		// } else {
+		// rewards = Arrays.stream(rewards)
+		// .map(i -> i - (1 / (float) Math.pow(step == 0 ? 1 : step, 2)))
+		// .toArray(Float[]::new);
+		// }
+
 
 		return new StepObs(nextStates, rewards, prey.isTrapped());
 	}
