@@ -15,7 +15,7 @@ import simulation.Env;
  * @author rob
  *
  */
-final class QLearning implements Network {
+final class QLearning {
 	private static final double ALPHA = 0.1; // Learning rate
 	private static final int EPOCH = 1000;
 
@@ -321,39 +321,4 @@ final class QLearning implements Network {
 		calculateQ();
 	}
 
-	@Override
-	public MultiLayerNetwork getNetwork() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public INDArray predict(INDArray inputs) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public void update(INDArray inputs, INDArray outputs) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public Gradient getGradient(INDArray inputs, INDArray labels) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public void saveNetwork(String fileName) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public MultiLayerNetwork loadNetwork(File fileName, boolean moreTraining) {
-		// TODO Auto-generated method stub
-		return null;
-	}
 }

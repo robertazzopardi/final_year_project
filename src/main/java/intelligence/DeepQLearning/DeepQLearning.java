@@ -282,8 +282,15 @@ public class DeepQLearning implements Network {
 	}
 
 	@Override
-	public MultiLayerNetwork loadNetwork(final File file, boolean moreTraining) {
+	public MultiLayerNetwork loadNetwork(final File file, boolean moreTraining, final int inputs,
+			final int outputs) {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	@Override
+	public void updateGradient(Gradient gradient) {
+		// TODO Auto-generated method stub
+
 	}
 }

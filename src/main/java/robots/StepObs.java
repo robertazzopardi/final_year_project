@@ -1,11 +1,13 @@
 package robots;
 
+import org.nd4j.linalg.api.ndarray.INDArray;
+
 public class StepObs {
-    private final Boolean[][] nextStates;
+    private final INDArray[] nextStates;
     private final Float[] rewards;
     private final boolean done;
 
-    public StepObs(final Boolean[][] nextStates, final Float[] rewards, final boolean done) {
+    public StepObs(final INDArray[] nextStates, final Float[] rewards, final boolean done) {
         this.nextStates = nextStates;
         this.rewards = rewards;
         this.done = done;
@@ -19,7 +21,7 @@ public class StepObs {
         return rewards;
     }
 
-    public Boolean[][] getNextStates() {
+    public INDArray[] getNextStates() {
         return nextStates;
     }
 }

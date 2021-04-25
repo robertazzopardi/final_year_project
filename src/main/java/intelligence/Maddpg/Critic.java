@@ -1,10 +1,10 @@
 package intelligence.Maddpg;
 
 import java.io.File;
+import java.util.Collection;
 import org.deeplearning4j.core.storage.StatsStorage;
 import org.deeplearning4j.nn.api.OptimizationAlgorithm;
 import org.deeplearning4j.nn.conf.BackpropType;
-import org.deeplearning4j.nn.conf.GradientNormalization;
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
 import org.deeplearning4j.nn.conf.WorkspaceMode;
@@ -13,68 +13,53 @@ import org.deeplearning4j.nn.conf.layers.OutputLayer;
 import org.deeplearning4j.nn.gradient.Gradient;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.nn.weights.WeightInit;
+import org.deeplearning4j.nn.workspace.LayerWorkspaceMgr;
+import org.deeplearning4j.optimize.api.TrainingListener;
 import org.deeplearning4j.ui.api.UIServer;
 import org.deeplearning4j.ui.model.stats.StatsListener;
 import org.deeplearning4j.ui.model.storage.InMemoryStatsStorage;
+import org.deeplearning4j.util.ModelSerializer;
 import org.nd4j.linalg.activations.Activation;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.learning.config.Adam;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
 import intelligence.Network;
-import robots.Hunter;
 import robots.RobotController;
-import simulation.Env;
 
 /**
  * Defines the Critic Neural Network
  */
 public class Critic implements Network {
 	private final MultiLayerNetwork net;
-	private static final double LR_CRITIC = 1e-3;
 
-	private final MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder().seed(12345)
-			// Optimiser
-			.optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
-			// Workspace
-			.trainingWorkspaceMode(WorkspaceMode.ENABLED)
-			// Weight Init
-			.weightInit(WeightInit.RELU)
-			// Updater
-			// .updater(new Adam(LR_CRITIC))
-			// .updater(new Adam(LR_CRITIC, 0.9, 0.999, 1e-08))
-			.updater(new Adam(LR_CRITIC, 0.9, 0.999, 0.1))
-			// .updater(new Sgd(LR_CRITIC))
-			// Gradient Normaliser
-			.gradientNormalization(GradientNormalization.ClipL2PerLayer)
-			// .gradientNormalizationThreshold(0.5)
-			.l2(0.00001).dropOut(0.8).list()
-			.layer(0,
-					new DenseLayer.Builder()
-							.nIn((Hunter.OBSERVATION_COUNT * RobotController.AGENT_COUNT)
-									// .nIn((Env.GRID_SIZE * Env.GRID_SIZE *
-									// RobotController.AGENT_COUNT)
-									+ RobotController.AGENT_COUNT)
-							.nOut(1024).dropOut(0.5).weightInit(WeightInit.RELU)
-							.activation(Activation.RELU).build())
-			.layer(1,
-					new DenseLayer.Builder().nIn(1024).nOut(512).dropOut(0.5)
-							.weightInit(WeightInit.RELU).activation(Activation.RELU).build())
-			.layer(2,
-					new DenseLayer.Builder().nIn(512).nOut(300).dropOut(0.5)
-							.weightInit(WeightInit.RELU).activation(Activation.RELU).build())
-			.layer(3,
-					new OutputLayer.Builder(LossFunctions.LossFunction.MSE).nIn(300).nOut(1)
-							.weightInit(WeightInit.RELU).activation(Activation.IDENTITY).build())
-			.backpropType(BackpropType.Standard).build();
-
-	public Critic(final String type) {
-		this.net = new MultiLayerNetwork(conf);
+	public Critic(final String type, final int inputs) {
+		this.net = new MultiLayerNetwork(getNetworkConfiguration(inputs));
 		this.net.init();
 
 		if (type != "TARGET") {
 			enableUIServer(this.net);
 		}
+	}
+
+	private MultiLayerConfiguration getNetworkConfiguration(final int inputs) {
+		return new NeuralNetConfiguration.Builder().seed(12345)
+				.optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
+				.trainingWorkspaceMode(WorkspaceMode.ENABLED).weightInit(WeightInit.RELU)
+				.updater(new Adam()).dropOut(0.8).list()
+				.layer(0,
+						new DenseLayer.Builder().nIn(inputs).nOut(1024).dropOut(0.5)
+								.weightInit(WeightInit.RELU).activation(Activation.RELU).build())
+				.layer(1,
+						new DenseLayer.Builder().nIn(1024).nOut(512).dropOut(0.5)
+								.weightInit(WeightInit.RELU).activation(Activation.RELU).build())
+				.layer(2,
+						new DenseLayer.Builder().nIn(512).nOut(300).dropOut(0.5)
+								.weightInit(WeightInit.RELU).activation(Activation.RELU).build())
+				.layer(3,
+						new OutputLayer.Builder(LossFunctions.LossFunction.MSE)
+								.activation(Activation.IDENTITY).nIn(300).nOut(1).build())
+				.backpropType(BackpropType.Standard).build();
 	}
 
 	private static void enableUIServer(final MultiLayerNetwork net) {
@@ -115,7 +100,31 @@ public class Critic implements Network {
 		this.net.setInput(inputs);
 		this.net.setLabels(labels);
 		this.net.computeGradientAndScore();
+		final Collection<TrainingListener> valueIterationListeners = this.net.getListeners();
+		if (valueIterationListeners != null && !valueIterationListeners.isEmpty()) {
+			for (final TrainingListener l : valueIterationListeners) {
+				l.onGradientCalculation(this.net);
+			}
+		}
+
 		return this.net.gradient();
+	}
+
+	@Override
+	public void updateGradient(final Gradient gradient) {
+		final MultiLayerConfiguration valueConf = this.net.getLayerWiseConfigurations();
+		final int valueIterationCount = valueConf.getIterationCount();
+		final int valueEpochCount = valueConf.getEpochCount();
+		this.net.getUpdater().update(this.net, gradient, valueIterationCount, valueEpochCount,
+				RobotController.BATCH_SIZE, LayerWorkspaceMgr.noWorkspaces());
+		this.net.params().subi(gradient.gradient());
+		final Collection<TrainingListener> valueIterationListeners = this.net.getListeners();
+		if (valueIterationListeners != null && !valueIterationListeners.isEmpty()) {
+			for (final TrainingListener listener : valueIterationListeners) {
+				listener.iterationDone(this.net, valueIterationCount, valueEpochCount);
+			}
+		}
+		valueConf.setIterationCount(valueIterationCount + 1);
 	}
 
 	@Override
@@ -124,7 +133,8 @@ public class Critic implements Network {
 	}
 
 	@Override
-	public MultiLayerNetwork loadNetwork(final File file, final boolean moreTraining) {
+	public MultiLayerNetwork loadNetwork(final File file, final boolean moreTraining,
+			final int inputs, final int outputs) {
 		// Dont need the critic to evaluate
 		return null;
 	}

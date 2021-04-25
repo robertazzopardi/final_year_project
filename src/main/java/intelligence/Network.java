@@ -36,11 +36,24 @@ public interface Network {
     /**
      * Update the networks gradient
      *
+     * Implementation from rl4j
+     * https://github.com/deeplearning4j/rl4j/blob/master/rl4j-core/src/main/java/org/deeplearning4j/rl4j/network/ac/ActorCriticSeparate.java
+     *
      * @param inputs
      * @param labels
      * @return
      */
     public Gradient getGradient(final INDArray inputs, final INDArray labels);
+
+    /**
+     * Update networks gradient
+     *
+     * Implementation from rl4j
+     * https://github.com/deeplearning4j/rl4j/blob/master/rl4j-core/src/main/java/org/deeplearning4j/rl4j/network/ac/ActorCriticSeparate.java
+     *
+     * @param gradient
+     */
+    public void updateGradient(final Gradient gradient);
 
     /**
      * Saves the network
@@ -56,5 +69,6 @@ public interface Network {
      * @param moreTraining
      * @return
      */
-    public MultiLayerNetwork loadNetwork(final File fileName, final boolean moreTraining);
+    public MultiLayerNetwork loadNetwork(final File fileName, final boolean moreTraining,
+            final int inputs, final int outputs);
 }

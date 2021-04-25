@@ -27,7 +27,6 @@ public class Env extends EnvController {
 
         this.mode = mode;
 
-
         grid = getGrid();
 
         addBoundaries();

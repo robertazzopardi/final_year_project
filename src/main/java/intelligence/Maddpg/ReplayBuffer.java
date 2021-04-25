@@ -5,14 +5,14 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
+import org.nd4j.linalg.api.ndarray.INDArray;
 import robots.Action;
+import robots.RobotController;
 
 /**
  * Collection of the previous experience in the simulation
  */
 public class ReplayBuffer {
-    private static final int NUM_AGENTS = 4;
-
     private final List<Experience> buffer;
 
     public ReplayBuffer(final int maxSize) {
@@ -28,8 +28,8 @@ public class ReplayBuffer {
      * @param nextState
      * @param dones
      */
-    public void push(final Boolean[][] state, final Action[] action, final Float[] rewards,
-            final Boolean[][] nextState, final Integer[] dones) {
+    public void push(final INDArray[] state, final Action[] action, final Float[] rewards,
+            final INDArray[] nextState, final Integer[] dones) {
         buffer.add(new Experience(state, action, rewards, nextState, dones));
     }
 
@@ -40,34 +40,34 @@ public class ReplayBuffer {
      * @return Sample
      */
     public Sample sample(final int batchSize) {
-        final List<List<Boolean[]>> obsBatch = new ArrayList<>(Arrays.asList(new ArrayList<>(),
+        final List<List<INDArray>> obsBatch = new ArrayList<>(Arrays.asList(new ArrayList<>(),
                 new ArrayList<>(), new ArrayList<>(), new ArrayList<>()));
         final List<List<Action>> indivActionBatch = new ArrayList<>(Arrays.asList(new ArrayList<>(),
                 new ArrayList<>(), new ArrayList<>(), new ArrayList<>()));
         final List<List<Float>> indivRewardBatch = new ArrayList<>(Arrays.asList(new ArrayList<>(),
                 new ArrayList<>(), new ArrayList<>(), new ArrayList<>()));
-        final List<List<Boolean[]>> nextObsBatch = new ArrayList<>(Arrays.asList(new ArrayList<>(),
+        final List<List<INDArray>> nextObsBatch = new ArrayList<>(Arrays.asList(new ArrayList<>(),
                 new ArrayList<>(), new ArrayList<>(), new ArrayList<>()));
 
-        final List<Boolean[]> globalStateBatch = new ArrayList<>();
-        final List<Boolean[]> globalNextStateBatch = new ArrayList<>();
+        final List<INDArray[]> globalStateBatch = new ArrayList<>();
+        final List<INDArray[]> globalNextStateBatch = new ArrayList<>();
         final List<Action[]> globalActionsBatch = new ArrayList<>();
         final List<Integer> doneBatch = new ArrayList<>();
 
         final List<Experience> batch = randomSample(batchSize);
 
         for (final Experience experience : batch) {
-            final Boolean[][] state = experience.state;
+            final INDArray[] state = experience.state;
             final Action[] action = experience.action;
             final Float[] reward = experience.reward;
-            final Boolean[][] nextState = experience.nextState;
+            final INDArray[] nextState = experience.nextState;
             final Integer[] done = experience.dones;
 
-            for (int i = 0; i < NUM_AGENTS; i++) {
-                final Boolean[] obsI = state[i];
+            for (int i = 0; i < RobotController.AGENT_COUNT - 1; i++) {
+                final INDArray obsI = state[i];
                 final Action actionI = action[i];
                 final Float rewardI = reward[i];
-                final Boolean[] nextObsI = nextState[i];
+                final INDArray nextObsI = nextState[i];
 
                 obsBatch.get(i).add(obsI);
                 indivActionBatch.get(i).add(actionI);
@@ -75,10 +75,10 @@ public class ReplayBuffer {
                 nextObsBatch.get(i).add(nextObsI);
             }
 
-            globalStateBatch.add(Stream.of(state).flatMap(Stream::of).toArray(Boolean[]::new));
+            globalStateBatch.add(Stream.of(state).flatMap(Stream::of).toArray(INDArray[]::new));
             globalActionsBatch.add(action);
             globalNextStateBatch
-                    .add(Stream.of(nextState).flatMap(Stream::of).toArray(Boolean[]::new));
+                    .add(Stream.of(nextState).flatMap(Stream::of).toArray(INDArray[]::new));
             doneBatch.addAll(Arrays.asList(done));
         }
 
