@@ -1,23 +1,24 @@
 package intelligence.Maddpg;
 
+import intelligence.Network;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Random;
 import org.deeplearning4j.core.storage.StatsStorage;
 import org.deeplearning4j.nn.api.OptimizationAlgorithm;
 import org.deeplearning4j.nn.conf.BackpropType;
+import org.deeplearning4j.nn.conf.layers.DenseLayer;
+import org.deeplearning4j.nn.conf.layers.OutputLayer;
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
 import org.deeplearning4j.nn.conf.WorkspaceMode;
-import org.deeplearning4j.nn.conf.layers.DenseLayer;
-import org.deeplearning4j.nn.conf.layers.OutputLayer;
 import org.deeplearning4j.nn.gradient.Gradient;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.nn.weights.WeightInit;
 import org.deeplearning4j.nn.workspace.LayerWorkspaceMgr;
 import org.deeplearning4j.optimize.api.TrainingListener;
-// import org.deeplearning4j.rl4j.network.ac.ActorCriticLoss;
 import org.deeplearning4j.ui.api.UIServer;
 import org.deeplearning4j.ui.model.stats.StatsListener;
 import org.deeplearning4j.ui.model.storage.InMemoryStatsStorage;
@@ -29,12 +30,13 @@ import org.nd4j.linalg.lossfunctions.LossFunctions;
 import org.nd4j.shade.guava.primitives.Booleans;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import intelligence.Network;
 import robots.RobotController;
+import static org.nd4j.linalg.ops.transforms.Transforms.exp;
 
 public class Actor implements Network {
 	private static final Logger LOG = LoggerFactory.getLogger(Actor.class.getName());
 	private final MultiLayerNetwork net;
+	private static final Random RANDOM = new Random(12345);
 
 	public Actor(final String type, final int inputs, final int outputs) {
 		this.net = new MultiLayerNetwork(getNetworkConfiguration(inputs, outputs));
@@ -176,5 +178,19 @@ public class Actor implements Network {
 		}
 
 		return null;
+	}
+
+	public int boltzmannDistribution(final INDArray output, final int shape) {
+		final INDArray exp = exp(output);
+		final double sum = exp.sum(shape).getDouble(0);
+
+		double picked = RANDOM.nextDouble() * sum;
+
+		for (int i = 0; i < exp.columns(); i++) {
+			if (picked < exp.getDouble(i))
+				return i;
+			picked -= exp.getDouble(i);
+		}
+		return (int) output.length() - 1;
 	}
 }

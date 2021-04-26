@@ -29,8 +29,8 @@ public class ReplayBuffer {
      * @param dones
      */
     public void push(final INDArray[] state, final Action[] action, final Float[] rewards,
-            final INDArray[] nextState, final Integer[] dones) {
-        buffer.add(new Experience(state, action, rewards, nextState, dones));
+            final INDArray[] nextState) {
+        buffer.add(new Experience(state, action, rewards, nextState));
     }
 
     /**
@@ -52,7 +52,6 @@ public class ReplayBuffer {
         final List<INDArray[]> globalStateBatch = new ArrayList<>();
         final List<INDArray[]> globalNextStateBatch = new ArrayList<>();
         final List<Action[]> globalActionsBatch = new ArrayList<>();
-        final List<Integer> doneBatch = new ArrayList<>();
 
         final List<Experience> batch = randomSample(batchSize);
 
@@ -61,7 +60,6 @@ public class ReplayBuffer {
             final Action[] action = experience.action;
             final Float[] reward = experience.reward;
             final INDArray[] nextState = experience.nextState;
-            final Integer[] done = experience.dones;
 
             for (int i = 0; i < RobotController.AGENT_COUNT - 1; i++) {
                 final INDArray obsI = state[i];
@@ -79,11 +77,10 @@ public class ReplayBuffer {
             globalActionsBatch.add(action);
             globalNextStateBatch
                     .add(Stream.of(nextState).flatMap(Stream::of).toArray(INDArray[]::new));
-            doneBatch.addAll(Arrays.asList(done));
         }
 
         return new Sample(obsBatch, indivActionBatch, indivRewardBatch, nextObsBatch,
-                globalStateBatch, globalNextStateBatch, globalActionsBatch, doneBatch);
+                globalStateBatch, globalNextStateBatch, globalActionsBatch);
     }
 
     public int getLength() {

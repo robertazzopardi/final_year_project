@@ -19,10 +19,10 @@ public abstract class Agent extends RobotMonitor implements Callable<Void> {
 	static final Direction RIGHT = Direction.RIGHT;
 	static final Direction DOWN = Direction.DOWN;
 
-	Critic critic;
-	Critic criticTarget;
+	final Critic critic;
+	final Critic criticTarget;
 	final Actor actor;
-	Actor actorTarget;
+	final Actor actorTarget;
 
 	final Env env;
 
@@ -56,15 +56,16 @@ public abstract class Agent extends RobotMonitor implements Callable<Void> {
 		// Load network if evaluating
 		if (env.getMode() == Mode.EVAL) {
 			this.actor = new Actor(file, Hunter.OBSERVATION_COUNT, Action.LENGTH);
+			this.actorTarget = null;
+			this.critic = null;
+			this.criticTarget = null;
 		} else {
 			this.actor = new Actor("MAIN", Hunter.OBSERVATION_COUNT, Action.LENGTH);
 			this.actorTarget = new Actor("TARGET", Hunter.OBSERVATION_COUNT, Action.LENGTH);
-			this.critic =
-					new Critic("MAIN", Hunter.OBSERVATION_COUNT * (RobotController.AGENT_COUNT - 1)
-							+ (RobotController.AGENT_COUNT - 1));
-			this.criticTarget = new Critic("TARGET",
-					Hunter.OBSERVATION_COUNT * (RobotController.AGENT_COUNT - 1)
-							+ (RobotController.AGENT_COUNT - 1));
+			int inputs = Hunter.OBSERVATION_COUNT * (RobotController.AGENT_COUNT - 1)
+					+ (RobotController.AGENT_COUNT - 1);
+			this.critic = new Critic("MAIN", inputs);
+			this.criticTarget = new Critic("TARGET", inputs);
 		}
 	}
 
@@ -95,13 +96,6 @@ public abstract class Agent extends RobotMonitor implements Callable<Void> {
 		final int x = dir.px(getX());
 		final int y = dir.py(getY());
 
-		// if (Arrays.stream(controller.getHunters())
-		// .anyMatch(i -> (i != this) && (i.gx == x && i.gy == y))) {
-		// return false;
-		// } else if (x == prey.gx && y == prey.gy) {
-		// return false;
-		// }
-		// Prey prey = (Prey) controller.getAgents().get(4);
 		if (controller.getAgents().stream()
 				.anyMatch(i -> (i != this) && (i.gx == x && i.gy == y))) {
 			return false;
@@ -147,11 +141,27 @@ public abstract class Agent extends RobotMonitor implements Callable<Void> {
 	public abstract Action getAction(final Boolean[] state, final int episode);
 
 	/**
+	 * Get the current actions being executed
+	 *
+	 * @return
+	 */
+	final Action getAction() {
+		return nextAction;
+	}
+
+	/**
 	 * Get the agents current local observations
 	 *
 	 * @return
 	 */
 	public abstract INDArray getObservation();
+
+	/**
+	 * Check if in a goal state
+	 * 
+	 * @return
+	 */
+	public abstract boolean isAtGoal();
 
 	/**
 	 * Sets the next action for the agent to execute
@@ -160,15 +170,6 @@ public abstract class Agent extends RobotMonitor implements Callable<Void> {
 	 */
 	public void setAction(final Action action) {
 		this.nextAction = action;
-	}
-
-	/**
-	 * Get the current actions being executed
-	 *
-	 * @return
-	 */
-	Action getAction() {
-		return nextAction;
 	}
 
 	/**
@@ -196,11 +197,7 @@ public abstract class Agent extends RobotMonitor implements Callable<Void> {
 		final int x = getX();
 		final int y = getY();
 
-		// if (canMove(direction.px(x), direction.py(y))) {
 		if (canMove()) {
-			// env.updateGridEmpty(Env.ENV_SIZE / x, Env.ENV_SIZE / y);
-			// updateGrid(Env.ENV_SIZE / direction.px(x), Env.ENV_SIZE / direction.py(y));
-
 			gx = direction.px(x);
 			gy = direction.py(y);
 
@@ -217,7 +214,7 @@ public abstract class Agent extends RobotMonitor implements Callable<Void> {
 	 *
 	 * @param action
 	 */
-	void doAction(final Action action) {
+	final void doAction(final Action action) {
 		switch (action) {
 			case FORWARD:
 				moveDirection(Direction.fromDegree(getHeading()));

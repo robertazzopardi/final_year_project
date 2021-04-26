@@ -45,16 +45,6 @@ final class Prey extends Agent {
 		return count > 3;
 	}
 
-	// @Override
-	// boolean canMove(final int x, final int y) {
-	// if (controller.getAgents().stream().anyMatch(i -> i != this && i.gx == x && i.gy == y)) {
-	// return false;
-	// }
-
-	// return (x < Env.ENV_SIZE - Env.CELL_WIDTH && x > Env.CELL_WIDTH)
-	// && (y < Env.ENV_SIZE - Env.CELL_WIDTH && y > Env.CELL_WIDTH);
-	// }
-
 	@Override
 	public Action getAction(Boolean[] state, final int episode) {
 		return Action.getRandomAction();
@@ -63,6 +53,11 @@ final class Prey extends Agent {
 	@Override
 	public INDArray getObservation() {
 		return Nd4j.ones();
+	}
+
+	@Override
+	public boolean isAtGoal() {
+		return false;
 	}
 
 }

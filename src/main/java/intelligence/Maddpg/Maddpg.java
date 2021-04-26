@@ -29,29 +29,19 @@ public class Maddpg {
 
     private final ReplayBuffer replayBuffer;
 
-    // private final Hunter[] agents;
-    private final List<Agent> agents;
-
     private final RobotController robotController;
 
     private final int maxEpisode;
     private final int maxStep;
     private final int batchSize;
 
-    private final Integer[] ones = new Integer[RobotController.AGENT_COUNT];
-    private final Integer[] zeros = new Integer[RobotController.AGENT_COUNT];
-
-    public Maddpg(final int cap, final List<Agent> agents, final RobotController controller,
-            final int maxEpisode, final int maxStep, final int batchSize) {
+    public Maddpg(final int cap, final RobotController controller, final int maxEpisode,
+            final int maxStep, final int batchSize) {
         this.replayBuffer = new ReplayBuffer(cap);
-        this.agents = agents;
         this.robotController = controller;
         this.maxEpisode = maxEpisode;
         this.maxStep = maxStep;
         this.batchSize = batchSize;
-
-        Arrays.fill(ones, 1);
-        Arrays.fill(zeros, 0);
     }
 
     public Action[] getActions(final INDArray[] states, final int episode) {
@@ -59,7 +49,7 @@ public class Maddpg {
 
         for (int i = 0; i < RobotController.AGENT_COUNT - 1; i++) {
             final int[] arr = states[i].toIntVector();
-            actions[i] = agents.get(i).getAction(
+            actions[i] = robotController.getAgents().get(i).getAction(
                     Arrays.stream(arr).mapToObj(j -> j == 1).toArray(Boolean[]::new), episode);
         }
 
@@ -79,16 +69,14 @@ public class Maddpg {
             final List<INDArray> nextGlobalActions = new ArrayList<>();
 
             for (int j = 0; j < 4; j++) {
-                final Hunter hunter = (Hunter) agents.get(j);
-                // final INDArray arr = hunter.getActorTarget()
-                // .predict(Nd4j.createFromArray(nextObsBatchI.toArray(new Boolean[][] {})));
+                final Hunter hunter = (Hunter) robotController.getAgents().get(j);
                 final INDArray arr = hunter.getActorTarget()
                         .predict(Nd4j.vstack(nextObsBatchI.toArray(INDArray[]::new)));
 
                 final Float[] indexes = new Float[RobotController.BATCH_SIZE];
                 for (int row = 0; row < arr.rows(); row++) {
                     final INDArray y = arr.get(NDArrayIndex.point(row), NDArrayIndex.all());
-                    indexes[row] = Float.valueOf(hunter.boltzmannDistribution(y, 0));
+                    indexes[row] = Float.valueOf(hunter.getActor().boltzmannDistribution(y, 0));
                 }
 
                 INDArray n = Nd4j.createFromArray(indexes);
@@ -100,7 +88,7 @@ public class Maddpg {
                     Nd4j.concat(0, nextGlobalActions.stream().map(x -> x).toArray(INDArray[]::new))
                             .reshape(batchSize, 4);
 
-            updaters.add(new AgentUpdate((Hunter) agents.get(i),
+            updaters.add(new AgentUpdate((Hunter) robotController.getAgents().get(i),
                     new Data(indivRewardBatchI, obsBatchI, exp.globalStateBatch,
                             exp.globalActionsBatch, exp.globalNextStateBatch),
                     tmp, indivActionBatchI));
@@ -120,7 +108,7 @@ public class Maddpg {
         final List<Double> episodeRewards = new ArrayList<>();
         final List<Integer> steps = new ArrayList<>();
 
-        for (int i = 0; i < maxEpisode; i++) {
+        for (int i = 1; i < maxEpisode; i++) {
             INDArray[] states = robotController.reset();
 
             double epReward = 0;
@@ -131,7 +119,7 @@ public class Maddpg {
 
                 // Simulate one step in the environment
                 // Blocks until all hunters have moved in the environment
-                final StepObs observation = robotController.step(actions, j);
+                final StepObs observation = robotController.step(actions);
 
                 epReward += Arrays.stream(observation.getRewards()).mapToDouble(r -> r).average()
                         .orElse(Double.NaN);
@@ -144,11 +132,11 @@ public class Maddpg {
                 } else {
                     if (observation.isDone() || j == maxStep - 1) {
                         replayBuffer.push(states, actions, observation.getRewards(),
-                                observation.getNextStates(), ones);
+                                observation.getNextStates());
                         break;
                     }
                     replayBuffer.push(states, actions, observation.getRewards(),
-                            observation.getNextStates(), zeros);
+                            observation.getNextStates());
                     states = observation.getNextStates();
 
                     // if (replayBuffer.getLength() > batchSize && j % batchSize * 2 == 0) {
@@ -185,7 +173,7 @@ public class Maddpg {
     private void saveNetworks(final int episode) {
         // Save the networks
         for (int i = 0; i < 4; i++) {
-            ((Hunter) agents.get(i)).getActor()
+            ((Hunter) robotController.getAgents().get(i)).getActor()
                     .saveNetwork(RobotController.OUTPUT_FOLDER + episode + "_" + (i + 1) + ".zip");
         }
     }

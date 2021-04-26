@@ -1,21 +1,17 @@
 package simulation;
 
-import java.io.File;
 import comp329robosim.EnvController;
 import comp329robosim.MyGridCell;
 import comp329robosim.OccupancyType;
 import robots.RobotController;
 
 public class Env extends EnvController {
-    // public static final String CONFIG_FILE = "resources/defaultConfig.txt";
-
     public static final int TOTAL_EPISODES = 100;
     public static final int CELL_WIDTH = 350;
     public static final int CELL_RADIUS = CELL_WIDTH / 2;
-    public static final int GRID_SIZE = 7;
+    public static final int GRID_SIZE = 8;
     public static final int ENV_SIZE = Env.GRID_SIZE * Env.CELL_WIDTH;
 
-    private int episode = 1;
     private Boolean isRunning = true;
 
     private final Mode mode;
@@ -30,8 +26,6 @@ public class Env extends EnvController {
         grid = getGrid();
 
         addBoundaries();
-
-        // new GridPrinter<MyGridCell>(grid).start();
     }
 
     public Boolean isRunning() {
@@ -41,15 +35,6 @@ public class Env extends EnvController {
     public void stopRunning() {
         isRunning = false;
     }
-
-    /**
-     * Returns a list of pre-trained models if there are any
-     *
-     * @return
-     */
-    // public File[] getFiles() {
-    // return files;
-    // }
 
     /**
      * Initialise the robot controller

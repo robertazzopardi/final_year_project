@@ -15,12 +15,11 @@ public class Sample {
     final List<INDArray[]> globalStateBatch;
     final List<INDArray[]> globalNextStateBatch;
     final List<Action[]> globalActionsBatch;
-    final List<Integer> doneBatch;
 
     public Sample(final List<List<INDArray>> obsBatch, final List<List<Action>> indivActionBatch,
             final List<List<Float>> indivRewardBatch, final List<List<INDArray>> nextObsBatch,
             final List<INDArray[]> globalStateBatch, final List<INDArray[]> globalNextStateBatch,
-            final List<Action[]> globalActionsBatch, final List<Integer> doneBatch) {
+            final List<Action[]> globalActionsBatch) {
         this.obsBatch = obsBatch;
         this.indivActionBatch = indivActionBatch;
         this.indivRewardBatch = indivRewardBatch;
@@ -28,6 +27,5 @@ public class Sample {
         this.globalStateBatch = globalStateBatch;
         this.globalNextStateBatch = globalNextStateBatch;
         this.globalActionsBatch = globalActionsBatch;
-        this.doneBatch = doneBatch;
     }
 }
