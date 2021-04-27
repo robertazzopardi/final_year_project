@@ -56,8 +56,10 @@ public final class Hunter extends Agent {
 		) {
 			// Critic Model
 			final INDArray nextQ = this.criticTarget.predict(criticTargetInputs);
+			// final INDArray nextQ = this.criticTarget.predict(gnsb);
 			final INDArray estimatedQ = irb.addi(nextQ.muli(GAMMA)); // rewards + gamma * nextQ
 			this.critic.update(criticInputs, estimatedQ);
+			// this.critic.update(gsb, estimatedQ);
 
 			final INDArray output = this.actor.predict(iob);
 			for (int i = 0; i < output.rows(); i++) {
@@ -70,6 +72,7 @@ public final class Hunter extends Agent {
 			this.actor.update(iob, output);
 
 			final Gradient criticGradient = this.critic.getGradient(criticTargetInputs, estimatedQ);
+			// final Gradient criticGradient = this.critic.getGradient(gnsb, estimatedQ);
 			final Gradient actorGradient = this.actor.getGradient(iob, output);
 
 			this.critic.updateGradient(criticGradient);
@@ -90,12 +93,11 @@ public final class Hunter extends Agent {
 	public void updateTargetModel(final MultiLayerNetwork main, final MultiLayerNetwork target) {
 		// mu^theta' = tau* mu^theta + (1-tau)*mu_theta'
 		final INDArray cModelWeights = main.params();
-		final INDArray cTargetModelWeights = target.params();
 		final INDArray newTargetWeights = Nd4j.zeros(1, cModelWeights.size(1));
 		// creating new indarray with same dimention as model weights
 		for (int i = 0; i < cModelWeights.size(1); i++) {
-			final double newTargetWeight = (TAU * cModelWeights.getDouble(i))
-					+ ((1 - TAU) * cTargetModelWeights.getDouble(i));
+			final double newTargetWeight =
+					(TAU * cModelWeights.getDouble(i)) + ((1 - TAU) * target.params().getDouble(i));
 			newTargetWeights.putScalar(new int[] {i}, newTargetWeight);
 		}
 		target.setParameters(newTargetWeights);
@@ -104,27 +106,8 @@ public final class Hunter extends Agent {
 	@Override
 	public Action getAction(final Boolean[] state, final int episode) {
 		final INDArray output = this.actor.predict(this.actor.toINDArray(state));
-		return Action.getActionByIndex(this.actor.boltzmannDistribution(output, 1));
+		return Action.getActionByIndex(this.actor.nextAction(output, 1));
 	}
-
-	// private static int getMaxValueIndex(final float[] values) {
-	// int maxAt = 0;
-
-	// for (int i = 0; i < values.length; i++) {
-	// maxAt = values[i] > values[maxAt] ? i : maxAt;
-	// }
-
-	// return maxAt;
-	// }
-
-	// public boolean isAtGoal(final int x, final int y) {
-	// final Prey prey = (Prey) controller.getAgents().get(4);
-	// final int px = prey.getX();
-	// final int py = prey.getY();
-	// return (x == UP.px(px) && y == UP.py(py)) || (x == DOWN.px(px) && y == DOWN.py(py))
-	// || (x == LEFT.px(px) && y == LEFT.py(py))
-	// || (x == RIGHT.px(px) && y == RIGHT.py(py));
-	// }
 
 	@Override
 	public boolean isAtGoal() {
@@ -138,10 +121,10 @@ public final class Hunter extends Agent {
 				|| (x == RIGHT.px(px) && y == RIGHT.py(py));
 	}
 
-	private static float getNormalisedManhattenDistance(final int x1, final int y1, final int x2,
-			final int y2) {
-		return normalise(Math.abs(x2 - x1) + Math.abs(y2 - y1), 1, Env.ENV_SIZE);
-	}
+	// private static float getNormalisedManhattenDistance(final int x1, final int y1, final int x2,
+	// final int y2) {
+	// return normalise(Math.abs(x2 - x1) + Math.abs(y2 - y1), 1, Env.ENV_SIZE);
+	// }
 
 	// private static <T> void shuffle(final T[] states) {
 	// final Random rnd = new Random(12345);
@@ -195,8 +178,8 @@ public final class Hunter extends Agent {
 
 	public double getDistanceFrom(final int x, final int y) {
 		final Prey prey = (Prey) controller.getAgents().get(4);
-		final double dx = (double) x - prey.getGridPosX();
-		final double dy = (double) y - prey.getGridPosY();
+		final double dx = (double) x - prey.getX();
+		final double dy = (double) y - prey.getY();
 
 		return Math.sqrt(dx * dx + dy * dy);
 	}
@@ -215,7 +198,7 @@ public final class Hunter extends Agent {
 	}
 
 	public boolean canSeePrey() {
-		Prey prey = (Prey) controller.getAgents().get(4);
+		final Prey prey = (Prey) controller.getAgents().get(4);
 		final Direction dir = Direction.fromDegree(getHeading());
 		final int x = getGridPosX();
 		final int y = getGridPosY();
@@ -248,6 +231,40 @@ public final class Hunter extends Agent {
 			}
 		}
 		return false;
+	}
+
+	@Override
+	public Float getReward(final Action action) {
+		Float reward = 0f;
+		switch (action) {
+			case FORWARD:
+				if (!isAtGoal()) {
+					reward -= 1f;
+				}
+				break;
+			case LEFT:
+			case RIGHT:
+				final Direction dir = Direction.fromDegree(getHeading());
+
+				final double lookingDistance = getDistanceFrom(dir.px(getX()), dir.py(getY()));
+				final double currDistance = getDistanceFrom();
+
+				if (lookingDistance > currDistance) {
+					reward -= 1f;
+				}
+
+				break;
+			case NOTHING:
+				if (!isAtGoal()) {
+					reward -= 1f;
+				}
+				break;
+
+			default:
+				break;
+		}
+
+		return reward;
 	}
 
 }

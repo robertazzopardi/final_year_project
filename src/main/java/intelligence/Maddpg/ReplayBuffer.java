@@ -62,15 +62,10 @@ public class ReplayBuffer {
             final INDArray[] nextState = experience.nextState;
 
             for (int i = 0; i < RobotController.AGENT_COUNT - 1; i++) {
-                final INDArray obsI = state[i];
-                final Action actionI = action[i];
-                final Float rewardI = reward[i];
-                final INDArray nextObsI = nextState[i];
-
-                obsBatch.get(i).add(obsI);
-                indivActionBatch.get(i).add(actionI);
-                indivRewardBatch.get(i).add(rewardI);
-                nextObsBatch.get(i).add(nextObsI);
+                obsBatch.get(i).add(state[i]);
+                indivActionBatch.get(i).add(action[i]);
+                indivRewardBatch.get(i).add(reward[i]);
+                nextObsBatch.get(i).add(nextState[i]);
             }
 
             globalStateBatch.add(Stream.of(state).flatMap(Stream::of).toArray(INDArray[]::new));

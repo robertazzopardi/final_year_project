@@ -1,4 +1,4 @@
-package intelligence.Maddpg;
+package intelligence.Maddpg.pytorch;
 
 public class Models {
 

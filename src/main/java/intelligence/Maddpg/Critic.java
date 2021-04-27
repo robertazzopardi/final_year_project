@@ -48,15 +48,12 @@ public class Critic implements Network {
 				.trainingWorkspaceMode(WorkspaceMode.ENABLED).weightInit(WeightInit.RELU)
 				.updater(new Adam()).dropOut(0.8).list()
 				.layer(0,
-						new DenseLayer.Builder().nIn(inputs).nOut(1024).dropOut(0.5)
+						new DenseLayer.Builder().nIn(inputs).nOut(512).dropOut(0.5)
 								.weightInit(WeightInit.RELU).activation(Activation.RELU).build())
 				.layer(1,
-						new DenseLayer.Builder().nIn(1024).nOut(512).dropOut(0.5)
-								.weightInit(WeightInit.RELU).activation(Activation.RELU).build())
-				.layer(2,
 						new DenseLayer.Builder().nIn(512).nOut(300).dropOut(0.5)
 								.weightInit(WeightInit.RELU).activation(Activation.RELU).build())
-				.layer(3,
+				.layer(2,
 						new OutputLayer.Builder(LossFunctions.LossFunction.MSE)
 								.activation(Activation.IDENTITY).nIn(300).nOut(1).build())
 				.backpropType(BackpropType.Standard).build();
@@ -70,7 +67,7 @@ public class Critic implements Network {
 		net.setListeners(new StatsListener(statsStorage));
 
 		// this will limit frequency of gc calls to 5000 milliseconds
-		Nd4j.getMemoryManager().togglePeriodicGc(false);
+		// Nd4j.getMemoryManager().togglePeriodicGc(false);
 	}
 
 	/**

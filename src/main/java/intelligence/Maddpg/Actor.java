@@ -1,6 +1,6 @@
 package intelligence.Maddpg;
 
-import intelligence.Network;
+import static org.nd4j.linalg.ops.transforms.Transforms.exp;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
@@ -9,11 +9,11 @@ import java.util.Random;
 import org.deeplearning4j.core.storage.StatsStorage;
 import org.deeplearning4j.nn.api.OptimizationAlgorithm;
 import org.deeplearning4j.nn.conf.BackpropType;
-import org.deeplearning4j.nn.conf.layers.DenseLayer;
-import org.deeplearning4j.nn.conf.layers.OutputLayer;
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
 import org.deeplearning4j.nn.conf.WorkspaceMode;
+import org.deeplearning4j.nn.conf.layers.DenseLayer;
+import org.deeplearning4j.nn.conf.layers.OutputLayer;
 import org.deeplearning4j.nn.gradient.Gradient;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.nn.weights.WeightInit;
@@ -30,8 +30,8 @@ import org.nd4j.linalg.lossfunctions.LossFunctions;
 import org.nd4j.shade.guava.primitives.Booleans;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import intelligence.Network;
 import robots.RobotController;
-import static org.nd4j.linalg.ops.transforms.Transforms.exp;
 
 public class Actor implements Network {
 	private static final Logger LOG = LoggerFactory.getLogger(Actor.class.getName());
@@ -52,6 +52,25 @@ public class Actor implements Network {
 		this.net.init();
 	}
 
+	// private MultiLayerConfiguration getNetworkConfiguration(final int inputs, final int outputs)
+	// {
+	// return new NeuralNetConfiguration.Builder().seed(12345)
+	// .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
+	// .trainingWorkspaceMode(WorkspaceMode.ENABLED).weightInit(WeightInit.RELU)
+	// .updater(new Adam(1e-3)).dropOut(0.8).l2(0.0001).list()
+	// .layer(0,
+	// new DenseLayer.Builder().nIn(inputs).nOut(512).dropOut(0.5)
+	// .weightInit(WeightInit.RELU).activation(Activation.RELU).build())
+	// .layer(1,
+	// new DenseLayer.Builder().nIn(512).nOut(128).dropOut(0.5)
+	// .weightInit(WeightInit.RELU).activation(Activation.RELU).build())
+	// .layer(2,
+	// new OutputLayer.Builder(LossFunctions.LossFunction.MSE).nIn(128)
+	// .nOut(outputs).weightInit(WeightInit.RELU)
+	// .activation(Activation.IDENTITY).build())
+
+	// .backpropType(BackpropType.Standard).build();
+	// }
 	private MultiLayerConfiguration getNetworkConfiguration(final int inputs, final int outputs) {
 		return new NeuralNetConfiguration.Builder().seed(12345)
 				.optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
@@ -61,13 +80,11 @@ public class Actor implements Network {
 						new DenseLayer.Builder().nIn(inputs).nOut(512).dropOut(0.5)
 								.weightInit(WeightInit.RELU).activation(Activation.RELU).build())
 				.layer(1,
-						new DenseLayer.Builder().nIn(512).nOut(128).dropOut(0.5)
+						new DenseLayer.Builder().nIn(512).nOut(300).dropOut(0.5)
 								.weightInit(WeightInit.RELU).activation(Activation.RELU).build())
-				.layer(2, new OutputLayer.Builder(LossFunctions.LossFunction.MSE).nIn(128)
-						.nOut(outputs).weightInit(WeightInit.RELU).activation(Activation.IDENTITY)
-						// .activation(Activation.SOFTMAX)
-						.build())
-
+				.layer(2,
+						new OutputLayer.Builder(LossFunctions.LossFunction.MSE)
+								.activation(Activation.IDENTITY).nIn(300).nOut(outputs).build())
 				.backpropType(BackpropType.Standard).build();
 	}
 
@@ -79,7 +96,7 @@ public class Actor implements Network {
 		net.setListeners(new StatsListener(statsStorage));
 
 		// this will limit frequency of gc calls to 5000 milliseconds
-		Nd4j.getMemoryManager().togglePeriodicGc(false);
+		// Nd4j.getMemoryManager().togglePeriodicGc(false);
 	}
 
 	/**
@@ -193,4 +210,24 @@ public class Actor implements Network {
 		}
 		return (int) output.length() - 1;
 	}
+
+	// public int distribution(final INDArray output) {
+	// float rVal = RANDOM.nextFloat();
+	// for (int i = 0; i < output.length(); i++) {
+	// // System.out.println(i + " " + rVal + " " + output.getFloat(i));
+	// if (rVal < output.getFloat(i)) {
+	// return i;
+	// } else
+	// rVal -= output.getFloat(i);
+	// }
+
+	// throw new RuntimeException(
+	// "Output from network is not a probability distribution: " + output);
+	// }
+
+	public int nextAction(final INDArray output, final int shape) {
+		return boltzmannDistribution(output, shape);
+		// return distribution(output);
+	}
+
 }

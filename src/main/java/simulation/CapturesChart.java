@@ -1,75 +1,64 @@
 package simulation;
 
-// import java.awt.EventQueue;
-// import java.awt.event.ActionEvent;
-// import java.awt.event.ActionListener;
-// import java.text.SimpleDateFormat;
-// import javax.swing.JFrame;
-import javax.swing.JPanel;
-// import javax.swing.Timer;
-// import org.jfree.chart.ChartFactory;
-// import org.jfree.chart.ChartPanel;
-// import org.jfree.chart.JFreeChart;
-// import org.jfree.chart.axis.DateAxis;
-// import org.jfree.chart.axis.ValueAxis;
-// import org.jfree.chart.plot.XYPlot;
-// import org.jfree.data.category.DefaultCategoryDataset;
-// import org.jfree.data.time.DynamicTimeSeriesCollection;
-// import org.jfree.data.time.Minute;
-// import org.jfree.data.time.RegularTimePeriod;
-// import org.jfree.data.time.Second;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.geom.Ellipse2D;
+import java.util.List;
+import javax.swing.JFrame;
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartPanel;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.axis.NumberAxis;
+import org.jfree.chart.plot.XYPlot;
+import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
+import org.jfree.data.xy.XYDataset;
+import org.jfree.data.xy.XYSeries;
+import org.jfree.data.xy.XYSeriesCollection;
 
-/**
- * TODO: just make a normal xy chart after all episodes have run
- *
- * @see https://stackoverflow.com/a/21307289/230513
- */
-public class CapturesChart extends JPanel {
-    private static final long serialVersionUID = 1L;
+public class CapturesChart<T> extends JFrame {
 
-    // private final DynamicTimeSeriesCollection dataset;
-    // private final JFreeChart chart;
+    public CapturesChart(final String title, final String name, final int episode,
+            final List<T> data) {
+        super(title);
+        final JFreeChart chart = createChart(createDataset(name, episode, data), name);
+        final ChartPanel panel = new ChartPanel(chart);
+        panel.setPreferredSize(new Dimension(500, 300));
+        setContentPane(panel);
+        pack();
+        setVisible(true);
+    }
 
-    // public CapturesChart(final String title) {
-    // dataset = new DynamicTimeSeriesCollection(1, 100, new Second());
-    // // dataset.setTimeBase(new Second());
-    // dataset.setTimeBase(new Second());
+    private XYDataset createDataset(final String name, final int episode, final List<T> data) {
+        final XYSeries s1 = new XYSeries(name);
 
+        for (int i = 0; i < episode; i++) {
+            s1.add(i, (Number) data.get(i));
+        }
 
-    // dataset.setPosition(0);
-    // dataset.addSeries(new Boolean[1], 0, title);
-    // chart = ChartFactory.createTimeSeriesChart(title, "Episode", title, dataset, true, true,
-    // false);
+        final XYSeriesCollection dataset = new XYSeriesCollection();
+        dataset.addSeries(s1);
+        return dataset;
+    }
 
-    // final XYPlot plot = chart.getXYPlot();
-    // // final DateAxis axis = (DateAxis) plot.getDomainAxis();
-    // final ValueAxis axis = plot.getDomainAxis();
-    // axis.setAutoRange(true);
-    // axis.setFixedAutoRange(10000);
-    // // axis.setDateFormatOverride(new SimpleDateFormat("ss.SS"));
-    // final ChartPanel chartPanel = new ChartPanel(chart);
-    // add(chartPanel);
-    // }
+    private JFreeChart createChart(final XYDataset dataset, final String name) {
+        final JFreeChart chart =
+                ChartFactory.createXYLineChart(name + " per episode", "Episode", name, dataset);
+        chart.removeLegend();
+        final XYPlot plot = (XYPlot) chart.getPlot();
+        final XYLineAndShapeRenderer renderer = (XYLineAndShapeRenderer) plot.getRenderer();
+        renderer.setSeriesShapesVisible(0, true);
+        renderer.setSeriesShape(0, new Ellipse2D.Double(-4.0, -4.0, 8.0, 8.0));
+        renderer.setSeriesFillPaint(0, Color.WHITE);
+        renderer.setUseFillPaint(true);
+        final NumberAxis xAxis = (NumberAxis) plot.getDomainAxis();
+        xAxis.setStandardTickUnits(NumberAxis.createIntegerTickUnits());
+        return chart;
+    }
 
-    // public void update(final Boolean value) {
-    // System.out.println(value);
-    // final Boolean[] newData = new Boolean[1];
-    // newData[0] = value;
-    // dataset.advanceTime();
-    // dataset.appendData(newData);
-    // }
+    public static void makeChart(final int episode, final List<Double> episodeRewards,
+            final List<Integer> steps) {
+        new CapturesChart<Integer>(episode + " Episodes", "Steps", episode, steps);
+        new CapturesChart<Double>(episode + " Episodes", "Rewards", episode, episodeRewards);
 
-    public static void startChart(final CapturesChart chart) {
-        // EventQueue.invokeLater(new Runnable() {
-
-        // @Override
-        // public void run() {
-        // final JFrame frame = new JFrame("testing");
-        // frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        // frame.add(chart);
-        // frame.pack();
-        // frame.setVisible(true);
-        // }
-        // });
     }
 }

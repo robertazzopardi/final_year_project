@@ -6,11 +6,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.stream.IntStream;
 import org.apache.commons.io.comparator.NameFileComparator;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import intelligence.Maddpg.Maddpg;
 import simulation.Env;
+import simulation.Mode;
 
 /**
  * Main utility class to handle the agents
@@ -25,17 +25,17 @@ public class RobotController {
 	private static final ExecutorService executor = Executors.newFixedThreadPool(AGENT_COUNT + 1);
 
 	public static final String OUTPUT_FOLDER = "src/main/resources/";
-	private final File[] files =
-			new File(OUTPUT_FOLDER).listFiles((dir1, filename) -> filename.endsWith(".zip"));
+	private final File[] files;
 
 	private final Env env;
 
-	private List<Agent> agents;
+	private final List<Agent> agents;
 
 	public RobotController(final Env env) {
 		this.env = env;
 
-		Arrays.sort(files, NameFileComparator.NAME_COMPARATOR);
+		files = new File(OUTPUT_FOLDER).listFiles((dir1, filename) -> filename.endsWith(".zip"));
+		// Arrays.sort(files, NameFileComparator.NAME_COMPARATOR);
 
 		agents = new ArrayList<>();
 
@@ -68,7 +68,6 @@ public class RobotController {
 	 */
 	public StepObs step(final Action[] actions) {
 		Float[] rewards = new Float[4];
-		Arrays.fill(rewards, 0f);
 
 		final Double[] oldDistances = new Double[4];
 		final INDArray[] nextStates = new INDArray[4];
@@ -83,79 +82,20 @@ public class RobotController {
 		// step agent through environment
 		executeAction();
 
-		final long count = Arrays.stream(agents.subList(0, 3).toArray(Hunter[]::new))
-				.filter(Hunter::isAtGoal).count();
-
 		// Collect the states after the agents have moved
 		for (int i = 0; i < 4; i++) {
 			nextStates[i] = agents.get(i).getObservation();
+			rewards[i] = agents.get(i).getReward(actions[i]);
 		}
 
-		boolean trapped = ((Prey) agents.get(4)).isTrapped();
-
-		final boolean allCloser = IntStream.range(0, 3)
-				.allMatch(i -> ((Hunter) agents.get(i)).getDistanceFrom() < oldDistances[i]);
-		// Arrays.fill(rewards, allCloser ? 1f : -1f);
-		rewards = Arrays.stream(rewards).map(i -> i + (allCloser ? 1f : -1f)).toArray(Float[]::new);
-		rewards = Arrays.stream(rewards).map(i -> i + (trapped ? 1f : -1f)).toArray(Float[]::new);
-		rewards = Arrays.stream(rewards).map(i -> i + count).toArray(Float[]::new);
-
-		// if (trapped) {
-		// // rewards = Arrays.stream(rewards).map(i -> i + 10).toArray(Float[]::new);
-		// // Arrays.fill(rewards, (float) count);
-		// }
-		return new StepObs(nextStates, rewards, trapped);
-	}
-
-	private Float getReward(final Hunter hunter, final Double dxdy, final Action action,
-			final int i, Float reward) {
-
-		// if (hunter.isAtGoal()) {
-		// for (final Hunter h : hunters) {
-		// if (h.isAtGoal()) {
-		// // reward += 0.125f;
-		// reward += 1f;
-		// } else {
-		// // reward -= 1f;
-		// }
-		// }
+		// Joint award
+		// final long count = agents.subList(0, 3).stream().filter(Agent::isAtGoal).count();
+		// if (count > 0) {
+		// final float sum = (float) Arrays.stream(rewards).mapToDouble(i -> i).sum();
+		// rewards = Arrays.stream(rewards).map(i -> i + sum).toArray(Float[]::new);
 		// }
 
-		// if (!hunter.isAtGoal()) {
-		// reward -= 1f;
-		// }
-
-		switch (action) {
-			case FORWARD:
-				if (hunter.isAtGoal()) {
-					reward = 1f;
-				} else {
-					reward = -1f;
-				}
-				break;
-
-			case LEFT:
-			case RIGHT:
-				// if (canSeePrey(i)) {
-				// reward = 1f;
-				// } else {
-				// reward = -1f;
-				// }
-				break;
-
-			case NOTHING:
-				if (hunter.isAtGoal()) {
-					reward = 1f;
-				} else {
-					reward = -1f;
-				}
-				break;
-
-			default:
-				break;
-		}
-
-		return reward;
+		return new StepObs(nextStates, rewards, ((Prey) agents.get(4)).isTrapped());
 	}
 
 	private void executeAction() {
@@ -171,7 +111,8 @@ public class RobotController {
 		// initialise the robots from the environment
 		for (int i = 0; i < AGENT_COUNT; i++) {
 			if (agents.size() < AGENT_COUNT - 1) {
-				agents.add(new Hunter(env.getAndSetHunter(i), DELAY, env, this, files[i]));
+				agents.add(new Hunter(env.getAndSetHunter(i), DELAY, env, this,
+						env.getMode() == Mode.EVAL ? files[i] : null));
 			} else if (agents.size() < AGENT_COUNT) {
 				agents.add(new Prey(env.getAndSetPrey(), DELAY, env, this, null));
 			}
@@ -180,11 +121,11 @@ public class RobotController {
 				final int randomPosX = agents.get(i).getSimulatedRobot().getRandomPos();
 				final int randomPosY = agents.get(i).getSimulatedRobot().getRandomPos();
 				agents.get(i).setPose(randomPosX, randomPosY, 0);
-			} while (samePosition(agents.get(i)));
+			} while (isSamePosition(agents.get(i)));
 		}
 	}
 
-	private boolean samePosition(final Agent agent) {
+	private boolean isSamePosition(final Agent agent) {
 		return agents.stream()
 				.anyMatch(i -> i != agent && agent.getX() == i.getX() && agent.getY() == i.getY());
 	}

@@ -1,6 +1,7 @@
 package robots;
 
 import java.io.File;
+import java.util.List;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import comp329robosim.MyGridCell;
@@ -58,6 +59,25 @@ final class Prey extends Agent {
 	@Override
 	public boolean isAtGoal() {
 		return false;
+	}
+
+	@Override
+	public Float getReward(Action action) {
+		return 0f;
+	}
+
+	@Override
+	public void update(List<Float> indivRewardBatchI, List<INDArray> obsBatchI,
+			List<INDArray[]> globalStateBatch, List<Action[]> globalActionsBatch,
+			List<INDArray[]> globalNextStateBatch, INDArray gnga, List<Action> indivActionBatch) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void updateTarget() {
+		// TODO Auto-generated method stub
+
 	}
 
 }

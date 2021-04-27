@@ -1,6 +1,7 @@
 package robots;
 
 import java.io.File;
+import java.util.List;
 import java.util.concurrent.Callable;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import comp329robosim.RobotMonitor;
@@ -44,7 +45,6 @@ public abstract class Agent extends RobotMonitor implements Callable<Void> {
 		setTravelSpeed(100);
 
 		gx = getX();
-
 		gy = getY();
 
 		this.env = env;
@@ -62,8 +62,9 @@ public abstract class Agent extends RobotMonitor implements Callable<Void> {
 		} else {
 			this.actor = new Actor("MAIN", Hunter.OBSERVATION_COUNT, Action.LENGTH);
 			this.actorTarget = new Actor("TARGET", Hunter.OBSERVATION_COUNT, Action.LENGTH);
-			int inputs = Hunter.OBSERVATION_COUNT * (RobotController.AGENT_COUNT - 1)
+			final int inputs = Hunter.OBSERVATION_COUNT * (RobotController.AGENT_COUNT - 1)
 					+ (RobotController.AGENT_COUNT - 1);
+			// int inputs = Hunter.OBSERVATION_COUNT * 4;
 			this.critic = new Critic("MAIN", inputs);
 			this.criticTarget = new Critic("TARGET", inputs);
 		}
@@ -78,11 +79,32 @@ public abstract class Agent extends RobotMonitor implements Callable<Void> {
 	}
 
 	@Override
-	public synchronized void setPose(int x, int y, int heading) {
+	public synchronized void setPose(final int x, final int y, final int heading) {
 		super.setPose(x, y, heading);
 		gx = x;
 		gy = y;
 	}
+
+	/**
+	 * Update the actor and critic networks
+	 *
+	 * @param indivRewardBatchI
+	 * @param obsBatchI
+	 * @param globalStateBatch
+	 * @param globalActionsBatch
+	 * @param globalNextStateBatch
+	 * @param gnga
+	 * @param indivActionBatch
+	 */
+	public abstract void update(final List<Float> indivRewardBatchI, final List<INDArray> obsBatchI,
+			final List<INDArray[]> globalStateBatch, final List<Action[]> globalActionsBatch,
+			final List<INDArray[]> globalNextStateBatch, final INDArray gnga,
+			final List<Action> indivActionBatch);
+
+	/**
+	 * Update the target actor and critic networks
+	 */
+	public abstract void updateTarget();
 
 	/**
 	 * Get whether the robot can move into the x and y position
@@ -158,7 +180,7 @@ public abstract class Agent extends RobotMonitor implements Callable<Void> {
 
 	/**
 	 * Check if in a goal state
-	 * 
+	 *
 	 * @return
 	 */
 	public abstract boolean isAtGoal();
@@ -181,8 +203,17 @@ public abstract class Agent extends RobotMonitor implements Callable<Void> {
 	 * @return x Normalised between -1 and 1
 	 */
 	static final float normalise(final int x, final int min, final int max) {
-		return (2 * ((float) (x - min) / (max - min))) - 1;
+		// return (2 * ((float) (x - min) / (max - min))) - 1;
+		return (x - min) / (float) (max - min);
 	}
+
+	/**
+	 * Get the reward for the the given action
+	 *
+	 * @param action
+	 * @return
+	 */
+	public abstract Float getReward(final Action action);
 
 	/**
 	 * Move Forward in given direction
