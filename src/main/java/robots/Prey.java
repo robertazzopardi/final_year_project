@@ -47,7 +47,7 @@ final class Prey extends Agent {
 	}
 
 	@Override
-	public Action getAction(Boolean[] state, final int episode) {
+	public Action getAction(final INDArray state, final int episode) {
 		return Action.getRandomAction();
 	}
 
@@ -62,16 +62,17 @@ final class Prey extends Agent {
 	}
 
 	@Override
-	public Float getReward(Action action) {
+	public Float getReward(final Action action) {
+		// TODO Auto-generated method stub
 		return 0f;
 	}
 
 	@Override
-	public void update(List<Float> indivRewardBatchI, List<INDArray> obsBatchI,
-			List<INDArray[]> globalStateBatch, List<Action[]> globalActionsBatch,
-			List<INDArray[]> globalNextStateBatch, INDArray gnga, List<Action> indivActionBatch) {
+	public void update(final List<Float> indivRewardBatchI, final List<INDArray> obsBatchI,
+			final List<INDArray[]> globalStateBatch, final List<Action[]> globalActionsBatch,
+			final List<INDArray[]> globalNextStateBatch, final INDArray gnga,
+			final List<Action> indivActionBatch) {
 		// TODO Auto-generated method stub
-
 	}
 
 	@Override

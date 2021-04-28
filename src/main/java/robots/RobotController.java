@@ -2,11 +2,9 @@ package robots;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import org.apache.commons.io.comparator.NameFileComparator;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import intelligence.Maddpg.Maddpg;
 import simulation.Env;
@@ -21,7 +19,7 @@ public class RobotController {
 	private static final int CAPACITY = 1000000;// Should calculate actual capacity
 	public static final int BATCH_SIZE = 64;
 	private static final int MAX_EPISODE = 1001;
-	private static final int MAX_STEP = 100 * Env.GRID_SIZE;
+	public static final int MAX_STEP = 100 * Env.GRID_SIZE;
 	private static final ExecutorService executor = Executors.newFixedThreadPool(AGENT_COUNT + 1);
 
 	public static final String OUTPUT_FOLDER = "src/main/resources/";
@@ -35,7 +33,6 @@ public class RobotController {
 		this.env = env;
 
 		files = new File(OUTPUT_FOLDER).listFiles((dir1, filename) -> filename.endsWith(".zip"));
-		// Arrays.sort(files, NameFileComparator.NAME_COMPARATOR);
 
 		agents = new ArrayList<>();
 
@@ -69,15 +66,13 @@ public class RobotController {
 	public StepObs step(final Action[] actions) {
 		Float[] rewards = new Float[4];
 
-		final Double[] oldDistances = new Double[4];
 		final INDArray[] nextStates = new INDArray[4];
 
 		// Set next action
 		for (int i = 0; i < 4; i++) {
 			agents.get(i).setAction(actions[i]);
-			oldDistances[i] = ((Hunter) agents.get(i)).getDistanceFrom();
 		}
-		agents.get(4).setAction(Action.getRandomAction());
+		// agents.get(4).setAction(Action.getRandomAction());
 
 		// step agent through environment
 		executeAction();
@@ -112,7 +107,7 @@ public class RobotController {
 		for (int i = 0; i < AGENT_COUNT; i++) {
 			if (agents.size() < AGENT_COUNT - 1) {
 				agents.add(new Hunter(env.getAndSetHunter(i), DELAY, env, this,
-						env.getMode() == Mode.EVAL ? files[i] : null));
+						env.getMode() == Mode.EVAL && files.length > 0 ? files[i] : null));
 			} else if (agents.size() < AGENT_COUNT) {
 				agents.add(new Prey(env.getAndSetPrey(), DELAY, env, this, null));
 			}

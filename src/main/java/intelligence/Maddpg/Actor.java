@@ -52,40 +52,22 @@ public class Actor implements Network {
 		this.net.init();
 	}
 
-	// private MultiLayerConfiguration getNetworkConfiguration(final int inputs, final int outputs)
-	// {
-	// return new NeuralNetConfiguration.Builder().seed(12345)
-	// .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
-	// .trainingWorkspaceMode(WorkspaceMode.ENABLED).weightInit(WeightInit.RELU)
-	// .updater(new Adam(1e-3)).dropOut(0.8).l2(0.0001).list()
-	// .layer(0,
-	// new DenseLayer.Builder().nIn(inputs).nOut(512).dropOut(0.5)
-	// .weightInit(WeightInit.RELU).activation(Activation.RELU).build())
-	// .layer(1,
-	// new DenseLayer.Builder().nIn(512).nOut(128).dropOut(0.5)
-	// .weightInit(WeightInit.RELU).activation(Activation.RELU).build())
-	// .layer(2,
-	// new OutputLayer.Builder(LossFunctions.LossFunction.MSE).nIn(128)
-	// .nOut(outputs).weightInit(WeightInit.RELU)
-	// .activation(Activation.IDENTITY).build())
-
-	// .backpropType(BackpropType.Standard).build();
-	// }
 	private MultiLayerConfiguration getNetworkConfiguration(final int inputs, final int outputs) {
 		return new NeuralNetConfiguration.Builder().seed(12345)
 				.optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
 				.trainingWorkspaceMode(WorkspaceMode.ENABLED).weightInit(WeightInit.RELU)
-				.updater(new Adam()).dropOut(0.8).list()
+				.updater(new Adam(.01)).dropOut(0.8).list()
 				.layer(0,
 						new DenseLayer.Builder().nIn(inputs).nOut(512).dropOut(0.5)
 								.weightInit(WeightInit.RELU).activation(Activation.RELU).build())
-				.layer(1,
-						new DenseLayer.Builder().nIn(512).nOut(300).dropOut(0.5)
-								.weightInit(WeightInit.RELU).activation(Activation.RELU).build())
-				.layer(2,
-						new OutputLayer.Builder(LossFunctions.LossFunction.MSE)
-								.activation(Activation.IDENTITY).nIn(300).nOut(outputs).build())
-				.backpropType(BackpropType.Standard).build();
+				.layer(1, new DenseLayer.Builder().nIn(512).nOut(300).dropOut(0.5)
+						.weightInit(WeightInit.RELU).activation(Activation.RELU).build())
+				.layer(2, new OutputLayer.Builder(LossFunctions.LossFunction.MSE).activation(
+						// Activation.TANH
+						// Activation.IDENTITY
+						Activation.LEAKYRELU
+				// Activation.SOFTMAX
+				).nIn(300).nOut(outputs).build()).backpropType(BackpropType.Standard).build();
 	}
 
 	private static void enableUIServer(final MultiLayerNetwork net) {
@@ -132,9 +114,9 @@ public class Actor implements Network {
 		this.net.setInput(inputs);
 		this.net.setLabels(labels);
 		this.net.computeGradientAndScore();
-		final Collection<TrainingListener> policyIterationListeners = this.net.getListeners();
-		if (policyIterationListeners != null && !policyIterationListeners.isEmpty()) {
-			for (final TrainingListener l : policyIterationListeners) {
+		final Collection<TrainingListener> iterListeners = this.net.getListeners();
+		if (iterListeners != null && !iterListeners.isEmpty()) {
+			for (final TrainingListener l : iterListeners) {
 				l.onGradientCalculation(this.net);
 			}
 		}
@@ -144,19 +126,19 @@ public class Actor implements Network {
 
 	@Override
 	public void updateGradient(final Gradient gradient) {
-		final MultiLayerConfiguration policyConf = this.net.getLayerWiseConfigurations();
-		final int policyIterationCount = policyConf.getIterationCount();
-		final int policyEpochCount = policyConf.getEpochCount();
-		this.net.getUpdater().update(this.net, gradient, policyIterationCount, policyEpochCount,
+		final MultiLayerConfiguration config = this.net.getLayerWiseConfigurations();
+		final int iterCount = config.getIterationCount();
+		final int epochs = config.getEpochCount();
+		this.net.getUpdater().update(this.net, gradient, iterCount, epochs,
 				RobotController.BATCH_SIZE, LayerWorkspaceMgr.noWorkspaces());
 		this.net.params().subi(gradient.gradient());
-		final Collection<TrainingListener> policyIterationListeners = this.net.getListeners();
-		if (policyIterationListeners != null && !policyIterationListeners.isEmpty()) {
-			for (final TrainingListener listener : policyIterationListeners) {
-				listener.iterationDone(this.net, policyIterationCount, policyEpochCount);
+		final Collection<TrainingListener> iterListeners = this.net.getListeners();
+		if (iterListeners != null && !iterListeners.isEmpty()) {
+			for (final TrainingListener listener : iterListeners) {
+				listener.iterationDone(this.net, iterCount, epochs);
 			}
 		}
-		policyConf.setIterationCount(policyIterationCount + 1);
+		config.setIterationCount(iterCount + 1);
 	}
 
 	/**
@@ -214,7 +196,6 @@ public class Actor implements Network {
 	// public int distribution(final INDArray output) {
 	// float rVal = RANDOM.nextFloat();
 	// for (int i = 0; i < output.length(); i++) {
-	// // System.out.println(i + " " + rVal + " " + output.getFloat(i));
 	// if (rVal < output.getFloat(i)) {
 	// return i;
 	// } else

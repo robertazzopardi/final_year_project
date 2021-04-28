@@ -3,7 +3,6 @@ package robots;
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Stream;
 import org.deeplearning4j.nn.gradient.Gradient;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.nd4j.linalg.api.ndarray.INDArray;
@@ -16,39 +15,43 @@ import simulation.Env;
  *
  */
 public final class Hunter extends Agent {
-	// public static final int OBSERVATION_COUNT = Env.GRID_SIZE * Env.GRID_SIZE;
-	public static final int OBSERVATION_COUNT = RobotController.AGENT_COUNT * 3;
+	public static final int OBSERVATION_COUNT = RobotController.AGENT_COUNT * 3 * 2;
+	public static final int ONE_STEP_OBSERVATION = OBSERVATION_COUNT / 2;
+
 	private static final double TAU = 1e-3;
 	private static final double GAMMA = 0.99;
 
 	public Hunter(final SimulatedRobot r, final int d, final Env env,
 			final RobotController controller, final File file) {
 		super(r, d, env, controller, file);
+
+		currentObservation = Nd4j.zeros(ONE_STEP_OBSERVATION);
 	}
 
+	@Override
 	public void update(final List<Float> indivRewardBatchI, final List<INDArray> obsBatchI,
 			final List<INDArray[]> globalStateBatch, final List<Action[]> globalActionsBatch,
 			final List<INDArray[]> globalNextStateBatch, final INDArray gnga,
 			final List<Action> indivActionBatch) {
 
-		try (INDArray irb = Nd4j.createFromArray(indivRewardBatchI.toArray(Float[]::new))
+		try (final INDArray irb = Nd4j.createFromArray(indivRewardBatchI.toArray(Float[]::new))
 				.reshape(indivRewardBatchI.size(), 1);
-
-				final INDArray iob = Nd4j.vstack(obsBatchI.toArray(INDArray[]::new));
 
 				final INDArray iab = Nd4j.createFromArray(indivActionBatch.stream()
 						.map(i -> Float.valueOf(i.getActionIndex())).toArray(Float[]::new));
-
-				final INDArray gsb = Nd4j.vstack(globalStateBatch.stream()
-						.map(i -> Nd4j.concat(0, i)).toArray(INDArray[]::new));
 
 				final INDArray gab = Nd4j.createFromArray(globalActionsBatch.stream()
 						.map(x -> Arrays.stream(x).map(y -> Float.valueOf(y.getActionIndex()))
 								.toArray(Float[]::new))
 						.toArray(Float[][]::new));
 
-				final INDArray gnsb = Nd4j.vstack(globalNextStateBatch.stream()
-						.map(i -> Nd4j.concat(0, i)).toArray(INDArray[]::new));
+				final INDArray iob = Nd4j.vstack(obsBatchI.toArray(INDArray[]::new));
+
+				final INDArray gsb = Nd4j.vstack(
+						globalStateBatch.stream().map(Nd4j::hstack).toArray(INDArray[]::new));
+
+				final INDArray gnsb = Nd4j.vstack(
+						globalNextStateBatch.stream().map(Nd4j::hstack).toArray(INDArray[]::new));
 
 				final INDArray criticTargetInputs = Nd4j.hstack(gnsb, gnga);
 				final INDArray criticInputs = Nd4j.hstack(gsb, gab);
@@ -85,6 +88,7 @@ public final class Hunter extends Agent {
 		}
 	}
 
+	@Override
 	public void updateTarget() {
 		updateTargetModel(this.actor.getNetwork(), this.actorTarget.getNetwork());
 		updateTargetModel(this.critic.getNetwork(), this.criticTarget.getNetwork());
@@ -104,8 +108,8 @@ public final class Hunter extends Agent {
 	}
 
 	@Override
-	public Action getAction(final Boolean[] state, final int episode) {
-		final INDArray output = this.actor.predict(this.actor.toINDArray(state));
+	public Action getAction(final INDArray state, final int episode) {
+		final INDArray output = this.actor.predict(state);
 		return Action.getActionByIndex(this.actor.nextAction(output, 1));
 	}
 
@@ -144,28 +148,26 @@ public final class Hunter extends Agent {
 
 	@Override
 	public INDArray getObservation() {
-		final Float[] states = new Float[Hunter.OBSERVATION_COUNT];
 		int count = 0;
 
+		// Get the observation
 		for (final Agent agent : controller.getAgents()) {
-			states[count++] = normalise(agent.getX(), 0, Env.ENV_SIZE);
-			states[count++] = normalise(agent.getY(), 0, Env.ENV_SIZE);
-			states[count++] = normalise(agent.getHeading() % 360, -360, 360);
+			currentObservation.putScalar(count++, normalise(agent.getX(), 0, Env.ENV_SIZE));
+			currentObservation.putScalar(count++, normalise(agent.getY(), 0, Env.ENV_SIZE));
+			currentObservation.putScalar(count++, normalise(agent.getHeading() % 360, -360, 360));
 		}
 
-		// final Boolean[][] states = new Boolean[Env.GRID_SIZE][Env.GRID_SIZE];
-		// for (final Boolean[] arr1 : states)
-		// Arrays.fill(arr1, false);
-		// // Arrays.stream(controller.getHunters())
-		// // .forEach(i -> states[i.getGridPosY()][i.getGridPosX()] = true);
-		// // states[prey.getGridPosY()][prey.getGridPosX()] = true;
-		// controller.getAgents().stream()
-		// .forEach(i -> states[i.getGridPosY()][i.getGridPosX()] = true);
+		// add previous observation
+		INDArray observation;
+		if (previousObservation == null) {
+			observation = Nd4j.hstack(Nd4j.zeros(ONE_STEP_OBSERVATION), currentObservation);
+		} else {
+			observation = Nd4j.hstack(previousObservation, currentObservation);
+		}
 
-		// shuffle(states);
+		previousObservation = currentObservation;
 
-		return Nd4j
-				.createFromArray(Arrays.stream(states).flatMap(Stream::of).toArray(Float[]::new));
+		return observation;
 	}
 
 	public double getDistanceFrom() {
@@ -184,18 +186,18 @@ public final class Hunter extends Agent {
 		return Math.sqrt(dx * dx + dy * dy);
 	}
 
-	public double[] manhattanPotential() {
-		final Prey prey = (Prey) controller.getAgents().get(4);
-		final int x = getGridPosX();
-		final int y = getGridPosY();
+	// public double[] manhattanPotential() {
+	// final Prey prey = (Prey) controller.getAgents().get(4);
+	// final int x = getGridPosX();
+	// final int y = getGridPosY();
 
-		return new double[] {
-				Math.abs(prey.getGridPosX() - x) + Math.abs(prey.getGridPosY() - (y - 1)), // UP
-				Math.abs(prey.getGridPosX() - x) + Math.abs(prey.getGridPosY() - (y + 1)), // DOWN
-				Math.abs(prey.getGridPosX() - (x - 1)) + Math.abs(prey.getGridPosY() - y), // LEFT
-				Math.abs(prey.getGridPosX() - (x + 1)) + Math.abs(prey.getGridPosY() - y), // RIGHT
-		};
-	}
+	// return new double[] {
+	// Math.abs(prey.getGridPosX() - x) + Math.abs(prey.getGridPosY() - (y - 1)), // UP
+	// Math.abs(prey.getGridPosX() - x) + Math.abs(prey.getGridPosY() - (y + 1)), // DOWN
+	// Math.abs(prey.getGridPosX() - (x - 1)) + Math.abs(prey.getGridPosY() - y), // LEFT
+	// Math.abs(prey.getGridPosX() - (x + 1)) + Math.abs(prey.getGridPosY() - y), // RIGHT
+	// };
+	// }
 
 	public boolean canSeePrey() {
 		final Prey prey = (Prey) controller.getAgents().get(4);
@@ -236,11 +238,12 @@ public final class Hunter extends Agent {
 	@Override
 	public Float getReward(final Action action) {
 		Float reward = 0f;
+
 		switch (action) {
 			case FORWARD:
-				if (!isAtGoal()) {
-					reward -= 1f;
-				}
+				// TODO: account for if new distance is next to the prey
+				reward -= getDistanceFrom() >= oldDistance ? 10f : 0f;
+
 				break;
 			case LEFT:
 			case RIGHT:
@@ -249,22 +252,28 @@ public final class Hunter extends Agent {
 				final double lookingDistance = getDistanceFrom(dir.px(getX()), dir.py(getY()));
 				final double currDistance = getDistanceFrom();
 
-				if (lookingDistance > currDistance) {
-					reward -= 1f;
-				}
+				reward -= lookingDistance > currDistance ? 10f : 0f;
 
 				break;
 			case NOTHING:
-				if (!isAtGoal()) {
-					reward -= 1f;
-				}
+				// reward -= !isAtGoal() ? 10f : 0f;
 				break;
 
 			default:
 				break;
 		}
 
+		// reward -= isAtGoal() ? 0f : 1f;
+		// reward -= action == Action.FORWARD && getDistanceFrom() >= oldDistance ? 10f : 0f;
+		// reward -= action != Action.FORWARD && !isAtGoal() ? 10f : 0f;
+
 		return reward;
+	}
+
+	@Override
+	public void setAction(final Action action) {
+		super.setAction(action);
+		oldDistance = getDistanceFrom();
 	}
 
 }

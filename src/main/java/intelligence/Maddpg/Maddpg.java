@@ -49,8 +49,9 @@ public class Maddpg {
 
         for (int i = 0; i < RobotController.AGENT_COUNT - 1; i++) {
             final int[] arr = states[i].toIntVector();
-            actions[i] = robotController.getAgents().get(i).getAction(
-                    Arrays.stream(arr).mapToObj(j -> j == 1).toArray(Boolean[]::new), episode);
+            try (INDArray state = Nd4j.createFromArray(new int[][] {arr})) {
+                actions[i] = robotController.getAgents().get(i).getAction(state, episode);
+            }
         }
 
         return actions;
@@ -79,11 +80,11 @@ public class Maddpg {
                     indexes[row] = Float.valueOf(hunter.getActor().nextAction(y, 0));
                 }
 
-                INDArray n = Nd4j.createFromArray(indexes);
-                n = Nd4j.stack(0, n);
-                nextGlobalActions.add(n);
-
+                try (final INDArray n = Nd4j.createFromArray(indexes)) {
+                    nextGlobalActions.add(Nd4j.stack(0, n));
+                }
             }
+
             final INDArray tmp =
                     Nd4j.concat(0, nextGlobalActions.stream().map(x -> x).toArray(INDArray[]::new))
                             .reshape(batchSize, 4);
@@ -108,14 +109,14 @@ public class Maddpg {
         final List<Double> episodeRewards = new ArrayList<>();
         final List<Integer> steps = new ArrayList<>();
 
-        for (int i = 1; i < maxEpisode; i++) {
+        for (int episode = 1; episode < maxEpisode; episode++) {
             INDArray[] states = robotController.reset();
 
             double epReward = 0;
 
-            int j = 0;
-            for (; j < maxStep; j++) {
-                final Action[] actions = getActions(states, i);
+            int step = 0;
+            for (; step < maxStep; step++) {
+                final Action[] actions = getActions(states, episode);
 
                 // Simulate one step in the environment
                 // Blocks until all hunters have moved in the environment
@@ -124,23 +125,19 @@ public class Maddpg {
                 epReward += Arrays.stream(observation.getRewards()).mapToDouble(r -> r).average()
                         .orElse(Double.NaN);
 
+                if (observation.isDone() || step == maxStep - 1) {
+                    break;
+                }
                 if (robotController.getEnv().getMode() == Mode.EVAL) {
-                    if (observation.isDone() || j == maxStep - 1) {
-                        break;
-                    }
                     states = observation.getNextStates();
                 } else {
-                    if (observation.isDone() || j == maxStep - 1) {
-                        replayBuffer.push(states, actions, observation.getRewards(),
-                                observation.getNextStates());
-                        break;
-                    }
                     replayBuffer.push(states, actions, observation.getRewards(),
                             observation.getNextStates());
+
                     states = observation.getNextStates();
 
                     // if (replayBuffer.getLength() > batchSize && j % batchSize * 2 == 0) {
-                    if (replayBuffer.getLength() > batchSize && j % batchSize == 0) {
+                    if (replayBuffer.getLength() > batchSize && step % batchSize == 0) {
                         update(batchSize);
                     }
                 }
@@ -154,16 +151,16 @@ public class Maddpg {
                 }
             }
 
-            steps.add(j);
+            steps.add(step);
             episodeRewards.add(epReward);
 
-            logEpisodeInformation(episodeRewards, i, epReward, j, steps);
+            logEpisodeInformation(episodeRewards, episode, epReward, step, steps);
 
-            if (i > 0 && i % 100 == 0) {
-                saveNetworks(i);
+            if (episode > 0 && episode % 100 == 0) {
+                saveNetworks(episode);
 
-                final int episode = i;
-                new Thread(() -> CapturesChart.makeChart(episode, episodeRewards, steps)).start();
+                final int ep = episode;
+                new Thread(() -> CapturesChart.makeChart(ep, episodeRewards, steps)).start();
             }
 
         }

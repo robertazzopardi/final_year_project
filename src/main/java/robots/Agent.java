@@ -36,6 +36,12 @@ public abstract class Agent extends RobotMonitor implements Callable<Void> {
 	int gx;
 	int gy;
 
+	Double oldDistance;
+
+	INDArray currentObservation;
+	INDArray previousObservation;
+	// float[] previousObservation = null;
+
 	Agent(final SimulatedRobot r, final int d, final Env env, final RobotController controller,
 			final File file) {
 		super(r, d);
@@ -64,7 +70,6 @@ public abstract class Agent extends RobotMonitor implements Callable<Void> {
 			this.actorTarget = new Actor("TARGET", Hunter.OBSERVATION_COUNT, Action.LENGTH);
 			final int inputs = Hunter.OBSERVATION_COUNT * (RobotController.AGENT_COUNT - 1)
 					+ (RobotController.AGENT_COUNT - 1);
-			// int inputs = Hunter.OBSERVATION_COUNT * 4;
 			this.critic = new Critic("MAIN", inputs);
 			this.criticTarget = new Critic("TARGET", inputs);
 		}
@@ -76,13 +81,6 @@ public abstract class Agent extends RobotMonitor implements Callable<Void> {
 
 	public Actor getActorTarget() {
 		return this.actorTarget;
-	}
-
-	@Override
-	public synchronized void setPose(final int x, final int y, final int heading) {
-		super.setPose(x, y, heading);
-		gx = x;
-		gy = y;
 	}
 
 	/**
@@ -119,7 +117,7 @@ public abstract class Agent extends RobotMonitor implements Callable<Void> {
 		final int y = dir.py(getY());
 
 		if (controller.getAgents().stream()
-				.anyMatch(i -> (i != this) && (i.gx == x && i.gy == y))) {
+				.anyMatch(i -> (i != this) && (i.getX() == x && i.getY() == y))) {
 			return false;
 		}
 
@@ -160,7 +158,7 @@ public abstract class Agent extends RobotMonitor implements Callable<Void> {
 	 * @param state
 	 * @return
 	 */
-	public abstract Action getAction(final Boolean[] state, final int episode);
+	public abstract Action getAction(final INDArray state, final int episode);
 
 	/**
 	 * Get the current actions being executed
@@ -203,8 +201,8 @@ public abstract class Agent extends RobotMonitor implements Callable<Void> {
 	 * @return x Normalised between -1 and 1
 	 */
 	static final float normalise(final int x, final int min, final int max) {
-		// return (2 * ((float) (x - min) / (max - min))) - 1;
-		return (x - min) / (float) (max - min);
+		return (2 * ((float) (x - min) / (max - min))) - 1;
+		// return (x - min) / (float) (max - min);
 	}
 
 	/**

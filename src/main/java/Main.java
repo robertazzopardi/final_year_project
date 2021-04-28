@@ -6,7 +6,7 @@ import simulation.Mode;
  */
 public class Main {
 
-    private static Mode simMode = Mode.TRAIN;
+    private static final Mode simMode = Mode.TRAIN;
 
     public static void main(final String[] args) {
         final Env env = new Env("", Env.GRID_SIZE, Env.GRID_SIZE, simMode);

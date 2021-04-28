@@ -18,10 +18,8 @@ import org.deeplearning4j.optimize.api.TrainingListener;
 import org.deeplearning4j.ui.api.UIServer;
 import org.deeplearning4j.ui.model.stats.StatsListener;
 import org.deeplearning4j.ui.model.storage.InMemoryStatsStorage;
-import org.deeplearning4j.util.ModelSerializer;
 import org.nd4j.linalg.activations.Activation;
 import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.learning.config.Adam;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
 import intelligence.Network;
@@ -97,9 +95,9 @@ public class Critic implements Network {
 		this.net.setInput(inputs);
 		this.net.setLabels(labels);
 		this.net.computeGradientAndScore();
-		final Collection<TrainingListener> valueIterationListeners = this.net.getListeners();
-		if (valueIterationListeners != null && !valueIterationListeners.isEmpty()) {
-			for (final TrainingListener l : valueIterationListeners) {
+		final Collection<TrainingListener> iterListeners = this.net.getListeners();
+		if (iterListeners != null && !iterListeners.isEmpty()) {
+			for (final TrainingListener l : iterListeners) {
 				l.onGradientCalculation(this.net);
 			}
 		}
@@ -109,19 +107,19 @@ public class Critic implements Network {
 
 	@Override
 	public void updateGradient(final Gradient gradient) {
-		final MultiLayerConfiguration valueConf = this.net.getLayerWiseConfigurations();
-		final int valueIterationCount = valueConf.getIterationCount();
-		final int valueEpochCount = valueConf.getEpochCount();
-		this.net.getUpdater().update(this.net, gradient, valueIterationCount, valueEpochCount,
+		final MultiLayerConfiguration config = this.net.getLayerWiseConfigurations();
+		final int iterCount = config.getIterationCount();
+		final int epochs = config.getEpochCount();
+		this.net.getUpdater().update(this.net, gradient, iterCount, epochs,
 				RobotController.BATCH_SIZE, LayerWorkspaceMgr.noWorkspaces());
 		this.net.params().subi(gradient.gradient());
-		final Collection<TrainingListener> valueIterationListeners = this.net.getListeners();
-		if (valueIterationListeners != null && !valueIterationListeners.isEmpty()) {
-			for (final TrainingListener listener : valueIterationListeners) {
-				listener.iterationDone(this.net, valueIterationCount, valueEpochCount);
+		final Collection<TrainingListener> iterListeners = this.net.getListeners();
+		if (iterListeners != null && !iterListeners.isEmpty()) {
+			for (final TrainingListener listener : iterListeners) {
+				listener.iterationDone(this.net, iterCount, epochs);
 			}
 		}
-		valueConf.setIterationCount(valueIterationCount + 1);
+		config.setIterationCount(iterCount + 1);
 	}
 
 	@Override

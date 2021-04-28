@@ -1,14 +1,9 @@
 package intelligence.qlearning;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Random;
-import org.deeplearning4j.nn.gradient.Gradient;
-import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
-import org.nd4j.linalg.api.ndarray.INDArray;
 import comp329robosim.MyGridCell;
 import comp329robosim.OccupancyType;
-import intelligence.Network;
 import simulation.Env;
 
 /**

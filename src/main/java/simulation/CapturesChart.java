@@ -22,7 +22,7 @@ public class CapturesChart<T> extends JFrame {
         super(title);
         final JFreeChart chart = createChart(createDataset(name, episode, data), name);
         final ChartPanel panel = new ChartPanel(chart);
-        panel.setPreferredSize(new Dimension(500, 300));
+        panel.setPreferredSize(new Dimension(700, 500));
         setContentPane(panel);
         pack();
         setVisible(true);
@@ -30,13 +30,17 @@ public class CapturesChart<T> extends JFrame {
 
     private XYDataset createDataset(final String name, final int episode, final List<T> data) {
         final XYSeries s1 = new XYSeries(name);
+        final XYSeries s2 = new XYSeries(name + " average");
 
         for (int i = 0; i < episode; i++) {
             s1.add(i, (Number) data.get(i));
+            s2.add(i, (Number) data.subList(0, i).stream()
+                    .mapToDouble(j -> Float.valueOf(String.valueOf(j))).average().orElse(0));
         }
 
         final XYSeriesCollection dataset = new XYSeriesCollection();
         dataset.addSeries(s1);
+        dataset.addSeries(s2);
         return dataset;
     }
 
