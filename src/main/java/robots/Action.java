@@ -41,4 +41,8 @@ public enum Action {
         return Arrays.asList(ACTIONS).indexOf(this);
     }
 
+    public float getActionIndexFloat() {
+        return Arrays.asList(ACTIONS).indexOf(this);
+    }
+
 }

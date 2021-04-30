@@ -6,8 +6,11 @@ import java.util.concurrent.Callable;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import comp329robosim.RobotMonitor;
 import comp329robosim.SimulatedRobot;
+import intelligence.Network;
 import intelligence.Maddpg.Actor;
 import intelligence.Maddpg.Critic;
+import intelligence.Maddpg.Maddpg.Data;
+import kotlin.NotImplementedError;
 import simulation.Env;
 import simulation.Mode;
 
@@ -15,23 +18,25 @@ import simulation.Mode;
  *
  */
 public abstract class Agent extends RobotMonitor implements Callable<Void> {
+	public static final String TARGET = "TARGET";
+	public static final String MAIN = "MAIN";
+	public static final String HUNTER_STRING = "HUNTER";
+	public static final String PREY_STRING = "PREY";
 	static final Direction LEFT = Direction.LEFT;
 	static final Direction UP = Direction.UP;
 	static final Direction RIGHT = Direction.RIGHT;
 	static final Direction DOWN = Direction.DOWN;
 
-	final Critic critic;
-	final Critic criticTarget;
-	final Actor actor;
-	final Actor actorTarget;
+	final Network critic;
+	final Network criticTarget;
+	final Network actor;
+	final Network actorTarget;
 
 	final Env env;
 
 	Action nextAction = null;
 
-	final RobotController controller;
-
-	final boolean mode;
+	final Mode mode;
 
 	int gx;
 	int gy;
@@ -40,10 +45,8 @@ public abstract class Agent extends RobotMonitor implements Callable<Void> {
 
 	INDArray currentObservation;
 	INDArray previousObservation;
-	// float[] previousObservation = null;
 
-	Agent(final SimulatedRobot r, final int d, final Env env, final RobotController controller,
-			final File file) {
+	Agent(final SimulatedRobot r, final int d, final Env env, final File actorFile, final File criticFile) {
 		super(r, d);
 
 		monitorRobotStatus(false);
@@ -55,49 +58,74 @@ public abstract class Agent extends RobotMonitor implements Callable<Void> {
 
 		this.env = env;
 
-		this.controller = controller;
-
-		mode = env.getMode() == Mode.EVAL;
+		mode = env.getMode();
 
 		// Load network if evaluating
-		if (env.getMode() == Mode.EVAL) {
-			this.actor = new Actor(file, Hunter.OBSERVATION_COUNT, Action.LENGTH);
+		if (mode == Mode.EVAL) {
+			this.actor = new Actor(MAIN, actorFile, Hunter.OBSERVATION_COUNT, Action.LENGTH, false);
 			this.actorTarget = null;
 			this.critic = null;
 			this.criticTarget = null;
+		} else if (mode == Mode.TRAIN_ON) {
+			this.actor = new Actor(MAIN, actorFile, Hunter.OBSERVATION_COUNT, Action.LENGTH, true);
+			this.actorTarget = new Actor(TARGET, this.actor.getNetwork().clone());
+			final int inputs = Hunter.OBSERVATION_COUNT * (Env.AGENT_COUNT - 1) + (Env.AGENT_COUNT - 1);
+			this.critic = new Critic(MAIN, criticFile, inputs, 1, true);
+			this.criticTarget = new Critic(TARGET, this.critic.getNetwork().clone());
 		} else {
-			this.actor = new Actor("MAIN", Hunter.OBSERVATION_COUNT, Action.LENGTH);
-			this.actorTarget = new Actor("TARGET", Hunter.OBSERVATION_COUNT, Action.LENGTH);
-			final int inputs = Hunter.OBSERVATION_COUNT * (RobotController.AGENT_COUNT - 1)
-					+ (RobotController.AGENT_COUNT - 1);
-			this.critic = new Critic("MAIN", inputs);
-			this.criticTarget = new Critic("TARGET", inputs);
+			this.actor = new Actor(MAIN, Hunter.OBSERVATION_COUNT, Action.LENGTH);
+			this.actorTarget = new Actor(TARGET, this.actor.getNetwork().clone());
+			final int inputs = Hunter.OBSERVATION_COUNT * (Env.AGENT_COUNT - 1) + (Env.AGENT_COUNT - 1);
+			this.critic = new Critic(MAIN, inputs, 1);
+			this.criticTarget = new Critic(TARGET, this.critic.getNetwork().clone());
 		}
 	}
 
-	public Actor getActor() {
+	/**
+	 * Agent factory
+	 *
+	 * Parse and make new predator or prey
+	 *
+	 * @param type
+	 * @param r
+	 * @param d
+	 * @param env
+	 * @param actorFile
+	 * @param criticFile
+	 * @return
+	 */
+	public static Agent makeAgent(final String type, final SimulatedRobot r, final int d, final Env env,
+			final File actorFile, final File criticFile) {
+		switch (type) {
+			case HUNTER_STRING:
+				return new Hunter(r, d, env, actorFile, criticFile);
+			case PREY_STRING:
+				return new Prey(r, d, env, actorFile, criticFile);
+			default:
+				throw new NotImplementedError("Agent type " + type + " has not been implemented");
+		}
+	}
+
+	public Network getActor() {
 		return this.actor;
 	}
 
-	public Actor getActorTarget() {
+	public Network getCritic() {
+		return this.critic;
+	}
+
+	public Network getActorTarget() {
 		return this.actorTarget;
 	}
 
 	/**
 	 * Update the actor and critic networks
 	 *
-	 * @param indivRewardBatchI
-	 * @param obsBatchI
-	 * @param globalStateBatch
-	 * @param globalActionsBatch
-	 * @param globalNextStateBatch
+	 * @param data
 	 * @param gnga
 	 * @param indivActionBatch
 	 */
-	public abstract void update(final List<Float> indivRewardBatchI, final List<INDArray> obsBatchI,
-			final List<INDArray[]> globalStateBatch, final List<Action[]> globalActionsBatch,
-			final List<INDArray[]> globalNextStateBatch, final INDArray gnga,
-			final List<Action> indivActionBatch);
+	public abstract void update(final Data data, final INDArray gnga, final List<Action> indivActionBatch);
 
 	/**
 	 * Update the target actor and critic networks
@@ -116,8 +144,7 @@ public abstract class Agent extends RobotMonitor implements Callable<Void> {
 		final int x = dir.px(getX());
 		final int y = dir.py(getY());
 
-		if (controller.getAgents().stream()
-				.anyMatch(i -> (i != this) && (i.getX() == x && i.getY() == y))) {
+		if (env.getAgents().stream().anyMatch(i -> (i != this) && (i.getX() == x && i.getY() == y))) {
 			return false;
 		}
 
@@ -184,6 +211,11 @@ public abstract class Agent extends RobotMonitor implements Callable<Void> {
 	public abstract boolean isAtGoal();
 
 	/**
+	 * Is the agent trapped
+	 */
+	public abstract boolean isTrapped();
+
+	/**
 	 * Sets the next action for the agent to execute
 	 *
 	 * @param action
@@ -230,8 +262,9 @@ public abstract class Agent extends RobotMonitor implements Callable<Void> {
 			gx = direction.px(x);
 			gy = direction.py(y);
 
-			if (env.getMode() == Mode.EVAL) {
-				travel(Env.CELL_WIDTH);
+			if (mode == Mode.EVAL) {
+				// travel(Env.CELL_WIDTH); // TODO Revert to origional
+				setPose(direction.px(getX()), direction.py(getY()), getHeading());
 			} else {
 				setPose(direction.px(getX()), direction.py(getY()), getHeading());
 			}
@@ -250,16 +283,18 @@ public abstract class Agent extends RobotMonitor implements Callable<Void> {
 				break;
 
 			case LEFT:
-				if (mode) {
-					rotate(-90);
+				if (mode == Mode.EVAL) {
+					// rotate(-90); // TODO put back
+					setPose(getX(), getY(), getHeading() - 90);
 				} else {
 					setPose(getX(), getY(), getHeading() - 90);
 				}
 				break;
 
 			case RIGHT:
-				if (mode) {
-					rotate(90);
+				if (mode == Mode.EVAL) {
+					// rotate(90); // TODO put back
+					setPose(getX(), getY(), getHeading() + 90);
 				} else {
 					setPose(getX(), getY(), getHeading() + 90);
 				}

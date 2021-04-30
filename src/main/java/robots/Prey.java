@@ -7,6 +7,7 @@ import org.nd4j.linalg.factory.Nd4j;
 import comp329robosim.MyGridCell;
 import comp329robosim.OccupancyType;
 import comp329robosim.SimulatedRobot;
+import intelligence.Maddpg.Maddpg.Data;
 import simulation.Env;
 
 /**
@@ -15,11 +16,11 @@ import simulation.Env;
  */
 final class Prey extends Agent {
 
-	public Prey(final SimulatedRobot r, final int d, final Env env,
-			final RobotController controller, final File file) {
-		super(r, d, env, controller, file);
+	public Prey(final SimulatedRobot r, final int d, final Env env, final File actorFile, final File criticFile) {
+		super(r, d, env, actorFile, criticFile);
 	}
 
+	@Override
 	public boolean isTrapped() {
 		final int x = getGridPosX();
 		final int y = getGridPosY();
@@ -40,8 +41,7 @@ final class Prey extends Agent {
 			count++;
 		}
 
-		count += controller.getAgents().stream().filter(i -> i != this && ((Hunter) i).isAtGoal())
-				.count();
+		count += env.getAgents().stream().filter(i -> i != this && ((Hunter) i).isAtGoal()).count();
 
 		return count > 3;
 	}
@@ -68,10 +68,7 @@ final class Prey extends Agent {
 	}
 
 	@Override
-	public void update(final List<Float> indivRewardBatchI, final List<INDArray> obsBatchI,
-			final List<INDArray[]> globalStateBatch, final List<Action[]> globalActionsBatch,
-			final List<INDArray[]> globalNextStateBatch, final INDArray gnga,
-			final List<Action> indivActionBatch) {
+	public void update(final Data data, final INDArray gnga, final List<Action> indivActionBatch) {
 		// TODO Auto-generated method stub
 	}
 

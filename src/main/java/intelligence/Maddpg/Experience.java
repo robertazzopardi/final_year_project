@@ -12,8 +12,7 @@ public class Experience {
     public final Float[] reward;
     public final INDArray[] nextState;
 
-    public Experience(final INDArray[] state, final Action[] action, final Float[] reward,
-            final INDArray[] nextState) {
+    public Experience(final INDArray[] state, final Action[] action, final Float[] reward, final INDArray[] nextState) {
         this.state = state;
         this.action = action;
         this.reward = reward;

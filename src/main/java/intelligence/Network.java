@@ -19,6 +19,15 @@ public interface Network {
     public INDArray predict(final INDArray inputs);
 
     /**
+     * Sample the outputs to get action index
+     * 
+     * @param output
+     * @param shape
+     * @return
+     */
+    public int nextAction(final INDArray output, final int shape);
+
+    /**
      * Fit the network to the data
      *
      * @param inputs
@@ -69,6 +78,6 @@ public interface Network {
      * @param moreTraining
      * @return
      */
-    public MultiLayerNetwork loadNetwork(final File fileName, final boolean moreTraining,
-            final int inputs, final int outputs);
+    public MultiLayerNetwork loadNetwork(final File fileName, final boolean moreTraining, final int inputs,
+            final int outputs);
 }

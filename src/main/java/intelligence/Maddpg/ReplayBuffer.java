@@ -6,8 +6,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
 import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.factory.Nd4j;
 import robots.Action;
-import robots.RobotController;
+import simulation.Env;
 
 /**
  * Collection of the previous experience in the simulation
@@ -28,8 +29,7 @@ public class ReplayBuffer {
      * @param nextState
      * @param dones
      */
-    public void push(final INDArray[] state, final Action[] action, final Float[] rewards,
-            final INDArray[] nextState) {
+    public void push(final INDArray[] state, final Action[] action, final Float[] rewards, final INDArray[] nextState) {
         buffer.add(new Experience(state, action, rewards, nextState));
     }
 
@@ -40,18 +40,18 @@ public class ReplayBuffer {
      * @return Sample
      */
     public Sample sample(final int batchSize) {
-        final List<List<INDArray>> obsBatch = new ArrayList<>(Arrays.asList(new ArrayList<>(),
-                new ArrayList<>(), new ArrayList<>(), new ArrayList<>()));
-        final List<List<Action>> indivActionBatch = new ArrayList<>(Arrays.asList(new ArrayList<>(),
-                new ArrayList<>(), new ArrayList<>(), new ArrayList<>()));
-        final List<List<Float>> indivRewardBatch = new ArrayList<>(Arrays.asList(new ArrayList<>(),
-                new ArrayList<>(), new ArrayList<>(), new ArrayList<>()));
-        final List<List<INDArray>> nextObsBatch = new ArrayList<>(Arrays.asList(new ArrayList<>(),
-                new ArrayList<>(), new ArrayList<>(), new ArrayList<>()));
+        final List<List<INDArray>> obsBatch = new ArrayList<>(
+                Arrays.asList(new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>()));
+        final List<List<Action>> indivActionBatch = new ArrayList<>(
+                Arrays.asList(new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>()));
+        final List<List<Float>> indivRewardBatch = new ArrayList<>(
+                Arrays.asList(new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>()));
+        final List<List<INDArray>> nextObsBatch = new ArrayList<>(
+                Arrays.asList(new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>()));
 
         final List<INDArray[]> globalStateBatch = new ArrayList<>();
         final List<INDArray[]> globalNextStateBatch = new ArrayList<>();
-        final List<Action[]> globalActionsBatch = new ArrayList<>();
+        final List<INDArray> globalActionsBatch = new ArrayList<>();
 
         final List<Experience> batch = randomSample(batchSize);
 
@@ -61,7 +61,7 @@ public class ReplayBuffer {
             final Float[] reward = experience.reward;
             final INDArray[] nextState = experience.nextState;
 
-            for (int i = 0; i < RobotController.AGENT_COUNT - 1; i++) {
+            for (int i = 0; i < Env.AGENT_COUNT - 1; i++) {
                 obsBatch.get(i).add(state[i]);
                 indivActionBatch.get(i).add(action[i]);
                 indivRewardBatch.get(i).add(reward[i]);
@@ -69,13 +69,13 @@ public class ReplayBuffer {
             }
 
             globalStateBatch.add(Stream.of(state).flatMap(Stream::of).toArray(INDArray[]::new));
-            globalActionsBatch.add(action);
-            globalNextStateBatch
-                    .add(Stream.of(nextState).flatMap(Stream::of).toArray(INDArray[]::new));
+            globalActionsBatch.add(
+                    Nd4j.createFromArray(Arrays.stream(action).map(Action::getActionIndexFloat).toArray(Float[]::new)));
+            globalNextStateBatch.add(Stream.of(nextState).flatMap(Stream::of).toArray(INDArray[]::new));
         }
 
-        return new Sample(obsBatch, indivActionBatch, indivRewardBatch, nextObsBatch,
-                globalStateBatch, globalNextStateBatch, globalActionsBatch);
+        return new Sample(obsBatch, indivActionBatch, indivRewardBatch, nextObsBatch, globalStateBatch,
+                globalNextStateBatch, globalActionsBatch);
     }
 
     public int getLength() {
