@@ -101,6 +101,8 @@ buildNumber.properties
 
 # Output networks
 *.zip
+# Serialised Objects
+*.ser
 
 *.log
 

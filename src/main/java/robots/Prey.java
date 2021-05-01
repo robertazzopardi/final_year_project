@@ -7,7 +7,7 @@ import org.nd4j.linalg.factory.Nd4j;
 import comp329robosim.MyGridCell;
 import comp329robosim.OccupancyType;
 import comp329robosim.SimulatedRobot;
-import intelligence.Maddpg.Maddpg.Data;
+import intelligence.Maddpg.Data;
 import simulation.Env;
 
 /**

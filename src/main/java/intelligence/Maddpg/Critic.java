@@ -67,29 +67,6 @@ public class Critic implements Network {
 		}
 	}
 
-	// private MultiLayerConfiguration getNetworkConfiguration(final int inputs,
-	// final int outputs) {
-	// final NeuralNetConfiguration.ListBuilder conf = new
-	// NeuralNetConfiguration.Builder().seed(123)
-	// .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT).updater(new
-	// Adam())
-	// .weightInit(WeightInit.XAVIER).l2(0.001).list()
-	// .layer(0, new
-	// DenseLayer.Builder().nIn(inputs).nOut(1024).activation(Activation.RELU).build());
-
-	// conf.layer(1, new
-	// DenseLayer.Builder().nIn(1024).nOut(512).activation(Activation.RELU).build());
-	// conf.layer(2, new
-	// DenseLayer.Builder().nIn(512).nOut(300).activation(Activation.RELU).build());
-
-	// conf.layer(3, new
-	// OutputLayer.Builder(LossFunctions.LossFunction.MSE).activation(Activation.IDENTITY).nIn(300)
-	// .nOut(outputs).build());
-
-	// conf.setInputType(InputType.feedForward(inputs));
-	// return conf.backpropType(BackpropType.Standard).build();
-	// }
-
 	private MultiLayerConfiguration getNetworkConfiguration(final int inputs, final int outputs) {
 		return new NeuralNetConfiguration.Builder().seed(12345)
 				.optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)

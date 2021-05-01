@@ -34,8 +34,9 @@ public class Maddpg {
     private final int maxStep;
     private final int batchSize;
 
-    public Maddpg(final int cap, final Env env, final int maxEpisode, final int maxStep, final int batchSize) {
-        this.replayBuffer = new ReplayBuffer(cap);
+    public Maddpg(final Env env, final int maxEpisode, final int maxStep, final int batchSize) {
+        this.replayBuffer = new ReplayBuffer();
+        // replayBuffer = ReplayBuffer.deserialiseBuffer();
         this.env = env;
         this.maxEpisode = maxEpisode;
         this.maxStep = maxStep;
@@ -60,17 +61,16 @@ public class Maddpg {
 
         final List<AgentUpdate> updaters = new ArrayList<>();
         for (int i = 0; i < 4; i++) {
-            final List<INDArray> obsBatchI = exp.obsBatch.get(i);
+            final INDArray obsBatchI = exp.obsBatch[i];
             final List<Action> indivActionBatchI = exp.indivActionBatch.get(i);
             final List<Float> indivRewardBatchI = exp.indivRewardBatch.get(i);
-            final List<INDArray> nextObsBatchI = exp.nextObsBatch.get(i);
+            final INDArray nextObsBatchI = exp.nextObsBatch[i];
 
             final List<INDArray> nextGlobalActions = new ArrayList<>();
 
             for (int j = 0; j < 4; j++) {
                 final Agent hunter = env.getAgents().get(j);
-                final INDArray arr = hunter.getActorTarget()
-                        .predict(Nd4j.vstack(nextObsBatchI.toArray(INDArray[]::new)));
+                final INDArray arr = hunter.getActorTarget().predict(Nd4j.vstack(nextObsBatchI));
 
                 final Float[] indexes = new Float[Env.BATCH_SIZE];
                 for (int row = 0; row < arr.rows(); row++) {
@@ -126,7 +126,8 @@ public class Maddpg {
                     states = observation.getNextStates();
                     // slow down evaluation a bit
                     try {
-                        Thread.sleep(100);
+                        // Thread.sleep(100);
+                        Thread.sleep(500);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                         Thread.currentThread().interrupt();
@@ -136,7 +137,6 @@ public class Maddpg {
 
                     states = observation.getNextStates();
 
-                    // if (replayBuffer.getLength() > batchSize && j % batchSize * 2 == 0) {
                     if (replayBuffer.getLength() > batchSize && step % batchSize == 0) {
                         update(batchSize);
                     }
@@ -166,6 +166,7 @@ public class Maddpg {
         }
 
         saveNetworks();
+        // ReplayBuffer.serialiseBuffer(replayBuffer);
 
         try {
             System.in.read();
@@ -201,27 +202,6 @@ public class Maddpg {
     public static String fixedLengthString(final String string, final int length) {
         final String format = "%1$" + length + "s";
         return String.format(format, string);
-    }
-
-    /**
-     * Data to be trained on buy the Actor and Critic models
-     */
-    public class Data {
-        public final List<Float> indivRewardBatchI;
-        public final List<INDArray> obsBatchI;
-        public final List<INDArray[]> globalStateBatch;
-        public final List<INDArray> globalActionsBatch;
-        public final List<INDArray[]> globalNextStateBatch;
-
-        public Data(final List<Float> indivRewardBatchI, final List<INDArray> obsBatchI,
-                final List<INDArray[]> globalStateBatch, final List<INDArray> globalActionsBatch,
-                final List<INDArray[]> globalNextStateBatch) {
-            this.indivRewardBatchI = indivRewardBatchI;
-            this.obsBatchI = obsBatchI;
-            this.globalStateBatch = globalStateBatch;
-            this.globalActionsBatch = globalActionsBatch;
-            this.globalNextStateBatch = globalNextStateBatch;
-        }
     }
 
     /**

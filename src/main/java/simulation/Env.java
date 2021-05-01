@@ -69,7 +69,7 @@ public class Env extends EnvController {
 
         agents = new ArrayList<>();
 
-        new Maddpg(CAPACITY, this, MAX_EPISODE, MAX_STEP, BATCH_SIZE).run();
+        new Maddpg(this, MAX_EPISODE, MAX_STEP, BATCH_SIZE).run();
     }
 
     // /**

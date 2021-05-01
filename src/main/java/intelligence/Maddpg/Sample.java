@@ -8,16 +8,16 @@ import robots.Action;
  * Sample of experiences in the simulation
  */
 public class Sample {
-    final List<List<INDArray>> obsBatch;
+    final INDArray[] obsBatch;
     final List<List<Action>> indivActionBatch;
     final List<List<Float>> indivRewardBatch;
-    final List<List<INDArray>> nextObsBatch;
+    final INDArray[] nextObsBatch;
     final List<INDArray[]> globalStateBatch;
     final List<INDArray[]> globalNextStateBatch;
     final List<INDArray> globalActionsBatch;
 
-    public Sample(final List<List<INDArray>> obsBatch, final List<List<Action>> indivActionBatch,
-            final List<List<Float>> indivRewardBatch, final List<List<INDArray>> nextObsBatch,
+    public Sample(final INDArray[] obsBatch, final List<List<Action>> indivActionBatch,
+            final List<List<Float>> indivRewardBatch, final INDArray[] nextObsBatch,
             final List<INDArray[]> globalStateBatch, final List<INDArray[]> globalNextStateBatch,
             final List<INDArray> globalActionsBatch) {
         this.obsBatch = obsBatch;

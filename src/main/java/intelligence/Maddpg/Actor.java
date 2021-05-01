@@ -4,7 +4,6 @@ import static org.nd4j.linalg.ops.transforms.Transforms.exp;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Random;
 
@@ -14,7 +13,6 @@ import org.deeplearning4j.nn.conf.BackpropType;
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
 import org.deeplearning4j.nn.conf.WorkspaceMode;
-import org.deeplearning4j.nn.conf.inputs.InputType;
 import org.deeplearning4j.nn.conf.layers.DenseLayer;
 import org.deeplearning4j.nn.conf.layers.OutputLayer;
 import org.deeplearning4j.nn.gradient.Gradient;
@@ -27,10 +25,8 @@ import org.deeplearning4j.ui.model.stats.StatsListener;
 import org.deeplearning4j.ui.model.storage.InMemoryStatsStorage;
 import org.nd4j.linalg.activations.Activation;
 import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.learning.config.Adam;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
-import org.nd4j.shade.guava.primitives.Booleans;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,28 +66,6 @@ public class Actor implements Network {
 			enableUIServer(this.net);
 		}
 	}
-
-	// private MultiLayerConfiguration getNetworkConfiguration(final int inputs,
-	// final int outputs) {
-	// final NeuralNetConfiguration.ListBuilder conf = new
-	// NeuralNetConfiguration.Builder().seed(123)
-	// .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT).updater(new
-	// Adam())
-	// .weightInit(WeightInit.XAVIER).l2(0.001).list()
-	// .layer(0, new
-	// DenseLayer.Builder().nIn(inputs).nOut(512).activation(Activation.RELU).build());
-
-	// conf.layer(1, new
-	// DenseLayer.Builder().nIn(512).nOut(128).activation(Activation.RELU).build());
-	// conf.layer(2, new
-	// OutputLayer.Builder(LossFunctions.LossFunction.MSE).activation(
-	// // Activation.SOFTMAX
-	// // Activation.RELU
-	// Activation.IDENTITY).nIn(128).nOut(outputs).build());
-
-	// conf.setInputType(InputType.feedForward(inputs));
-	// return conf.backpropType(BackpropType.Standard).build();
-	// }
 
 	private MultiLayerConfiguration getNetworkConfiguration(final int inputs, final int outputs) {
 		return new NeuralNetConfiguration.Builder().seed(12345)
@@ -137,9 +111,10 @@ public class Actor implements Network {
 	 * @param states
 	 * @return
 	 */
-	public INDArray toINDArray(final Boolean[] states) {
-		return Nd4j.create(new boolean[][] { Booleans.toArray(Arrays.asList(states)) });
-	}
+	// public INDArray toINDArray(final Boolean[] states) {
+	// return Nd4j.create(new boolean[][] { Booleans.toArray(Arrays.asList(states))
+	// });
+	// }
 
 	@Override
 	public MultiLayerNetwork getNetwork() {

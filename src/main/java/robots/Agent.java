@@ -9,7 +9,7 @@ import comp329robosim.SimulatedRobot;
 import intelligence.Network;
 import intelligence.Maddpg.Actor;
 import intelligence.Maddpg.Critic;
-import intelligence.Maddpg.Maddpg.Data;
+import intelligence.Maddpg.Data;
 import kotlin.NotImplementedError;
 import simulation.Env;
 import simulation.Mode;
@@ -264,9 +264,9 @@ public abstract class Agent extends RobotMonitor implements Callable<Void> {
 
 			if (mode == Mode.EVAL) {
 				// travel(Env.CELL_WIDTH); // TODO Revert to origional
-				setPose(direction.px(getX()), direction.py(getY()), getHeading());
+				setPose(direction.px(x), direction.py(y), getHeading());
 			} else {
-				setPose(direction.px(getX()), direction.py(getY()), getHeading());
+				setPose(direction.px(x), direction.py(y), getHeading());
 			}
 		}
 	}

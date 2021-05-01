@@ -8,7 +8,7 @@ import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.exception.ND4JIllegalStateException;
 import org.nd4j.linalg.factory.Nd4j;
 import comp329robosim.SimulatedRobot;
-import intelligence.Maddpg.Maddpg.Data;
+import intelligence.Maddpg.Data;
 import simulation.Env;
 
 /**
@@ -43,9 +43,10 @@ final class Hunter extends Agent {
 
 		) {
 
-			final INDArray gab = Nd4j.vstack(data.globalActionsBatch.toArray(INDArray[]::new));
+			final INDArray gab = Nd4j.vstack(data.globalActionsBatch);
 
-			final INDArray iob = Nd4j.vstack(data.obsBatchI.toArray(INDArray[]::new));
+			// final INDArray iob = Nd4j.vstack(data.obsBatchI.toArray(INDArray[]::new));
+			final INDArray iob = data.obsBatchI;
 
 			final INDArray gsb = Nd4j.vstack(data.globalStateBatch.stream().map(Nd4j::hstack).toArray(INDArray[]::new));
 
@@ -205,9 +206,9 @@ final class Hunter extends Agent {
 
 		switch (action) {
 			case FORWARD:
-				reward -= getDistanceFrom() > oldDistance ? 1f : 0f;
-				reward -= getDistanceFrom() == oldDistance ? 1f : 0f;
-				reward -= !isAtGoal() ? 1f : 0f;
+				reward -= getDistanceFrom() > oldDistance ? .5f : 0f;
+				// reward -= getDistanceFrom() == oldDistance ? 1f : 0f;
+				reward -= !isAtGoal() ? .5f : 0f;
 				break;
 			case LEFT:
 			case RIGHT:
@@ -216,8 +217,8 @@ final class Hunter extends Agent {
 				final double lookingDistance = getDistanceFrom(dir.px(getX()), dir.py(getY()));
 				final double currDistance = getDistanceFrom();
 
-				reward -= lookingDistance > currDistance ? 1f : 0f;
-				reward -= !canSeePrey() ? 1f : 0f;
+				reward -= lookingDistance > currDistance ? .5f : 0f;
+				reward -= !canSeePrey() ? .5f : 0f;
 				break;
 			case NOTHING:
 				reward -= !isAtGoal() ? 1f : 0f;

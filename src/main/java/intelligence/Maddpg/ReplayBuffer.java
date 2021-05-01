@@ -1,23 +1,77 @@
 package intelligence.Maddpg;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Stream;
+
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import robots.Action;
 import simulation.Env;
 
 /**
  * Collection of the previous experience in the simulation
  */
-public class ReplayBuffer {
-    private final List<Experience> buffer;
+public class ReplayBuffer implements Serializable {
+    private static final Logger LOG = LoggerFactory.getLogger(ReplayBuffer.class.getName());
+    private static final String SERIALISED_NAME = Env.OUTPUT_FOLDER + "/replayBuffer.ser";
+    private final Set<Experience> buffer;
 
-    public ReplayBuffer(final int maxSize) {
-        this.buffer = new ArrayList<>(maxSize);
+    public ReplayBuffer() {
+        this.buffer = new HashSet<>();
+    }
+
+    /**
+     * Save the state of the buffer
+     *
+     * @param replayBuffer
+     */
+    public static void serialiseBuffer(final ReplayBuffer replayBuffer) {
+        try (BufferedOutputStream fileOut = new BufferedOutputStream(new FileOutputStream(SERIALISED_NAME));
+                ObjectOutputStream out = new ObjectOutputStream(fileOut);) {
+            out.writeObject(replayBuffer);
+            LOG.info("Serialized data saved");
+        } catch (final IOException i) {
+            i.printStackTrace();
+        }
+    }
+
+    /**
+     * Load the saved state of the replay buffer from previous runs
+     *
+     * @return
+     */
+    public static ReplayBuffer deserialiseBuffer() {
+        try (BufferedInputStream fileIn = new BufferedInputStream(new FileInputStream(SERIALISED_NAME));
+                ObjectInputStream in = new ObjectInputStream(fileIn);) {
+            final ReplayBuffer replayBuffer = (ReplayBuffer) in.readObject();
+            final String logInfo = "Loaded Saved ReplayBuffer of length " + replayBuffer.getLength();
+            LOG.info(logInfo);
+            return replayBuffer;
+        } catch (final IOException i) {
+            // i.printStackTrace();
+            LOG.error("IOException");
+        } catch (final ClassNotFoundException c) {
+            LOG.error("ReplayBuffer class not found");
+            // c.printStackTrace();
+        }
+        LOG.info("Loading new replay buffer");
+        return new ReplayBuffer();
     }
 
     /**
@@ -30,7 +84,8 @@ public class ReplayBuffer {
      * @param dones
      */
     public void push(final INDArray[] state, final Action[] action, final Float[] rewards, final INDArray[] nextState) {
-        buffer.add(new Experience(state, action, rewards, nextState));
+        if (!buffer.add(new Experience(state, action, rewards, nextState)))
+            LOG.info("Did not add experience to replay");
     }
 
     /**
@@ -68,14 +123,17 @@ public class ReplayBuffer {
                 nextObsBatch.get(i).add(nextState[i]);
             }
 
-            globalStateBatch.add(Stream.of(state).flatMap(Stream::of).toArray(INDArray[]::new));
+            globalStateBatch.add(state);
             globalActionsBatch.add(
                     Nd4j.createFromArray(Arrays.stream(action).map(Action::getActionIndexFloat).toArray(Float[]::new)));
-            globalNextStateBatch.add(Stream.of(nextState).flatMap(Stream::of).toArray(INDArray[]::new));
+            globalNextStateBatch.add(nextState);
         }
 
-        return new Sample(obsBatch, indivActionBatch, indivRewardBatch, nextObsBatch, globalStateBatch,
-                globalNextStateBatch, globalActionsBatch);
+        final INDArray[] tmp = obsBatch.stream().map(Nd4j::vstack).toArray(INDArray[]::new);
+        final INDArray[] tmp2 = nextObsBatch.stream().map(Nd4j::vstack).toArray(INDArray[]::new);
+
+        return new Sample(tmp, indivActionBatch, indivRewardBatch, tmp2, globalStateBatch, globalNextStateBatch,
+                globalActionsBatch);
     }
 
     public int getLength() {
@@ -94,7 +152,8 @@ public class ReplayBuffer {
     public List<Experience> randomSample(final int n) {
         final List<Experience> copy = new ArrayList<>(buffer);
         Collections.shuffle(copy);
-        return n > copy.size() ? copy.subList(0, copy.size()) : copy.subList(0, n);
+        final int size = copy.size();
+        return n > size ? copy.subList(0, size) : copy.subList(0, n);
     }
 
 }
