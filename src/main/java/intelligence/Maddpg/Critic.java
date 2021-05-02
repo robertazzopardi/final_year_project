@@ -188,7 +188,6 @@ public class Critic implements Network {
 
 	@Override
 	public int nextAction(INDArray output, int shape) {
-		// TODO Auto-generated method stub
 		return 0;
 	}
 

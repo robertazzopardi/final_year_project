@@ -126,8 +126,7 @@ public class Maddpg {
                     states = observation.getNextStates();
                     // slow down evaluation a bit
                     try {
-                        // Thread.sleep(100);
-                        Thread.sleep(500);
+                        Thread.sleep(100);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                         Thread.currentThread().interrupt();

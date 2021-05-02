@@ -18,12 +18,15 @@ import robots.Agent;
 import robots.StepObs;
 
 public class Env extends EnvController {
+    private static final String LINE_SEP = "_";
     public static final int TOTAL_EPISODES = 100;
     public static final int CELL_WIDTH = 350;
     public static final int CELL_RADIUS = CELL_WIDTH / 2;
     public static final int GRID_SIZE = 8;
     public static final int ENV_SIZE = GRID_SIZE * CELL_WIDTH;
     public static final int AGENT_COUNT = 5;
+    public static final int HUNTER_COUNT = 4;
+    public static final int PREY_COUNT = 1;
     private static final int DELAY = 1000;
 
     private static final int CAPACITY = 1000000;// Should calculate actual capacity
@@ -62,7 +65,7 @@ public class Env extends EnvController {
 
         if (actors.length > 0) {
             final String name = actors[0].getName();
-            trainedEpisodes = Integer.parseInt((String) name.subSequence(name.indexOf("_") + 1, name.lastIndexOf("_")))
+            trainedEpisodes = Integer.parseInt((String) name.subSequence(name.indexOf(LINE_SEP) + 1, name.lastIndexOf(LINE_SEP)))
                     + MAX_EPISODE;
         } else
             trainedEpisodes = MAX_EPISODE;
@@ -101,7 +104,7 @@ public class Env extends EnvController {
      */
     public INDArray[] reset() {
         initRobots();
-        return agents.subList(0, 4).stream().map(Agent::getObservation).toArray(INDArray[]::new);
+        return agents.subList(0, HUNTER_COUNT).stream().map(Agent::getObservation).toArray(INDArray[]::new);
     }
 
     /**
@@ -111,21 +114,23 @@ public class Env extends EnvController {
      * @return
      */
     public StepObs step(final Action[] actions, final int step) {
-        final Float[] rewards = new Float[4];
+        final Float[] rewards = new Float[HUNTER_COUNT];
 
-        final INDArray[] nextStates = new INDArray[4];
+        final INDArray[] nextStates = new INDArray[HUNTER_COUNT];
 
         // Set next action
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < HUNTER_COUNT; i++) {
             agents.get(i).setAction(actions[i]);
         }
         agents.get(4).setAction(Action.getRandomAction());
+
+        // System.out.println(Arrays.toString(actions));
 
         // step agent through environment
         executeAction();
 
         // Collect the states after the agents have moved
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < HUNTER_COUNT; i++) {
             nextStates[i] = agents.get(i).getObservation();
             rewards[i] = agents.get(i).getReward(actions[i]);
         }
@@ -144,18 +149,23 @@ public class Env extends EnvController {
         }
     }
 
+    /**
+     * Creats the agents at the start of the simulation
+     *
+     * And changes their location inbetween episodes
+     */
     private void initRobots() {
         // initialise the robots from the environment
+        boolean b = mode == Mode.EVAL || mode == Mode.TRAIN_ON;
         for (int i = 0; i < AGENT_COUNT; i++) {
             if (agents.size() < AGENT_COUNT - 1) {
-                agents.add(Agent.makeAgent(Agent.HUNTER_STRING, getAndSetHunter(i), DELAY, this,
-                        (getMode() == Mode.EVAL || getMode() == Mode.TRAIN_ON) && actors.length > 0 ? actors[i] : null,
-                        (getMode() == Mode.EVAL || getMode() == Mode.TRAIN_ON) && critics.length > 0 ? critics[i]
-                                : null));
+                agents.add(Agent.makeAgent(Agent.HUNTER_STRING, getAndSetRobot(i, Agent.HUNTER_STRING), DELAY, this,
+                        b && actors.length > 0 ? actors[i] : null, b && critics.length > 0 ? critics[i] : null));
             } else if (agents.size() < AGENT_COUNT) {
-                agents.add(Agent.makeAgent(Agent.PREY_STRING, getAndSetPrey(), DELAY, this, null, null));
+                agents.add(Agent.makeAgent(Agent.PREY_STRING, getAndSetRobot(i, Agent.PREY_STRING), DELAY, this, null,
+                        null));
             }
-            // check if agents is on another agent
+            // check if agent is on top of another agent
             do {
                 final int randomPosX = agents.get(i).getSimulatedRobot().getRandomPos();
                 final int randomPosY = agents.get(i).getSimulatedRobot().getRandomPos();

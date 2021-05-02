@@ -4,6 +4,7 @@ import static org.nd4j.linalg.ops.transforms.Transforms.exp;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Random;
 
@@ -25,6 +26,7 @@ import org.deeplearning4j.ui.model.stats.StatsListener;
 import org.deeplearning4j.ui.model.storage.InMemoryStatsStorage;
 import org.nd4j.linalg.activations.Activation;
 import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.learning.config.Adam;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
 import org.slf4j.Logger;
@@ -196,35 +198,58 @@ public class Actor implements Network {
 		return null;
 	}
 
-	public int boltzmannDistribution(final INDArray output, final int shape) {
-		final INDArray exp = exp(output);
-		final double sum = exp.sum(shape).getDouble(0);
+	// public int boltzmannDistribution(final INDArray output, final int shape) {
+	// final INDArray exp = exp(output);
+	// final double sum = exp.sum(shape).getDouble(0);
 
-		double picked = RANDOM.nextDouble() * sum;
+	// double picked = RANDOM.nextDouble() * sum;
 
-		for (int i = 0; i < exp.columns(); i++) {
-			if (picked < exp.getDouble(i))
-				return i;
-			picked -= exp.getDouble(i);
-		}
-		return (int) output.length() - 1;
-	}
+	// for (int i = 0; i < exp.columns(); i++) {
+	// if (picked < exp.getDouble(i))
+	// return i;
+	// picked -= exp.getDouble(i);
+	// }
+	// return (int) output.length() - 1;
+	// }
 
-	public int distribution(final INDArray output) {
-		float rVal = RANDOM.nextFloat();
-		for (int i = 0; i < output.length(); i++) {
-			if (rVal < output.getFloat(i)) {
-				return i;
-			} else
-				rVal -= output.getFloat(i);
-		}
+	// public int distribution(final INDArray output) {
+	// float rVal = RANDOM.nextFloat();
+	// for (int i = 0; i < output.length(); i++) {
+	// if (rVal < output.getFloat(i)) {
+	// return i;
+	// } else
+	// rVal -= output.getFloat(i);
+	// }
 
-		throw new RuntimeException("Output from network is not a probability distribution: " + output);
+	// throw new RuntimeException("Output from network is not a probability
+	// distribution: " + output);
+	// }
+
+	/**
+	 * Ornstein Olhenbeck noise
+	 *
+	 * code from The ANESIAAgent
+	 */
+	private static double addOUnoise(final double thresholdUtility) {
+		// https://towardsdatascience.com/deep-deterministic-policy-gradients-explained-2d94655a9b7b
+		final double low = -0.5f;
+		final double high = 0.5f;
+		final double ouNoise = 0.3f * RANDOM.nextDouble(); // random num between 0.0 and 1.0
+		double result = thresholdUtility + ouNoise;
+		if (result < low)
+			result = low;
+		if (result > high)
+			result = high;
+		return result;
 	}
 
 	public int nextAction(final INDArray output, final int shape) {
-		return boltzmannDistribution(output, shape);
-		// return distribution(output);
+		final double[] m = Arrays.stream(output.toDoubleVector()).map(Actor::addOUnoise).toArray();
+		try (INDArray no = Nd4j.create(m)) {
+			return no.argMax().getInt();
+			// return boltzmannDistribution(no, shape);
+			// return distribution(no);
+		}
 	}
 
 }

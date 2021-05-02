@@ -1,3 +1,5 @@
+#  Installs the robosim jar to the local repository
+
 cd lib
 
 if [ ! -d "comp329robosim" ]; then

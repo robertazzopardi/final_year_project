@@ -206,9 +206,10 @@ final class Hunter extends Agent {
 
 		switch (action) {
 			case FORWARD:
-				reward -= getDistanceFrom() > oldDistance ? .5f : 0f;
+				reward -= getDistanceFrom() >= oldDistance ? .5f : 0f;
 				// reward -= getDistanceFrom() == oldDistance ? 1f : 0f;
 				reward -= !isAtGoal() ? .5f : 0f;
+				// reward -= !canMove() ? .5f : 0f;
 				break;
 			case LEFT:
 			case RIGHT:
