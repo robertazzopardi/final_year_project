@@ -1,6 +1,7 @@
 package robots;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.List;
 import org.deeplearning4j.nn.gradient.Gradient;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
@@ -8,28 +9,31 @@ import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.exception.ND4JIllegalStateException;
 import org.nd4j.linalg.factory.Nd4j;
 import comp329robosim.SimulatedRobot;
+import environment.Env;
 import intelligence.Maddpg.Data;
-import simulation.Env;
 
 /**
  *
  */
 final class Hunter extends Agent {
 	public static final int OBSERVATION_COUNT = Env.AGENT_COUNT * 3 * 2;
-	// public static final int OBSERVATION_COUNT = Env.GRID_SIZE;
+	// public static final int OBSERVATION_COUNT = Env.HUNTER_COUNT * 4 * 2;
+	// public static final int OBSERVATION_COUNT = Env.HUNTER_COUNT * 4 * 2;
+
 	public static final int ONE_STEP_OBSERVATION = OBSERVATION_COUNT / 2;
 
 	static final double TAU = 1e-3;
 	static final double GAMMA = 0.99;
 
-	final Agent[] agents;
-
-	public Hunter(final SimulatedRobot r, final int d, final Env env, final File actorFile, final File criticFile) {
+	public Hunter(final SimulatedRobot r, final int d, final Env env, final File actorFile,
+			final File criticFile) {
 		super(r, d, env, actorFile, criticFile);
 
-		agents = env.getAgents().stream().filter(i -> i != this).toArray(Agent[]::new);
-
 		currentObservation = Nd4j.zeros(ONE_STEP_OBSERVATION);
+	}
+
+	final Agent[] getAgents() {
+		return env.getAgents().stream().filter(i -> i != this).toArray(Agent[]::new);
 	}
 
 	@Override
@@ -38,8 +42,8 @@ final class Hunter extends Agent {
 		try (final INDArray irb = Nd4j.createFromArray(data.indivRewardBatchI.toArray(Float[]::new))
 				.reshape(data.indivRewardBatchI.size(), 1);
 
-				final INDArray iab = Nd4j.createFromArray(
-						indivActionBatch.stream().map(i -> Float.valueOf(i.getActionIndex())).toArray(Float[]::new));
+				final INDArray iab = Nd4j.createFromArray(indivActionBatch.stream()
+						.map(i -> Float.valueOf(i.getActionIndex())).toArray(Float[]::new));
 
 		) {
 
@@ -48,10 +52,11 @@ final class Hunter extends Agent {
 			// final INDArray iob = Nd4j.vstack(data.obsBatchI.toArray(INDArray[]::new));
 			final INDArray iob = data.obsBatchI;
 
-			final INDArray gsb = Nd4j.vstack(data.globalStateBatch.stream().map(Nd4j::hstack).toArray(INDArray[]::new));
+			final INDArray gsb = Nd4j.vstack(
+					data.globalStateBatch.stream().map(Nd4j::hstack).toArray(INDArray[]::new));
 
-			final INDArray gnsb = Nd4j
-					.vstack(data.globalNextStateBatch.stream().map(Nd4j::hstack).toArray(INDArray[]::new));
+			final INDArray gnsb = Nd4j.vstack(
+					data.globalNextStateBatch.stream().map(Nd4j::hstack).toArray(INDArray[]::new));
 
 			final INDArray criticTargetInputs = Nd4j.hstack(gnsb, gnab);
 			final INDArray criticInputs = Nd4j.hstack(gsb, gab);
@@ -65,7 +70,7 @@ final class Hunter extends Agent {
 				final int a = (int) iab.getFloat(i);
 				final float q = estimatedQ.getFloat(i);
 
-				output.getRow(i).putScalar(new int[] { a }, q);
+				output.getRow(i).putScalar(new int[] {a}, q);
 			}
 
 			// Update Gradients
@@ -94,9 +99,9 @@ final class Hunter extends Agent {
 		final INDArray newTargetWeights = Nd4j.zeros(1, cModelWeights.size(1));
 		// creating new indarray with same dimention as model weights
 		for (int i = 0; i < cModelWeights.size(1); i++) {
-			final double newTargetWeight = (TAU * cModelWeights.getDouble(i))
-					+ ((1 - TAU) * target.params().getDouble(i));
-			newTargetWeights.putScalar(new int[] { i }, newTargetWeight);
+			final double newTargetWeight =
+					(TAU * cModelWeights.getDouble(i)) + ((1 - TAU) * target.params().getDouble(i));
+			newTargetWeights.putScalar(new int[] {i}, newTargetWeight);
 		}
 		target.setParameters(newTargetWeights);
 	}
@@ -109,13 +114,14 @@ final class Hunter extends Agent {
 
 	@Override
 	public boolean isAtGoal() {
-		final Agent prey = env.getAgents().get(4);
+		final Agent prey = env.getAgents().get(Env.HUNTER_COUNT);
 		final int px = prey.getX();
 		final int py = prey.getY();
 		final int x = getX();
 		final int y = getY();
 		return (x == UP.px(px) && y == UP.py(py)) || (x == DOWN.px(px) && y == DOWN.py(py))
-				|| (x == LEFT.px(px) && y == LEFT.py(py)) || (x == RIGHT.px(px) && y == RIGHT.py(py));
+				|| (x == LEFT.px(px) && y == LEFT.py(py))
+				|| (x == RIGHT.px(px) && y == RIGHT.py(py));
 	}
 
 	// private static float getNormalisedManhattenDistance(final int x1, final int
@@ -127,6 +133,51 @@ final class Hunter extends Agent {
 	@Override
 	public INDArray getObservation() {
 		int count = 0;
+
+		//
+		// int[] obs = new int[5 * 4];
+		// int obsCount = 0;
+		final int x = getGridPosX();
+		final int y = getGridPosY();
+		final Agent[] agents = getAgents();
+
+		// for (int i = 1; i < 6; i++) {
+		// final int index = i;
+		// if (Arrays.stream(agents)
+		// .anyMatch(a -> x + index == a.getGridPosX() && y == a.getGridPosY())) {
+		// currentObservation.putScalar(count++, 1);
+		// } else {
+		// currentObservation.putScalar(count++, 0);
+		// }
+		// }
+		// for (int i = 1; i < 6; i++) {
+		// final int index = i;
+		// if (Arrays.stream(agents)
+		// .anyMatch(a -> x - index == a.getGridPosX() && y == a.getGridPosY())) {
+		// currentObservation.putScalar(count++, 1);
+		// } else {
+		// currentObservation.putScalar(count++, 0);
+		// }
+		// }
+		// for (int i = 1; i < 6; i++) {
+		// final int index = i;
+		// if (Arrays.stream(agents)
+		// .anyMatch(a -> x == a.getGridPosX() && y + index == a.getGridPosY())) {
+		// currentObservation.putScalar(count++, 1);
+		// } else {
+		// currentObservation.putScalar(count++, 0);
+		// }
+		// }
+		// for (int i = 1; i < 6; i++) {
+		// final int index = i;
+		// if (Arrays.stream(agents)
+		// .anyMatch(a -> x == a.getGridPosX() && y - index == a.getGridPosY())) {
+		// currentObservation.putScalar(count++, 1);
+		// } else {
+		// currentObservation.putScalar(count++, 0);
+		// }
+		// }
+		//
 
 		// Get the observation
 		for (final Agent agent : env.getAgents()) {
@@ -149,7 +200,7 @@ final class Hunter extends Agent {
 	}
 
 	final double getDistanceFrom() {
-		final Prey prey = (Prey) env.getAgents().get(4);
+		final Prey prey = (Prey) env.getAgents().get(Env.HUNTER_COUNT);
 		final double dx = (double) getX() - prey.getX();
 		final double dy = (double) getY() - prey.getY();
 
@@ -157,7 +208,7 @@ final class Hunter extends Agent {
 	}
 
 	final double getDistanceFrom(final int x, final int y) {
-		final Prey prey = (Prey) env.getAgents().get(4);
+		final Prey prey = (Prey) env.getAgents().get(Env.HUNTER_COUNT);
 		final double dx = (double) x - prey.getX();
 		final double dy = (double) y - prey.getY();
 
@@ -165,7 +216,7 @@ final class Hunter extends Agent {
 	}
 
 	public boolean canSeePrey() {
-		final Prey prey = (Prey) env.getAgents().get(4);
+		final Prey prey = (Prey) env.getAgents().get(Env.HUNTER_COUNT);
 		final Direction dir = Direction.fromDegree(getHeading());
 		final int x = getGridPosX();
 		final int y = getGridPosY();
@@ -229,6 +280,31 @@ final class Hunter extends Agent {
 				break;
 		}
 
+		// switch (action) {
+		// case FORWARD:
+		// reward += getDistanceFrom() >= oldDistance ? 0f : .5f;
+		// // reward -= getDistanceFrom() == oldDistance ? 1f : 0f;
+		// reward += !isAtGoal() ? 0f : .5f;
+		// // reward -= !canMove() ? .5f : 0f;
+		// break;
+		// case LEFT:
+		// case RIGHT:
+		// final Direction dir = Direction.fromDegree(getHeading());
+
+		// final double lookingDistance = getDistanceFrom(dir.px(getX()), dir.py(getY()));
+		// final double currDistance = getDistanceFrom();
+
+		// reward += lookingDistance > currDistance ? 0f : .5f;
+		// reward += !canSeePrey() ? 0f : .5f;
+		// break;
+		// case NOTHING:
+		// reward += !isAtGoal() ? 0f : 1f;
+		// break;
+
+		// default:
+		// break;
+		// }
+
 		return reward;
 	}
 
@@ -240,7 +316,7 @@ final class Hunter extends Agent {
 
 	@Override
 	public boolean isTrapped() {
-		return canMove();
+		return canMove(); // extend to all directions, or event just use the preys implementation
 	}
 
 }

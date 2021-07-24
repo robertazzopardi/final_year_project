@@ -6,13 +6,13 @@ import java.util.concurrent.Callable;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import comp329robosim.RobotMonitor;
 import comp329robosim.SimulatedRobot;
+import environment.Env;
+import intelligence.Mode;
 import intelligence.Network;
 import intelligence.Maddpg.Actor;
 import intelligence.Maddpg.Critic;
 import intelligence.Maddpg.Data;
 import kotlin.NotImplementedError;
-import simulation.Env;
-import simulation.Mode;
 
 /**
  *
@@ -46,7 +46,8 @@ public abstract class Agent extends RobotMonitor implements Callable<Void> {
 	INDArray currentObservation;
 	INDArray previousObservation;
 
-	Agent(final SimulatedRobot r, final int d, final Env env, final File actorFile, final File criticFile) {
+	Agent(final SimulatedRobot r, final int d, final Env env, final File actorFile,
+			final File criticFile) {
 		super(r, d);
 
 		monitorRobotStatus(false);
@@ -69,13 +70,13 @@ public abstract class Agent extends RobotMonitor implements Callable<Void> {
 		} else if (mode == Mode.TRAIN_ON) {
 			this.actor = new Actor(MAIN, actorFile, Hunter.OBSERVATION_COUNT, Action.LENGTH, true);
 			this.actorTarget = new Actor(TARGET, this.actor.getNetwork().clone());
-			final int inputs = Hunter.OBSERVATION_COUNT * (Env.AGENT_COUNT - 1) + (Env.AGENT_COUNT - 1);
+			final int inputs = Hunter.OBSERVATION_COUNT * Env.HUNTER_COUNT + Env.HUNTER_COUNT;
 			this.critic = new Critic(MAIN, criticFile, inputs, 1, true);
 			this.criticTarget = new Critic(TARGET, this.critic.getNetwork().clone());
 		} else {
 			this.actor = new Actor(MAIN, Hunter.OBSERVATION_COUNT, Action.LENGTH);
 			this.actorTarget = new Actor(TARGET, this.actor.getNetwork().clone());
-			final int inputs = Hunter.OBSERVATION_COUNT * (Env.AGENT_COUNT - 1) + (Env.AGENT_COUNT - 1);
+			final int inputs = Hunter.OBSERVATION_COUNT * Env.HUNTER_COUNT + Env.HUNTER_COUNT;
 			this.critic = new Critic(MAIN, inputs, 1);
 			this.criticTarget = new Critic(TARGET, this.critic.getNetwork().clone());
 		}
@@ -94,8 +95,8 @@ public abstract class Agent extends RobotMonitor implements Callable<Void> {
 	 * @param criticFile
 	 * @return
 	 */
-	public static Agent makeAgent(final String type, final SimulatedRobot r, final int d, final Env env,
-			final File actorFile, final File criticFile) {
+	public static Agent makeAgent(final String type, final SimulatedRobot r, final int d,
+			final Env env, final File actorFile, final File criticFile) {
 		switch (type) {
 			case HUNTER_STRING:
 				return new Hunter(r, d, env, actorFile, criticFile);
@@ -125,7 +126,8 @@ public abstract class Agent extends RobotMonitor implements Callable<Void> {
 	 * @param gnga
 	 * @param indivActionBatch
 	 */
-	public abstract void update(final Data data, final INDArray gnga, final List<Action> indivActionBatch);
+	public abstract void update(final Data data, final INDArray gnga,
+			final List<Action> indivActionBatch);
 
 	/**
 	 * Update the target actor and critic networks
@@ -144,7 +146,8 @@ public abstract class Agent extends RobotMonitor implements Callable<Void> {
 		final int x = dir.px(getX());
 		final int y = dir.py(getY());
 
-		if (env.getAgents().stream().anyMatch(i -> (i != this) && (i.getX() == x && i.getY() == y))) {
+		if (env.getAgents().stream()
+				.anyMatch(i -> (i != this) && (i.getX() == x && i.getY() == y))) {
 			return false;
 		}
 
@@ -234,7 +237,8 @@ public abstract class Agent extends RobotMonitor implements Callable<Void> {
 	 */
 	static final float normalise(final int x, final int min, final int max) {
 		return (2 * ((float) (x - min) / (max - min))) - 1;
-		// return (x - min) / (float) (max - min);
+		// return 1 - (x - min) / (float) (max - min);
+		// return x;
 	}
 
 	/**

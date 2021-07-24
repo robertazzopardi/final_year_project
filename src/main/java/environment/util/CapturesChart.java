@@ -1,4 +1,4 @@
-package simulation.util;
+package environment.util;
 
 import java.awt.Color;
 import java.awt.Dimension;

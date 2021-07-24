@@ -1,4 +1,4 @@
-package simulation;
+package environment;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,6 +12,7 @@ import org.nd4j.linalg.api.ndarray.INDArray;
 import comp329robosim.EnvController;
 import comp329robosim.MyGridCell;
 import comp329robosim.OccupancyType;
+import intelligence.Mode;
 import intelligence.Maddpg.Maddpg;
 import robots.Action;
 import robots.Agent;
@@ -24,15 +25,15 @@ public class Env extends EnvController {
     public static final int CELL_RADIUS = CELL_WIDTH / 2;
     public static final int GRID_SIZE = 8;
     public static final int ENV_SIZE = GRID_SIZE * CELL_WIDTH;
-    public static final int AGENT_COUNT = 5;
-    public static final int HUNTER_COUNT = 4;
     public static final int PREY_COUNT = 1;
+    public static final int HUNTER_COUNT = 4;
+    public static final int AGENT_COUNT = HUNTER_COUNT + PREY_COUNT;
     private static final int DELAY = 1000;
 
     private static final int CAPACITY = 1000000;// Should calculate actual capacity
     public static final int BATCH_SIZE = 64;
     // private static final int MAX_EPISODE = 1001;
-    private static final int MAX_EPISODE = 101;
+    private static final int MAX_EPISODE = 201;
     public static final int MAX_STEP = 100 * GRID_SIZE;
 
     private static final ExecutorService executor = Executors.newFixedThreadPool(AGENT_COUNT + 1);
@@ -50,8 +51,9 @@ public class Env extends EnvController {
 
     private final MyGridCell[][] grid;
 
+
     public Env(final String confFileName, final int cols, final int rows, final Mode mode) {
-        super(confFileName, cols, rows);
+        super(confFileName, cols, rows, AGENT_COUNT);
 
         this.mode = mode;
 
@@ -59,14 +61,17 @@ public class Env extends EnvController {
 
         addBoundaries();
 
-        final File[] files = new File(OUTPUT_FOLDER).listFiles((dir1, filename) -> filename.endsWith(".zip"));
-        actors = Arrays.stream(files).filter(i -> i.getName().contains("actor")).toArray(File[]::new);
-        critics = Arrays.stream(files).filter(i -> i.getName().contains("critic")).toArray(File[]::new);
+        final File[] files =
+                new File(OUTPUT_FOLDER).listFiles((dir1, filename) -> filename.endsWith(".zip"));
+        actors = Arrays.stream(files).filter(i -> i.getName().contains("actor"))
+                .toArray(File[]::new);
+        critics = Arrays.stream(files).filter(i -> i.getName().contains("critic"))
+                .toArray(File[]::new);
 
         if (actors.length > 0) {
             final String name = actors[0].getName();
-            trainedEpisodes = Integer.parseInt((String) name.subSequence(name.indexOf(LINE_SEP) + 1, name.lastIndexOf(LINE_SEP)))
-                    + MAX_EPISODE;
+            trainedEpisodes = Integer.parseInt((String) name.subSequence(name.indexOf(LINE_SEP) + 1,
+                    name.lastIndexOf(LINE_SEP))) + MAX_EPISODE;
         } else
             trainedEpisodes = MAX_EPISODE;
 
@@ -100,11 +105,35 @@ public class Env extends EnvController {
     /**
      * Reset environment and get hunter observations
      *
+     * Creats the agents at the start of the simulation
+     *
+     * And changes their location inbetween episodes
+     *
      * @return
      */
     public INDArray[] reset() {
-        initRobots();
-        return agents.subList(0, HUNTER_COUNT).stream().map(Agent::getObservation).toArray(INDArray[]::new);
+        // initialise the robots in the environment
+        boolean b = mode == Mode.EVAL || mode == Mode.TRAIN_ON;
+        for (int i = 0; i < AGENT_COUNT; i++) {
+            if (agents.size() < AGENT_COUNT - 1) {
+                agents.add(
+                        Agent.makeAgent(Agent.HUNTER_STRING, getAndSetRobot(i, Agent.HUNTER_STRING),
+                                DELAY, this, b && actors.length > 0 ? actors[i] : null,
+                                b && critics.length > 0 ? critics[i] : null));
+            } else if (agents.size() < AGENT_COUNT) {
+                agents.add(Agent.makeAgent(Agent.PREY_STRING, getAndSetRobot(i, Agent.PREY_STRING),
+                        DELAY, this, null, null));
+            }
+            // check if agent is on top of another agent
+            do {
+                final int randomPosX = agents.get(i).getSimulatedRobot().getRandomPos();
+                final int randomPosY = agents.get(i).getSimulatedRobot().getRandomPos();
+                agents.get(i).setPose(randomPosX, randomPosY, 0);
+            } while (isSamePosition(agents.get(i)));
+        }
+
+        return agents.subList(0, HUNTER_COUNT).stream().map(Agent::getObservation)
+                .toArray(INDArray[]::new);
     }
 
     /**
@@ -113,7 +142,7 @@ public class Env extends EnvController {
      * @param actions
      * @return
      */
-    public StepObs step(final Action[] actions, final int step) {
+    public StepObs step(final Action[] actions) {
         final Float[] rewards = new Float[HUNTER_COUNT];
 
         final INDArray[] nextStates = new INDArray[HUNTER_COUNT];
@@ -122,7 +151,7 @@ public class Env extends EnvController {
         for (int i = 0; i < HUNTER_COUNT; i++) {
             agents.get(i).setAction(actions[i]);
         }
-        agents.get(4).setAction(Action.getRandomAction());
+        agents.get(HUNTER_COUNT).setAction(Action.getRandomAction());
 
         // System.out.println(Arrays.toString(actions));
 
@@ -135,7 +164,7 @@ public class Env extends EnvController {
             rewards[i] = agents.get(i).getReward(actions[i]);
         }
 
-        final boolean trapped = agents.get(4).isTrapped();
+        final boolean trapped = agents.get(HUNTER_COUNT).isTrapped();
 
         return new StepObs(nextStates, rewards, trapped);
     }
@@ -146,36 +175,13 @@ public class Env extends EnvController {
             executor.invokeAll(agents);
         } catch (final Exception e) {
             e.printStackTrace();
+            Thread.currentThread().interrupt();
         }
     }
 
-    /**
-     * Creats the agents at the start of the simulation
-     *
-     * And changes their location inbetween episodes
-     */
-    private void initRobots() {
-        // initialise the robots from the environment
-        boolean b = mode == Mode.EVAL || mode == Mode.TRAIN_ON;
-        for (int i = 0; i < AGENT_COUNT; i++) {
-            if (agents.size() < AGENT_COUNT - 1) {
-                agents.add(Agent.makeAgent(Agent.HUNTER_STRING, getAndSetRobot(i, Agent.HUNTER_STRING), DELAY, this,
-                        b && actors.length > 0 ? actors[i] : null, b && critics.length > 0 ? critics[i] : null));
-            } else if (agents.size() < AGENT_COUNT) {
-                agents.add(Agent.makeAgent(Agent.PREY_STRING, getAndSetRobot(i, Agent.PREY_STRING), DELAY, this, null,
-                        null));
-            }
-            // check if agent is on top of another agent
-            do {
-                final int randomPosX = agents.get(i).getSimulatedRobot().getRandomPos();
-                final int randomPosY = agents.get(i).getSimulatedRobot().getRandomPos();
-                agents.get(i).setPose(randomPosX, randomPosY, 0);
-            } while (isSamePosition(agents.get(i)));
-        }
-    }
-
-    private boolean isSamePosition(final Agent agent) {
-        return agents.stream().anyMatch(i -> i != agent && agent.getX() == i.getX() && agent.getY() == i.getY());
+    public boolean isSamePosition(final Agent agent) {
+        return agents.stream()
+                .anyMatch(i -> i != agent && agent.getX() == i.getX() && agent.getY() == i.getY());
     }
 
     /**

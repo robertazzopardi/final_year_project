@@ -1,13 +1,10 @@
 package intelligence.Maddpg;
 
-import static org.nd4j.linalg.ops.transforms.Transforms.exp;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Random;
-
 import org.deeplearning4j.core.storage.StatsStorage;
 import org.deeplearning4j.nn.api.OptimizationAlgorithm;
 import org.deeplearning4j.nn.conf.BackpropType;
@@ -31,10 +28,11 @@ import org.nd4j.linalg.learning.config.Adam;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+import environment.Env;
 import intelligence.Network;
 import robots.Agent;
-import simulation.Env;
+
+import static org.nd4j.linalg.ops.transforms.Transforms.exp;
 
 public class Actor implements Network {
 	private static final Logger LOG = LoggerFactory.getLogger(Actor.class.getName());
@@ -72,20 +70,33 @@ public class Actor implements Network {
 	private MultiLayerConfiguration getNetworkConfiguration(final int inputs, final int outputs) {
 		return new NeuralNetConfiguration.Builder().seed(12345)
 				.optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
-				.trainingWorkspaceMode(WorkspaceMode.ENABLED).weightInit(WeightInit.RELU).activation(Activation.RELU)
-				.updater(new Adam()).dropOut(0.8).list()
+				.trainingWorkspaceMode(WorkspaceMode.ENABLED).weightInit(WeightInit.RELU)
+				.activation(Activation.RELU).updater(new Adam()).dropOut(0.8).list()
 				.layer(0,
-						new DenseLayer.Builder().nIn(inputs).nOut(512).dropOut(0.5).weightInit(WeightInit.RELU)
-								.activation(Activation.RELU).build())
-				.layer(1,
-						new DenseLayer.Builder().nIn(512).nOut(300).dropOut(0.5).weightInit(WeightInit.RELU)
-								.activation(Activation.RELU).build())
+						new DenseLayer.Builder().nIn(inputs).nOut(512).dropOut(0.5)
+								.weightInit(WeightInit.RELU).activation(Activation.RELU).build())
+				.layer(1, new DenseLayer.Builder().nIn(512).nOut(300).dropOut(0.5)
+						.weightInit(WeightInit.RELU).activation(Activation.RELU).build())
 				.layer(2, new OutputLayer.Builder(LossFunctions.LossFunction.MSE).activation(
-						// Activation.TANH
-						// Activation.IDENTITY
-						Activation.LEAKYRELU
-				// Activation.SOFTMAX
-				).nIn(300).nOut(outputs).build()).backpropType(BackpropType.Standard).build();
+						Activation.SOFTMAX).nIn(300).nOut(outputs).build())
+				.backpropType(BackpropType.Standard).build();
+		// final int HIDDEN_NEURONS = 150;
+		// return new NeuralNetConfiguration.Builder().seed(12345)
+		// .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
+		// .weightInit(WeightInit.RELU).updater(new Adam(0.001, 0.9, 0.999, 0.1))
+		// .gradientNormalization(GradientNormalization.RenormalizeL2PerLayer).miniBatch(true)
+		// .dropOut(0.8).l2(0.000001).list()
+		// .layer(0,
+		// new DenseLayer.Builder().nIn(inputs).nOut(HIDDEN_NEURONS).dropOut(0.5)
+		// .weightInit(WeightInit.RELU).activation(Activation.RELU).build())
+		// .layer(1,
+		// new DenseLayer.Builder().nIn(HIDDEN_NEURONS).nOut(HIDDEN_NEURONS)
+		// .dropOut(0.5).weightInit(WeightInit.RELU)
+		// .activation(Activation.RELU).build())
+		// .layer(2, new OutputLayer.Builder(LossFunctions.LossFunction.MSE)
+		// .nIn(HIDDEN_NEURONS).nOut(outputs).weightInit(WeightInit.RELU)
+		// .activation(Activation.IDENTITY).weightInit(WeightInit.RELU).build())
+		// .backpropType(BackpropType.Standard).build();
 	}
 
 	private static void enableUIServer(final MultiLayerNetwork net) {
@@ -181,8 +192,8 @@ public class Actor implements Network {
 	 * @return Multi Layered Network
 	 */
 	@Override
-	public MultiLayerNetwork loadNetwork(final File file, final boolean moreTraining, final int inputs,
-			final int outputs) {
+	public MultiLayerNetwork loadNetwork(final File file, final boolean moreTraining,
+			final int inputs, final int outputs) {
 		if (file == null) {
 			LOG.info("Loading untrained network");
 			return new MultiLayerNetwork(getNetworkConfiguration(inputs, outputs));
@@ -198,32 +209,32 @@ public class Actor implements Network {
 		return null;
 	}
 
-	// public int boltzmannDistribution(final INDArray output, final int shape) {
-	// final INDArray exp = exp(output);
-	// final double sum = exp.sum(shape).getDouble(0);
+	public static int boltzmannDistribution(final INDArray output, final int shape) {
+		final INDArray exp = exp(output);
+		final double sum = exp.sum(shape).getDouble(0);
 
-	// double picked = RANDOM.nextDouble() * sum;
+		double picked = RANDOM.nextDouble() * sum;
 
-	// for (int i = 0; i < exp.columns(); i++) {
-	// if (picked < exp.getDouble(i))
-	// return i;
-	// picked -= exp.getDouble(i);
-	// }
-	// return (int) output.length() - 1;
-	// }
+		for (int i = 0; i < exp.columns(); i++) {
+			if (picked < exp.getDouble(i))
+				return i;
+			picked -= exp.getDouble(i);
+		}
+		return (int) output.length() - 1;
+	}
 
-	// public int distribution(final INDArray output) {
-	// float rVal = RANDOM.nextFloat();
-	// for (int i = 0; i < output.length(); i++) {
-	// if (rVal < output.getFloat(i)) {
-	// return i;
-	// } else
-	// rVal -= output.getFloat(i);
-	// }
+	public static int distribution(final INDArray output) {
+		float rVal = RANDOM.nextFloat();
+		for (int i = 0; i < output.length(); i++) {
+			if (rVal < output.getFloat(i)) {
+				return i;
+			} else
+				rVal -= output.getFloat(i);
+		}
 
-	// throw new RuntimeException("Output from network is not a probability
-	// distribution: " + output);
-	// }
+		throw new RuntimeException(
+				"Output from network is not a probability distribution: " + output);
+	}
 
 	/**
 	 * Ornstein Olhenbeck noise
@@ -246,8 +257,9 @@ public class Actor implements Network {
 	public int nextAction(final INDArray output, final int shape) {
 		final double[] m = Arrays.stream(output.toDoubleVector()).map(Actor::addOUnoise).toArray();
 		try (INDArray no = Nd4j.create(m)) {
-			return no.argMax().getInt();
+			// return no.argMax().getInt();
 			// return boltzmannDistribution(no, shape);
+			return boltzmannDistribution(no, 0);
 			// return distribution(no);
 		}
 	}

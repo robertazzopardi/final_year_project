@@ -1,35 +1,21 @@
 package intelligence.Maddpg;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Stream;
-
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import environment.Env;
 import robots.Action;
-import simulation.Env;
 
 /**
  * Collection of the previous experience in the simulation
  */
 public class ReplayBuffer implements Serializable {
-    private static final Logger LOG = LoggerFactory.getLogger(ReplayBuffer.class.getName());
-    private static final String SERIALISED_NAME = Env.OUTPUT_FOLDER + "/replayBuffer.ser";
+    // private static final Logger LOG = LoggerFactory.getLogger(ReplayBuffer.class.getName());
+    // private static final String SERIALISED_NAME = Env.OUTPUT_FOLDER + "/replayBuffer.ser";
     // private final Set<Experience> buffer;
     private final List<Experience> buffer;
 
@@ -88,9 +74,11 @@ public class ReplayBuffer implements Serializable {
      * @param nextState
      * @param dones
      */
-    public void push(final INDArray[] state, final Action[] action, final Float[] rewards, final INDArray[] nextState) {
-        if (!buffer.add(new Experience(state, action, rewards, nextState)))
-            ;
+    public void push(final INDArray[] state, final Action[] action, final Float[] rewards,
+            final INDArray[] nextState) {
+        buffer.add(new Experience(state, action, rewards, nextState));
+        // if (!buffer.add(new Experience(state, action, rewards, nextState)))
+        // ;
         // LOG.info("Did not add experience to replay");
     }
 
@@ -101,14 +89,29 @@ public class ReplayBuffer implements Serializable {
      * @return Sample
      */
     public Sample sample(final int batchSize) {
-        final List<List<INDArray>> obsBatch = new ArrayList<>(
-                Arrays.asList(new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>()));
-        final List<List<Action>> indivActionBatch = new ArrayList<>(
-                Arrays.asList(new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>()));
-        final List<List<Float>> indivRewardBatch = new ArrayList<>(
-                Arrays.asList(new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>()));
-        final List<List<INDArray>> nextObsBatch = new ArrayList<>(
-                Arrays.asList(new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>()));
+        // final List<List<INDArray>> obsBatch = new ArrayList<>(Arrays.asList(new ArrayList<>(),
+        // new ArrayList<>(), new ArrayList<>(), new ArrayList<>()));
+
+        // final List<List<Action>> indivActionBatch = new ArrayList<>(Arrays.asList(new
+        // ArrayList<>(),
+        // new ArrayList<>(), new ArrayList<>(), new ArrayList<>()));
+        // final List<List<Float>> indivRewardBatch = new ArrayList<>(Arrays.asList(new
+        // ArrayList<>(),
+        // new ArrayList<>(), new ArrayList<>(), new ArrayList<>()));
+        // final List<List<INDArray>> nextObsBatch = new ArrayList<>(Arrays.asList(new
+        // ArrayList<>(),
+        // new ArrayList<>(), new ArrayList<>(), new ArrayList<>()));
+        final List<List<INDArray>> obsBatch = new ArrayList<>();
+        final List<List<Action>> indivActionBatch = new ArrayList<>();
+        final List<List<Float>> indivRewardBatch = new ArrayList<>();
+        final List<List<INDArray>> nextObsBatch = new ArrayList<>();
+
+        for (int i = 0; i < Env.HUNTER_COUNT; i++) {
+            obsBatch.add(new ArrayList<>());
+            indivActionBatch.add(new ArrayList<>());
+            indivRewardBatch.add(new ArrayList<>());
+            nextObsBatch.add(new ArrayList<>());
+        }
 
         final List<INDArray[]> globalStateBatch = new ArrayList<>();
         final List<INDArray[]> globalNextStateBatch = new ArrayList<>();
@@ -122,7 +125,7 @@ public class ReplayBuffer implements Serializable {
             final Float[] reward = experience.reward;
             final INDArray[] nextState = experience.nextState;
 
-            for (int i = 0; i < Env.AGENT_COUNT - 1; i++) {
+            for (int i = 0; i < Env.HUNTER_COUNT; i++) {
                 obsBatch.get(i).add(state[i]);
                 indivActionBatch.get(i).add(action[i]);
                 indivRewardBatch.get(i).add(reward[i]);
@@ -130,16 +133,16 @@ public class ReplayBuffer implements Serializable {
             }
 
             globalStateBatch.add(state);
-            globalActionsBatch.add(
-                    Nd4j.createFromArray(Arrays.stream(action).map(Action::getActionIndexFloat).toArray(Float[]::new)));
+            globalActionsBatch.add(Nd4j.createFromArray(
+                    Arrays.stream(action).map(Action::getActionIndexFloat).toArray(Float[]::new)));
             globalNextStateBatch.add(nextState);
         }
 
         final INDArray[] tmp = obsBatch.stream().map(Nd4j::vstack).toArray(INDArray[]::new);
         final INDArray[] tmp2 = nextObsBatch.stream().map(Nd4j::vstack).toArray(INDArray[]::new);
 
-        return new Sample(tmp, indivActionBatch, indivRewardBatch, tmp2, globalStateBatch, globalNextStateBatch,
-                globalActionsBatch);
+        return new Sample(tmp, indivActionBatch, indivRewardBatch, tmp2, globalStateBatch,
+                globalNextStateBatch, globalActionsBatch);
     }
 
     public int getLength() {

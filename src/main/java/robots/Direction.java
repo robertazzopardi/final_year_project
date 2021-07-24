@@ -1,6 +1,6 @@
 package robots;
 
-import simulation.Env;
+import environment.Env;
 
 /**
  * Defines a possible direction

@@ -9,7 +9,6 @@ import org.deeplearning4j.nn.conf.BackpropType;
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
 import org.deeplearning4j.nn.conf.WorkspaceMode;
-import org.deeplearning4j.nn.conf.inputs.InputType;
 import org.deeplearning4j.nn.conf.layers.DenseLayer;
 import org.deeplearning4j.nn.conf.layers.OutputLayer;
 import org.deeplearning4j.nn.gradient.Gradient;
@@ -22,14 +21,13 @@ import org.deeplearning4j.ui.model.stats.StatsListener;
 import org.deeplearning4j.ui.model.storage.InMemoryStatsStorage;
 import org.nd4j.linalg.activations.Activation;
 import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.learning.config.Adam;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import environment.Env;
 import intelligence.Network;
 import robots.Agent;
-import simulation.Env;
 
 /**
  * Defines the Critic Neural Network
@@ -70,16 +68,17 @@ public class Critic implements Network {
 	private MultiLayerConfiguration getNetworkConfiguration(final int inputs, final int outputs) {
 		return new NeuralNetConfiguration.Builder().seed(12345)
 				.optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
-				.trainingWorkspaceMode(WorkspaceMode.ENABLED).weightInit(WeightInit.RELU).activation(Activation.RELU)
-				.updater(new Adam()).dropOut(0.8).list()
+				.trainingWorkspaceMode(WorkspaceMode.ENABLED).weightInit(WeightInit.RELU)
+				.activation(Activation.RELU).updater(new Adam()).dropOut(0.8).list()
 				.layer(0,
-						new DenseLayer.Builder().nIn(inputs).nOut(512).dropOut(0.5).weightInit(WeightInit.RELU)
-								.activation(Activation.RELU).build())
+						new DenseLayer.Builder().nIn(inputs).nOut(512).dropOut(0.5)
+								.weightInit(WeightInit.RELU).activation(Activation.RELU).build())
 				.layer(1,
-						new DenseLayer.Builder().nIn(512).nOut(300).dropOut(0.5).weightInit(WeightInit.RELU)
-								.activation(Activation.RELU).build())
-				.layer(2, new OutputLayer.Builder(LossFunctions.LossFunction.MSE).activation(Activation.IDENTITY)
-						.nIn(300).nOut(outputs).build())
+						new DenseLayer.Builder().nIn(512).nOut(300).dropOut(0.5)
+								.weightInit(WeightInit.RELU).activation(Activation.RELU).build())
+				.layer(2,
+						new OutputLayer.Builder(LossFunctions.LossFunction.MSE)
+								.activation(Activation.IDENTITY).nIn(300).nOut(outputs).build())
 				.backpropType(BackpropType.Standard).build();
 	}
 
@@ -169,8 +168,8 @@ public class Critic implements Network {
 	 * @return Multi Layered Network
 	 */
 	@Override
-	public MultiLayerNetwork loadNetwork(final File file, final boolean moreTraining, final int inputs,
-			final int outputs) {
+	public MultiLayerNetwork loadNetwork(final File file, final boolean moreTraining,
+			final int inputs, final int outputs) {
 		if (file == null) {
 			LOG.info("Loading untrained network");
 			return new MultiLayerNetwork(getNetworkConfiguration(inputs, outputs));

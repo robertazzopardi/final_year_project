@@ -28,10 +28,9 @@ import org.nd4j.linalg.learning.config.Adam;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+import environment.Env;
 import intelligence.Network;
 import robots.Action;
-import simulation.Env;
 
 public class DeepQLearning implements Network {
 
@@ -58,36 +57,24 @@ public class DeepQLearning implements Network {
 
 	// Just make sure the number of inputs of the next layer equals to the number of
 	// outputs in the previous layer.
-	private final MultiLayerConfiguration configuration = new NeuralNetConfiguration.Builder().seed(12345)
-			.optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT).weightInit(WeightInit.RELU)
-			//
-			// .updater(new Adam(LEARNING_RATE))
-			// .updater(new Adam(0.0005, 0.9, 0.999, 1e-08))
-			.updater(new Adam(0.001, 0.9, 0.999, 0.1))
-			// .updater(new Adam(0.0005, 0.9, 0.999, 0.1))
-			// .updater(new Sgd(LEARNING_RATE))
-			//
-			.gradientNormalization(GradientNormalization.RenormalizeL2PerLayer)
-			//
-			.miniBatch(true)
-			//
-			.dropOut(0.8)
-			//
-			.l2(0.000001)
-			//
-			.list()
-			//
-			.layer(0, new DenseLayer.Builder()
-					// .nIn(Hunter.OBSERVATION_COUNT)
-					.nOut(HIDDEN_NEURONS).dropOut(0.5).weightInit(WeightInit.RELU).activation(Activation.RELU).build())
+	private final MultiLayerConfiguration configuration = new NeuralNetConfiguration.Builder()
+			.seed(12345).optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
+			.weightInit(WeightInit.RELU).updater(new Adam(0.001, 0.9, 0.999, 0.1))
+			.gradientNormalization(GradientNormalization.RenormalizeL2PerLayer).miniBatch(true)
+			.dropOut(0.8).l2(0.000001).list()
+			.layer(0,
+					new DenseLayer.Builder().nOut(HIDDEN_NEURONS).dropOut(0.5)
+							.weightInit(WeightInit.RELU).activation(Activation.RELU).build())
 			.layer(1,
 					new DenseLayer.Builder().nIn(HIDDEN_NEURONS).nOut(HIDDEN_NEURONS).dropOut(0.5)
 							.weightInit(WeightInit.RELU).activation(Activation.RELU).build())
 			.layer(2,
 					new DenseLayer.Builder().nIn(HIDDEN_NEURONS).nOut(HIDDEN_NEURONS).dropOut(0.5)
 							.weightInit(WeightInit.RELU).activation(Activation.RELU).build())
-			.layer(3, new OutputLayer.Builder(LossFunctions.LossFunction.MSE).nIn(HIDDEN_NEURONS).nOut(Action.LENGTH)
-					.weightInit(WeightInit.RELU).activation(Activation.IDENTITY).weightInit(WeightInit.RELU).build())
+			.layer(3,
+					new OutputLayer.Builder(LossFunctions.LossFunction.MSE).nIn(HIDDEN_NEURONS)
+							.nOut(Action.LENGTH).weightInit(WeightInit.RELU)
+							.activation(Activation.IDENTITY).weightInit(WeightInit.RELU).build())
 			.backpropType(BackpropType.Standard).build();
 
 	public DeepQLearning(final boolean eval) {
@@ -152,7 +139,8 @@ public class DeepQLearning implements Network {
 	// return Nd4j.create(new Boolean[][] {states});
 	// }
 	private static INDArray toINDArray(final Boolean[] states) {
-		return Nd4j.create(new double[][] { Arrays.stream(states).mapToDouble(i -> i ? 1 : 0).toArray() });
+		return Nd4j.create(
+				new double[][] {Arrays.stream(states).mapToDouble(i -> i ? 1 : 0).toArray()});
 	}
 
 	private int getMaxValueIndex(final double[] values) {
@@ -233,7 +221,8 @@ public class DeepQLearning implements Network {
 		return state + "-" + action;
 	}
 
-	public static void saveNetwork(final MultiLayerNetwork network, final int number, final String episode) {
+	public static void saveNetwork(final MultiLayerNetwork network, final int number,
+			final String episode) {
 		LOGGER.debug("Saving trained network");
 		try {
 			network.save(new File(FILE_NAME_PREFIX + number + "_" + episode + ".zip"), true);
@@ -242,7 +231,8 @@ public class DeepQLearning implements Network {
 		}
 	}
 
-	public static DeepQLearning loadNetwork(final File file, final boolean needsTraining, final boolean eval) {
+	public static DeepQLearning loadNetwork(final File file, final boolean needsTraining,
+			final boolean eval) {
 		try {
 			return new DeepQLearning(MultiLayerNetwork.load(file, needsTraining), eval);
 		} catch (final IOException e) {
@@ -278,7 +268,8 @@ public class DeepQLearning implements Network {
 	}
 
 	@Override
-	public MultiLayerNetwork loadNetwork(final File file, boolean moreTraining, final int inputs, final int outputs) {
+	public MultiLayerNetwork loadNetwork(final File file, boolean moreTraining, final int inputs,
+			final int outputs) {
 		// TODO Auto-generated method stub
 		return null;
 	}

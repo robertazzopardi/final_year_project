@@ -1,4 +1,4 @@
-package simulation;
+package intelligence;
 
 /**
  * Define the possible modes for training

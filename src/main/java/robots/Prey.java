@@ -7,8 +7,8 @@ import org.nd4j.linalg.factory.Nd4j;
 import comp329robosim.MyGridCell;
 import comp329robosim.OccupancyType;
 import comp329robosim.SimulatedRobot;
+import environment.Env;
 import intelligence.Maddpg.Data;
-import simulation.Env;
 
 /**
  * @author rob
@@ -16,7 +16,8 @@ import simulation.Env;
  */
 final class Prey extends Agent {
 
-	public Prey(final SimulatedRobot r, final int d, final Env env, final File actorFile, final File criticFile) {
+	public Prey(final SimulatedRobot r, final int d, final Env env, final File actorFile,
+			final File criticFile) {
 		super(r, d, env, actorFile, criticFile);
 	}
 

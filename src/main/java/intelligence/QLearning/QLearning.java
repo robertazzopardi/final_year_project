@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Random;
 import comp329robosim.MyGridCell;
 import comp329robosim.OccupancyType;
-import simulation.Env;
+import environment.Env;
 
 /**
  * @author rob
@@ -28,7 +28,7 @@ final class QLearning {
 
 	private double[][] qValues;
 
-	private int[][] rValues;
+	private int[][] rewards;
 
 	public QLearning(final MyGridCell[][] grid) {
 		this.maze = grid;
@@ -39,24 +39,21 @@ final class QLearning {
 			// Select random initial state
 			int crtObservation = rand.nextInt(STATESCOUNT);
 
-			while (!isFinalObservation(crtObservation)) {
-				final int[] actionsFromCurrentObservation =
-						possibleActionsFromObservation(crtObservation);
+			while (!isTerminalState(crtObservation)) {
+				final int[] actionsFromCurrentObservation = getPolicy(crtObservation);
 
 				if (actionsFromCurrentObservation.length == 0) {
 					return;
 				}
 
-				// Pick a random action from the ones possible
 				final int index = rand.nextInt(actionsFromCurrentObservation.length);
 				final int newObservations = actionsFromCurrentObservation[index];
 
-				// Q(state,action)= Q(state,action) + alpha * (R(state,action) + gamma *
-				// Max(next state, all actions) - Q(state,action))
-				final double q = qValues[crtObservation][newObservations];
-				final double maxQ = maxQ(newObservations);
-				final int r = rValues[crtObservation][newObservations];
-				final double value = q + ALPHA * (r + GAMMA * maxQ - q);
+				final double qv = qValues[crtObservation][newObservations];
+				final double maxQ = getMaxQValue(newObservations);
+				final int reward = rewards[crtObservation][newObservations];
+
+				final double value = qv + ALPHA * (reward + GAMMA * maxQ - qv);
 
 				qValues[crtObservation][newObservations] = value;
 				crtObservation = newObservations;
@@ -65,7 +62,7 @@ final class QLearning {
 	}
 
 	// public int getPolicyFromObservation(final int state) {
-	// final int[] actionsFromObservation = possibleActionsFromObservation(state);
+	// final int[] actionsFromObservation = getPolicy(state);
 	// double maxValue = Double.MIN_VALUE;
 	// int policyGotoObservation = state;
 
@@ -83,7 +80,7 @@ final class QLearning {
 	public int getActionFromObservation(final int state) {
 		train();
 
-		final int[] actionsFromObservation = possibleActionsFromObservation(state);
+		final int[] actionsFromObservation = getPolicy(state);
 		double maxValue = Double.MIN_VALUE;
 		int policyGotoObservation = state;
 
@@ -99,7 +96,7 @@ final class QLearning {
 	}
 
 	private void init() {
-		rValues = new int[STATESCOUNT][STATESCOUNT];
+		rewards = new int[STATESCOUNT][STATESCOUNT];
 		qValues = new double[STATESCOUNT][STATESCOUNT];
 
 		int i = 0;
@@ -114,22 +111,16 @@ final class QLearning {
 
 			// Fill in the reward matrix with -1
 			for (int s = 0; s < STATESCOUNT; s++) {
-				rValues[k][s] = -1;
+				rewards[k][s] = -1;
 			}
 			// If not in final state or a wall try moving in all directions in the maze
 
 			if (maze[i][j].getCellType() != OccupancyType.GOAL) {
-				// Try to move left in the maze
-				tryMoveLeft(i, j, k);
+				tryMoveLeftRight(i, k, j + 1);
+				tryMoveLeftRight(i, k, j - 1);
 
-				// Try to move right in the maze
-				tryMoveRight(i, j, k);
-
-				// Try to move up in the maze
-				tryMoveUp(i, j, k);
-
-				// Try to move down in the maze
-				tryMoveDown(i, j, k);
+				tryMoveUpDown(j, k, i + 1);
+				tryMoveUpDown(j, k, i - 1);
 			}
 		}
 		initializeQ();
@@ -139,25 +130,20 @@ final class QLearning {
 	// Set Q values to R values
 	private void initializeQ() {
 		for (int i = 0; i < STATESCOUNT; i++) {
-			// for (int j = 0; j < STATESCOUNT; j++) {
-			// qValues[i][j] = rValues[i][j];
-			// }
-			final int[] aMatrix = rValues[i];
+			final int[] aMatrix = rewards[i];
 			final int aLength = aMatrix.length;
 			qValues[i] = new double[aLength];
 			System.arraycopy(aMatrix, 0, qValues[i], 0, aLength);
 		}
 	}
 
-	private boolean isFinalObservation(final int state) {
-		final int i = state / Env.GRID_SIZE;
-		final int j = state - i * Env.GRID_SIZE;
-
-		return maze[i][j].getCellType() == OccupancyType.GOAL;
+	private boolean isTerminalState(final int state) {
+		return maze[state / Env.GRID_SIZE][state - (state / Env.GRID_SIZE) * Env.GRID_SIZE]
+				.getCellType() == OccupancyType.GOAL;
 	}
 
-	private double maxQ(final int newObservations) {
-		final int[] actionsFromObservation = possibleActionsFromObservation(newObservations);
+	private double getMaxQValue(final int newObservations) {
+		final int[] actionsFromObservation = getPolicy(newObservations);
 		// the learning rate and eagerness will keep the W value above the lowest reward
 		double maxValue = -10;
 		for (final int nextAction : actionsFromObservation) {
@@ -169,10 +155,10 @@ final class QLearning {
 		return maxValue;
 	}
 
-	public int[] possibleActionsFromObservation(final int state) {
+	public int[] getPolicy(final int state) {
 		final ArrayList<Integer> result = new ArrayList<>();
 		for (int i = 0; i < STATESCOUNT; i++) {
-			if (rValues[state][i] != -1) {
+			if (rewards[state][i] != -1) {
 				result.add(i);
 			}
 		}
@@ -180,134 +166,29 @@ final class QLearning {
 		return result.stream().mapToInt(i -> i).toArray();
 	}
 
-	/**
-	 * @param i
-	 * @param j
-	 * @param k
-	 */
-	private void tryMoveDown(final int i, final int j, final int k) {
-		final int goDown = i + 1;
-		if (goDown < Env.GRID_SIZE) {
-			final int target = goDown * Env.GRID_SIZE + j;
-
-			switch (maze[goDown][j].getCellType()) {
-				case EMPTY:
-					rValues[k][target] = 0;
-					break;
-				case GOAL:
-					rValues[k][target] = REWARD;
-					break;
-				default:
-					rValues[k][target] = PENALTY;
-					break;
-			}
+	private void updateRewards(final OccupancyType type, final int row, final int col) {
+		switch (type) {
+			case EMPTY:
+				rewards[row][col] = 0;
+				break;
+			case GOAL:
+				rewards[row][col] = REWARD;
+				break;
+			default:
+				rewards[row][col] = PENALTY;
+				break;
 		}
 	}
 
-	/**
-	 * @param i
-	 * @param j
-	 * @param k
-	 */
-	private void tryMoveLeft(final int i, final int j, final int k) {
-		final int goLeft = j - 1;
-		if (goLeft >= 0) {
-			final int target = i * Env.GRID_SIZE + goLeft;
-
-			switch (maze[i][goLeft].getCellType()) {
-				case EMPTY:
-					rValues[k][target] = 0;
-					break;
-				case GOAL:
-					rValues[k][target] = REWARD;
-					break;
-				default:
-					rValues[k][target] = PENALTY;
-					break;
-			}
+	private void tryMoveUpDown(final int j, final int k, final int next) {
+		if (next >= 0 || next < Env.GRID_SIZE) {
+			updateRewards(maze[next][j].getCellType(), k, next * Env.GRID_SIZE + j);
 		}
 	}
 
-	/**
-	 * @param i
-	 * @param j
-	 * @param k
-	 */
-	private void tryMoveRight(final int i, final int j, final int k) {
-		final int goRight = j + 1;
-		if (goRight < Env.GRID_SIZE) {
-			final int target = i * Env.GRID_SIZE + goRight;
-
-			switch (maze[i][goRight].getCellType()) {
-				case EMPTY:
-					rValues[k][target] = 0;
-					break;
-				case GOAL:
-					rValues[k][target] = REWARD;
-					break;
-				default:
-					rValues[k][target] = PENALTY;
-					break;
-			}
-		}
-	}
-
-	// public void printPolicy() {
-	// System.out.println("\nPrint policy");
-	// for (int i = 0; i < STATESCOUNT; i++) {
-	// System.out.println("From state " + i + " goto state " +
-	// getPolicyFromObservation(i));
-	// }
-	// }
-	//
-	// public void printQ() {
-	// System.out.println("Q matrix");
-	// for (int i = 0; i < Q.length; i++) {
-	// System.out.print("From state " + i + ": ");
-	// for (int j = 0; j < Q[i].length; j++) {
-	// System.out.printf("%6.2f ", (Q[i][j]));
-	// }
-	// System.out.println();
-	// }
-	// }
-	//
-	// // Used for debug
-	// public void printR(final int[][] matrix) {
-	// System.out.printf("%25s", "Observations: ");
-	// for (int i = 0; i <= 8; i++) {
-	// System.out.printf("%4s", i);
-	// }
-	// System.out.println();
-	// for (int i = 0; i < STATESCOUNT; i++) {
-	// System.out.print("Possible states from " + i + " :[");
-	// for (int j = 0; j < STATESCOUNT; j++) {
-	// System.out.printf("%4s", matrix[i][j]);
-	// }
-	// System.out.println("]");
-	// }
-	// }
-
-	/**
-	 * @param i
-	 * @param j
-	 * @param k
-	 */
-	private void tryMoveUp(final int i, final int j, final int k) {
-		final int goUp = i - 1;
-		if (goUp >= 0) {
-			final int target = goUp * Env.GRID_SIZE + j;
-
-			switch (maze[goUp][j].getCellType()) {
-				case EMPTY:
-					rValues[k][target] = 0;
-					break;
-				case GOAL:
-					rValues[k][target] = REWARD;
-					break;
-				default:
-					rValues[k][target] = PENALTY;
-					break;
-			}
+	private void tryMoveLeftRight(final int i, final int k, final int next) {
+		if (next >= 0 || next < Env.GRID_SIZE) {
+			updateRewards(maze[i][next].getCellType(), k, i * Env.GRID_SIZE + next);
 		}
 	}
 
